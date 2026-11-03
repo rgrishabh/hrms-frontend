@@ -19,6 +19,10 @@ import { Expenses } from './pages/Expenses';
 import { Competency } from './pages/Competency';
 import { Policies } from './pages/Policies';
 import { MfaVerify, MfaEnroll, RecoveryCodes } from './Mfa';
+import { runtimeEnv, environmentLabel } from './runtime/env';
+
+const RUNTIME = runtimeEnv();
+const ENV_LABEL = environmentLabel(RUNTIME);
 
 /** Logo from deployment config; initials if none is configured or it fails to load. */
 export function BrandMark({ cfg, size = 30 }: { cfg: PublicConfig; size?: number }) {
@@ -228,7 +232,8 @@ function Shell({ cfg, children, unread }: { cfg: PublicConfig; children: ReactNo
   return (
     <div className="shell">
       <aside className={`sidebar ${open ? 'open' : ''}`} aria-label="Main navigation">
-        <div className="brand"><BrandMark cfg={cfg} /><div>{cfg.brand.shortName}</div></div>
+        <div className="brand"><BrandMark cfg={cfg} /><div>{cfg.brand.shortName}</div>
+          {ENV_LABEL && <span className="badge warn" title={`Version ${RUNTIME.version}`} style={{ marginLeft: "auto" }}>{ENV_LABEL}</span>}</div>
         <nav className="nav">
           {groups.map((g) => g.items.some((i) => i.show) && (
             <div key={g.title}><div className="nav-group">{g.title}</div>
