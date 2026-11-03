@@ -83,7 +83,7 @@ function ChecklistDetail({ id, onClose }: { id: string; onClose: () => void }) {
   );
 }
 
-function EmployeePicker({ value, onChange }: { value: string; onChange: (id: string) => void }) {
+export function EmployeePicker({ value, onChange }: { value: string; onChange: (id: string) => void }) {
   const [search, setSearch] = useState('');
   const { data } = useLoad(() => api.get(`/api/v1/employees${qs({ search: search || undefined, pageSize: 20 })}`), [search]);
   return (

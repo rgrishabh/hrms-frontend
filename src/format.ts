@@ -59,6 +59,8 @@ export function localInputToIso(value: string): string {
 export const STATUS_LABEL: Record<string, string> = {
   present: 'Present', half_day: 'Half day', absent: 'Absent', missing_punch: 'Missing punch', weekly_off: 'Weekly off',
   holiday: 'Holiday', not_joined: 'Not employed', not_calculated: 'Not calculated', on_leave: 'On leave',
+  self_submitted: 'Self-review done', manager_submitted: 'Manager review done', in_repair: 'In repair',
+  not_started: 'Not started', acknowledged: 'Acknowledged', finalized: 'Finalized', available: 'Available', issued: 'Issued', lost: 'Lost',
 };
 
 export const EXCEPTION_LABEL: Record<string, string> = {
