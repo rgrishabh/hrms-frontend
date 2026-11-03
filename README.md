@@ -11,6 +11,21 @@ npm run dev        # http://localhost:5173 — proxies /api, /health, /ready, /b
 npm run lint && npm test && npm run build
 ```
 
+## Browser end-to-end tests
+
+Playwright tests in `e2e/` drive the real app as the backend's demo personas (analyst, lab manager,
+HR head, payroll, IT): every menu page per role, the performance review from self-review to
+acknowledgement, and issuing / returning a calibrated instrument. They need an installation loaded
+with the backend's **synthetic** demo data (`npm run demo` in hrms-backend) and `MFA_ENFORCEMENT=off`.
+
+```bash
+E2E_PASSWORD='<from the demo output>' npm run e2e          # against http://localhost:5173 (vite + local API)
+```
+
+CI (`.github/workflows/e2e.yml`) does the same on every pull request: a throwaway Postgres, the
+`hrms-backend:develop` image, demo data, and this repo's production build. Tests are written to be
+re-runnable on the same data.
+
 ## Same origin as the API
 
 Authentication uses a session cookie plus a CSRF header, so the SPA and the API must be served from the **same origin**.

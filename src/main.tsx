@@ -2,7 +2,7 @@ import { StrictMode, useEffect, useState, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, NavLink, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import './styles.css';
-import { AuthProvider, useAuth, type PublicConfig } from './auth';
+import { AuthProvider, useAuth, TEMPORARY, type PublicConfig } from './auth';
 import { ToastProvider, Loading, ErrorBox, Field, errText, useToast } from './ui';
 import { api, setCsrf } from './api';
 import { Dashboard } from './pages/Dashboard';
@@ -23,6 +23,8 @@ import { Lifecycle } from './pages/Lifecycle';
 import { Payroll } from './pages/Payroll';
 import { Payslips } from './pages/Payslips';
 import { Cases } from './pages/Cases';
+import { Performance } from './pages/Performance';
+import { Assets } from './pages/Assets';
 import { MfaVerify, MfaEnroll, RecoveryCodes } from './Mfa';
 import { runtimeEnv, environmentLabel } from './runtime/env';
 
@@ -224,6 +226,8 @@ function Shell({ cfg, children, unread }: { cfg: PublicConfig; children: ReactNo
       { to: '/payslips', label: 'Payslips', show: hasModule('payroll.payslips') && can('payslips.self') && !!me?.user.employeeId },
       { to: '/payroll', label: 'Payroll', show: hasModule('payroll') && canAny('payroll.read', 'payroll.manage', 'payroll.approve', 'payroll.statutory') },
       { to: '/cases', label: 'Grievances & POSH', show: (hasModule('posh') || hasModule('grievance')) },
+      { to: '/performance', label: 'Performance', show: hasModule('performance') && canAny('performance.self', 'performance.manage') },
+      { to: '/assets', label: 'Assets', show: hasModule('assets') && ((can('assets.self') && !!me.user.employeeId) || can('assets.manage')) },
       { to: '/lifecycle', label: 'Onboarding & exit', show: hasModule('core.onboarding') || hasModule('core.offboarding') },
       { to: '/policies', label: 'Policies', show: hasModule('core.policies') && canAny('policies.self', 'policies.read', 'policies.manage') },
       { to: '/competency', label: hasModule('lab.competency') ? 'Competency' : 'Training', show: hasModule('training') && canAny('competency.self', 'training.manage', 'competency.read', 'competency.manage', 'competency.assess', 'competency.authorize') },
@@ -270,7 +274,9 @@ function App() {
   const { config, configError, me, loading, refresh } = useAuth();
   const loc = useLocation();
   const unread = useUnread(!!me && !me.passwordChangeRequired && !me.mfa.pending && !me.mfa.enrollmentRequired);
-  if (configError) return <div className="login-wrap"><div className="card login-card"><h2>This address is not configured</h2><p className="muted">{configError}</p></div></div>;
+  if (configError) return <div className="login-wrap"><div className="card login-card">{configError.startsWith(TEMPORARY)
+    ? <><h2>Please wait a moment</h2><p className="muted">{configError}. Retrying in a few seconds…</p><button className="btn" onClick={() => window.location.reload()}>Retry now</button></>
+    : <><h2>This address is not configured</h2><p className="muted">{configError}</p></>}</div></div>;
   if (!config || loading) return <Loading />;
   if (loc.pathname === '/setup') return <Setup cfg={config} />;
   if (!me) return <Login cfg={config} />;
@@ -296,6 +302,8 @@ function App() {
         <Route path="/payroll" element={<Payroll />} />
         <Route path="/payslips" element={<Payslips />} />
         <Route path="/cases" element={<Cases />} />
+        <Route path="/performance" element={<Performance />} />
+        <Route path="/assets" element={<Assets />} />
         <Route path="/employees" element={<Employees />} />
         <Route path="/employees/:id" element={<EmployeeProfile />} />
         <Route path="/settings/*" element={<SettingsCenter />} />
