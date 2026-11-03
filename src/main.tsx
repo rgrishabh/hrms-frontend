@@ -20,6 +20,8 @@ import { Competency } from './pages/Competency';
 import { Policies } from './pages/Policies';
 import { Recruitment } from './pages/Recruitment';
 import { Lifecycle } from './pages/Lifecycle';
+import { Payroll } from './pages/Payroll';
+import { Payslips } from './pages/Payslips';
 import { MfaVerify, MfaEnroll, RecoveryCodes } from './Mfa';
 import { runtimeEnv, environmentLabel } from './runtime/env';
 
@@ -218,6 +220,8 @@ function Shell({ cfg, children, unread }: { cfg: PublicConfig; children: ReactNo
       { to: '/leave', label: 'Leave', show: hasModule('leave') && canAny('leave.self', 'leave.team.read', 'leave.read', 'leave.manage') },
       // Everyone can be on an interview panel, so the page is shown whenever the module is on.
       { to: '/recruitment', label: 'Recruitment', show: hasModule('recruitment') },
+      { to: '/payslips', label: 'Payslips', show: hasModule('payroll.payslips') && can('payslips.self') && !!me?.user.employeeId },
+      { to: '/payroll', label: 'Payroll', show: hasModule('payroll') && canAny('payroll.read', 'payroll.manage', 'payroll.approve', 'payroll.statutory') },
       { to: '/lifecycle', label: 'Onboarding & exit', show: hasModule('core.onboarding') || hasModule('core.offboarding') },
       { to: '/policies', label: 'Policies', show: hasModule('core.policies') && canAny('policies.self', 'policies.read', 'policies.manage') },
       { to: '/competency', label: hasModule('lab.competency') ? 'Competency' : 'Training', show: hasModule('training') && canAny('competency.self', 'training.manage', 'competency.read', 'competency.manage', 'competency.assess', 'competency.authorize') },
@@ -287,6 +291,8 @@ function App() {
         <Route path="/policies" element={<Policies />} />
         <Route path="/recruitment" element={<Recruitment />} />
         <Route path="/lifecycle" element={<Lifecycle />} />
+        <Route path="/payroll" element={<Payroll />} />
+        <Route path="/payslips" element={<Payslips />} />
         <Route path="/employees" element={<Employees />} />
         <Route path="/employees/:id" element={<EmployeeProfile />} />
         <Route path="/settings/*" element={<SettingsCenter />} />
