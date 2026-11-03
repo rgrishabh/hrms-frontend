@@ -11,6 +11,8 @@ export default defineConfig({
     proxy: {
       '/api': { target: 'http://127.0.0.1:4000', changeOrigin: false },
       '/health': { target: 'http://127.0.0.1:4000', changeOrigin: false },
+      '/ready': { target: 'http://127.0.0.1:4000', changeOrigin: false },
+      '/branding': { target: 'http://127.0.0.1:4000', changeOrigin: false },
     },
   },
 });
