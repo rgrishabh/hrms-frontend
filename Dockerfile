@@ -9,7 +9,7 @@ RUN --mount=type=cache,target=/root/.npm npm ci --no-audit --no-fund
 COPY . .
 RUN npm run build
 
-FROM nginxinc/nginx-unprivileged:1.29-alpine
+FROM nginxinc/nginx-unprivileged:1.31-alpine
 ARG VERSION=dev
 ARG REVISION=unknown
 LABEL org.opencontainers.image.title="hrms-frontend" \
@@ -17,6 +17,10 @@ LABEL org.opencontainers.image.title="hrms-frontend" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.revision="${REVISION}"
 ENV APP_VERSION=${VERSION}
+# Security fixes published after the base image was built (Trivy gate is CRITICAL).
+USER root
+# hadolint ignore=DL3018
+RUN apk upgrade --no-cache
 COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --chmod=0755 docker/40-hrms-runtime.sh /docker-entrypoint.d/40-hrms-runtime.sh
 COPY --from=build /src/dist /usr/share/nginx/html
