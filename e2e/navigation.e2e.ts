@@ -22,7 +22,7 @@ for (const c of CASES) {
     const hrefs = await nav.getByRole('link').evaluateAll((as) => as.map((a) => a.getAttribute('href')!).filter(Boolean));
     for (const href of hrefs) {
       await nav.locator(`a[href="${href}"]`).click();
-      await expect(page).toHaveURL(new RegExp(`${href.replace(/[/]/g, '\\/')}(\\?.*)?$`));
+      await expect(page).toHaveURL((u) => u.pathname === href || u.pathname.startsWith(`${href.replace(/\/$/, '')}/`)); // e.g. /settings → /settings/general
       await expect(page.getByRole('heading', { level: 1 }).first(), `page ${href}`).toBeVisible();
       await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
       await noErrors(page);
