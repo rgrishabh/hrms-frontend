@@ -24,7 +24,7 @@ export function SettingsCenter() {
   return (
     <div className="stack">
       <div><h1>Settings center</h1><p className="sub">Business settings for your organization. Changes apply immediately and are recorded in the audit history.</p></div>
-      <nav className="tabs">{sections.map((s) => <NavLink key={s.to} to={s.to} className={({ isActive }) => (isActive ? 'active' : '')}>{s.label}</NavLink>)}</nav>
+      <nav className="tabs">{sections.map((s) => <NavLink key={s.to} to={`/settings/${s.to}`} className={({ isActive }) => (isActive ? 'active' : '')}>{s.label}</NavLink>)}</nav>
       <Routes>
         <Route path="general" element={<SettingsGroup group="general" />} />
         <Route path="attendance" element={<SettingsGroup group="attendance" />} />
@@ -34,7 +34,8 @@ export function SettingsCenter() {
         <Route path="users" element={<Users />} />
         <Route path="jobs" element={<Jobs />} />
         <Route path="audit" element={<Audit />} />
-        <Route path="*" element={<Navigate to={sections[0]?.to ?? 'general'} replace />} />
+        {/* Absolute targets: relative links inside a splat route resolve against the full URL in React Router v7. */}
+        <Route path="*" element={<Navigate to={`/settings/${sections[0]?.to ?? 'general'}`} replace />} />
       </Routes>
     </div>
   );
