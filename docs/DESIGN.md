@@ -47,7 +47,12 @@ Variables go through CSSOM because the CSP forbids `<style>` injection. `public/
 | Search and filters above a list | `FilterBar` |
 | Focused task | `Modal`. Side panel: `Drawer` |
 | Yes or no before acting | `ConfirmDialog`. Add `typedConfirmation` for the irreversible |
-| Result of an action | `useToast`. Failure inside a form: `InlineError` |
+| Result of an action | `useToast`, with an optional undo action. Failure inside a form: `InlineError` |
+| Submitting a form | `useSubmit` for busy, field errors and the failure, `FormActions` for its end |
+| One press on a row | `useAction` |
+| An amount | `Money` in JSX, `formatMoney` in text. Nothing else formats money, and a test holds this |
+| A file from the API | `DownloadButton` |
+| An employee | `EmployeeField`. Branch, department, legal entity: `useOrg` |
 | Failed load | `ErrorState`, already inside `QueryState` |
 | Nothing to show | `EmptyState` |
 | A number with a meaning | `StatTile` in `StatGrid` |
@@ -122,7 +127,7 @@ The API returns RFC 7807 only. `ApiError` carries `status`, `code`, `problem` an
 - `/sw.js` is generated from `src/pwa/sw.template.js` at build. It caches the HTML shell and hashed assets, and never touches `/api`, `/brand`, `/branding` or `env.js`.
 - The manifest and icon are rendered at container start from `.brandenv` by `docker/40-hrms-runtime.sh`, because `manifest-src 'self'` rules out `blob:` and `data:` manifests. `public/manifest.webmanifest` is the dev default.
 - The offline state is a banner while working, and a clear screen if the app cannot load config.
-- Push sits behind `FEATURE_PUSH_NOTIFICATIONS`. The worker ignores the payload, shows a generic message and stores nothing. **The endpoints in `src/pwa/push.ts` are placeholders until a later batch connects them.**
+- Push sits behind `FEATURE_PUSH_NOTIFICATIONS`. The worker ignores the payload, shows a generic message and stores nothing. Without VAPID keys the server answers 409 `feature_not_configured`, which the toggle shows.
 
 ## nginx
 
@@ -136,23 +141,41 @@ Hashed assets are immutable for a year. The build writes `.gz` and `.br` next to
 
 **D2: Remove `unsafe-inline` now, not after the last page.** Options were to wait for full migration or remove it at once. React sets `style` through CSSOM, which the directive does not govern, and a browser test proves no violations on every page. So removing it costs nothing.
 
-**D3: Compatibility layer `src/ui.tsx`.** Unmigrated pages keep their markup, but get the new dialogs, toasts and tabs, the reworked `useLoad`, and restyled classes in `styles/legacy.css`. This gives them focus traps and dark mode now, without half-migrating them. Delete both with the last page.
-
-**D4: `useLoad` stays for unmigrated pages.** Reimplementing it on TanStack Query would need keys for closures, for no benefit before those pages move to `useApiQuery`.
+**D3, D4: compatibility layer and `useLoad`.** Served their purpose in batch 1. Both were deleted with the last unmigrated page in batch 2.
 
 **D5: Default view is the most privileged held.** Priority is Super-admin, HR, Admin, Manager, Employee. A person's main job is usually their widest view, and the choice is remembered. Self-service stays one switch away.
 
 **D6: Device type decides the punch channel.** `pointer: coarse`, not viewport width, so a narrow desktop window no longer claims `mobile`. The backend's validation of channel was not checked.
 
+**D8: Browser checks show at the field.** `Field` catches the `invalid` event, cancels the bubble and shows the browser's message inline. Every form gets `required`, `min` and `pattern` errors in the same place with no code per form. `useSubmit` adds checks the browser cannot express and the server's field errors. It clears on the bubble phase, because clearing in the capture phase reset a controlled value and lost the first keystroke (QA-012).
+
+**D9: `Money` is the only way amounts reach the screen.** `money()` is called from one file. Masking can arrive later by changing that file. `formatMoney` covers toasts and labels, which cannot hold an element. Options were a CSS mask (leaks to the DOM) or per-page handling (misses cases).
+
+**D10: Downloads are fetched, not linked.** A plain link replaces the app with raw JSON when the server refuses. The cost is that the file is held in memory, which is fine for these sizes.
+
+**D11: Selfie only when required, photo reused on retry.** No camera opens unless `selfieRequired` is true, since a photo nobody asked for is data nobody should hold. An uploaded photo is reused when the clock-in fails, because it is linked only on success. A blocked or missing camera falls back to the device's photo picker, because the backend only needs an image. So a required selfie is not proof of a live capture: `capture="user"` is a hint that browsers can ignore.
+
+**D12: Location failure is stopped in the browser when location is required.** The server would refuse anyway, and it cannot say how to fix a blocked permission. When location is optional the clock-in goes on without it.
+
+**D13: Settings tabs are links.** Each section has its own URL, so `nav.tabs` with real links stays, rather than `role="tab"`.
+
+**D14: Phone roster.** A team lists one chosen day and one person lists all their days, because a 15-column grid has no phone form.
+
+**D15: Payroll runs page on the client.** The server caps the list at 100 and has no pager. Run detail deep-links with `?run=`.
+
+**D16: Offer edit matches the branch by name.** Offer rows carry no ids for branch, department or legal entity, so the form matches the branch by name, takes the department from the requisition, and says so. Contract end must be retyped. A backend change returning `legal_entity_id`, `department_id` and `contract_end_date` would remove this.
+
+**D17: Reset on tab change by key.** Lists with scopes are keyed by tab, so page and filters cannot leak between tabs.
+
+**D18: Cases respondent.** A complaint's respondent uses `EmployeeField` because the API takes an employee id and `cases/people` needs admin permission. Handler and committee pickers use `cases/people`.
+
 **D7: Decisions live here.** The shared rules ask for `DECISIONS.md`, but this batch was told to create no docs beyond this file and `QA_REPORT.md`.
 
 ## Migration status
 
-**Migrated:** Dashboard, MyAttendance, Leave, Payslips, Approvals (with Delegations), Notifications, Employees and employee profile, Documents, My profile (PersonalDetails), and Login, Setup, MFA, forced password change and My account.
+Every screen is on the design system. `src/app/registry.test.ts` scans `src/pages` and `src/features` and fails on a legacy import, an inline style, `any`, a clickable `<tr>`, a raw badge or table, or a browser dialog. The only raw tables are the team calendar and payslip lines, which are data grids with their own phone layout.
 
-**Not migrated, 19 screens:** Accounting, Assets, AttendanceAdmin, Cases, Competency, Expenses (with AllowanceRates), FieldDuty, Lifecycle, Loans, Overtime, Payroll, Performance, Policies, Recruitment, Reports, Rosters, Settings (with Roles), TeamAttendance, Travel. They received bug fixes only. A test in `src/app/registry.test.ts` holds migrated files to no `ui.tsx`, no inline style and no `any`.
-
-To migrate a page: replace `useLoad` with `useApiQuery` and `QueryState`, tables with `Table`, forms with `Input` and friends, and `style={{}}` with utilities or a CSS file. Then add the file to the list in that test and move it from `UNMIGRATED` to `MIGRATED` in `e2e/mock/routes.ts`.
+Not yet built, by instruction: L4 masking and mode-specific menus. Backend batch C is defining those contracts.
 
 ## Verifying
 
@@ -161,5 +184,5 @@ To migrate a page: replace `useLoad` with `useApiQuery` and `QueryState`, tables
 | `npm run lint` | Types, including e2e |
 | `npm test` | Units, axe in jsdom, page failure sweep, runtime script |
 | `npm run build` | Type check and bundle |
-| `npm run e2e:mock` | Production build with mocked API: real contrast, CSP, lazy chunks, layout at 360 to 768, service worker, screenshots |
+| `npm run e2e:mock` | Production build with mocked API: real contrast, CSP, lazy chunks, layout at 360 to 768 with long real rows, service worker, screenshots. Each group's rows and screens are in `e2e/mock/fixtures/` |
 | `npm run e2e` | Full stack, needs a backend with demo data |
