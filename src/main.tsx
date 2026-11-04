@@ -27,11 +27,8 @@ import { Performance } from './pages/Performance';
 import { Assets } from './pages/Assets';
 import { Overtime } from './pages/Overtime';
 import { FieldDuty } from './pages/FieldDuty';
-<<<<<<< HEAD
-import { Accounting } from './pages/Accounting';
-=======
 import { Travel } from './pages/Travel';
->>>>>>> origin/develop
+import { Accounting } from './pages/Accounting';
 import { Reports } from './pages/Reports';
 import { MfaVerify, MfaEnroll, RecoveryCodes } from './Mfa';
 import { runtimeEnv, environmentLabel } from './runtime/env';
@@ -320,11 +317,8 @@ function App() {
         <Route path="/assets" element={<Assets />} />
         <Route path="/overtime" element={<Overtime />} />
         <Route path="/field-duty" element={<FieldDuty />} />
-<<<<<<< HEAD
-        <Route path="/accounting" element={<Accounting />} />
-=======
         <Route path="/travel" element={<Travel />} />
->>>>>>> origin/develop
+        <Route path="/accounting" element={<Accounting />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/employees" element={<Employees />} />
         <Route path="/employees/:id" element={<EmployeeProfile />} />
