@@ -10,7 +10,8 @@ import { PageHeader } from '../components/PageHeader';
 import { QueryState } from '../components/QueryState';
 import { Table, type Column } from '../components/Table';
 import { PayLines, type PayLine } from '../features/payroll/PayLines';
-import { currencySymbol, fmtDate, money } from '../format';
+import { currencySymbol, fmtDate } from '../format';
+import { formatMoney } from '../components/Money';
 import { useApiQuery } from '../lib/query';
 
 interface PayslipRow { id: string; period: string; kind: string; gross: number | string; deductions: number | string; net: number | string }
@@ -25,9 +26,9 @@ export function Payslips() {
   const mask = `${currencySymbol()} ••••••`;
   const columns: Column<PayslipRow>[] = [
     { key: 'period', header: 'Month', card: 'title', cell: (p) => <span className="tnum">{p.period}{p.kind === 'fnf' ? ' (F&F)' : ''}</span> },
-    { key: 'gross', header: 'Gross', align: 'right', cell: (p) => <MaskedValue label={`Gross for ${p.period}`} mask={mask} onReveal={() => money(p.gross)} /> },
-    { key: 'deductions', header: 'Deductions', align: 'right', cell: (p) => <MaskedValue label={`Deductions for ${p.period}`} mask={mask} onReveal={() => money(p.deductions)} /> },
-    { key: 'net', header: 'Net pay', align: 'right', cell: (p) => <MaskedValue label={`Net pay for ${p.period}`} mask={mask} onReveal={() => money(p.net)} /> },
+    { key: 'gross', header: 'Gross', align: 'right', cell: (p) => <MaskedValue label={`Gross for ${p.period}`} mask={mask} onReveal={() => formatMoney(p.gross)} /> },
+    { key: 'deductions', header: 'Deductions', align: 'right', cell: (p) => <MaskedValue label={`Deductions for ${p.period}`} mask={mask} onReveal={() => formatMoney(p.deductions)} /> },
+    { key: 'net', header: 'Net pay', align: 'right', cell: (p) => <MaskedValue label={`Net pay for ${p.period}`} mask={mask} onReveal={() => formatMoney(p.net)} /> },
     { key: 'actions', header: 'Actions', card: 'actions', cell: (p) => <div className="table__actions"><Button size="sm" onClick={() => setOpen(p.id)}>View</Button></div> },
   ];
   return (

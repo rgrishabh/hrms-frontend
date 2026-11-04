@@ -2,12 +2,20 @@ import { act, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { expectNoAxeViolations } from '../test/axe';
 import { renderUi } from '../test/render';
-import { useToast, type ToastKind } from './Toast';
+import { useToast, type ToastAction, type ToastKind } from './Toast';
 
-let toast: (text: string, kind?: ToastKind) => void;
+let toast: (text: string, kind?: ToastKind, action?: ToastAction) => void;
 function Capture() { toast = useToast(); return null; }
 
 describe('Toast', () => {
+  it('offers an undo that runs once and closes the toast', () => {
+    const undo = vi.fn();
+    renderUi(<Capture />);
+    act(() => { toast('Marked done', 'ok', { label: 'Undo', onClick: undo }); });
+    act(() => { screen.getByRole('button', { name: 'Undo' }).click(); });
+    expect(undo).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText('Marked done')).toBeNull();
+  });
   it('announces successes politely and errors assertively', () => {
     renderUi(<Capture />);
     act(() => { toast('Saved'); toast('Failed', 'error'); });

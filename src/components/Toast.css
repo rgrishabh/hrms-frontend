@@ -4,11 +4,14 @@
 .toast--error { background: var(--danger-solid); color: var(--on-danger); }
 .toast__close { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; flex: none; padding: 0; background: none; border: 0; border-radius: var(--radius-sm); color: inherit; cursor: pointer; }
 .toast__close svg { width: 14px; height: 14px; }
+.toast__action { flex: none; padding: 0 var(--space-2); background: none; border: 1px solid currentcolor; border-radius: var(--radius-sm); color: inherit; font-weight: var(--weight-medium); cursor: pointer; }
+.toast__action:focus-visible { outline-color: currentcolor; }
 .toast__close:focus-visible { outline-color: currentcolor; }
 @keyframes toast-in { from { opacity: 0; transform: translateY(-6px); } }
 
 /* Phones: at the top, clear of the bottom navigation and of a form's primary action. */
 @media (max-width: 860px) {
   .toasts { left: var(--space-3); right: var(--space-3); top: calc(var(--topbar-height) + var(--space-2)); width: auto; }
+  .toast__action { min-height: var(--touch-target); }
   .toast__close { width: var(--touch-target); height: var(--touch-target); margin: calc(-1 * var(--space-3)) calc(-1 * var(--space-3)) calc(-1 * var(--space-3)) 0; }
 }

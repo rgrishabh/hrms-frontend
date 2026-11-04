@@ -1,10 +1,10 @@
 import { test, expect } from '@playwright/test';
 import { mockApi } from './api';
-import { MIGRATED, UNMIGRATED } from './routes';
+import { SCREENS } from './routes';
 
 // Preview sends the same CSP as nginx. React's style prop goes through CSSOM, which `style-src 'self'`
 // permits, so even pages with inline styles must produce no violations.
-for (const path of [...MIGRATED, ...UNMIGRATED]) {
+for (const { path, persona } of SCREENS) {
   test(`no CSP violation on ${path}`, async ({ page }) => {
     const violations: string[] = [];
     page.on('console', (m) => { if (/Content Security Policy/i.test(m.text())) violations.push(m.text()); });

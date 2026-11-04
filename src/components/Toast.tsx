@@ -4,12 +4,14 @@ import { X } from 'lucide-react';
 import './Toast.css';
 
 export type ToastKind = 'ok' | 'error';
-interface ToastItem { id: number; text: string; kind: ToastKind }
+/** A way to take the action back, such as Undo. Pressing it closes the toast. */
+export interface ToastAction { label: string; onClick: () => void }
+interface ToastItem { id: number; text: string; kind: ToastKind; action?: ToastAction }
 
 const OK_MS = 4500;
 const ERROR_MS = 10000;
 
-const ToastContext = createContext<(text: string, kind?: ToastKind) => void>(() => undefined);
+const ToastContext = createContext<(text: string, kind?: ToastKind, action?: ToastAction) => void>(() => undefined);
 export const useToast = () => useContext(ToastContext);
 
 /**
@@ -29,8 +31,8 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const schedule = useCallback((item: ToastItem) => {
     timers.current.set(item.id, setTimeout(() => remove(item.id), item.kind === 'error' ? ERROR_MS : OK_MS));
   }, [remove]);
-  const push = useCallback((text: string, kind: ToastKind = 'ok') => {
-    const item = { id: nextId.current++, text, kind };
+  const push = useCallback((text: string, kind: ToastKind = 'ok', action?: ToastAction) => {
+    const item = { id: nextId.current++, text, kind, action };
     setToasts((t) => [...t, item]);
     schedule(item);
   }, [schedule]);
@@ -47,6 +49,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       onBlur={() => schedule(t)}
     >
       <span className="grow">{t.text}</span>
+      {t.action && <button type="button" className="toast__action" onClick={() => { remove(t.id); t.action!.onClick(); }}>{t.action.label}</button>}
       <button type="button" className="toast__close" aria-label="Dismiss" onClick={() => remove(t.id)}><X aria-hidden="true" /></button>
     </div>
   );

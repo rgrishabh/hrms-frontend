@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
-import { mockApi, type Persona } from './api';
-import { MIGRATED, UNMIGRATED } from './routes';
+import { mockApi } from './api';
+import { SCREENS } from './routes';
 
 const noSidewaysScroll = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
 
@@ -10,27 +10,37 @@ const tooSmall = (page: Page) => page.evaluate(() => [...document.querySelectorA
   .filter((el) => { const r = el.getBoundingClientRect(); return r.height < 43.5 || (r.width < 43.5 && !el.classList.contains('btn--link')); })
   .map((el) => `${el.tagName} "${(el.textContent ?? '').trim().slice(0, 30) || el.getAttribute('aria-label')}" ${Math.round(el.getBoundingClientRect().width)}x${Math.round(el.getBoundingClientRect().height)}`));
 
+/** Anything drawn past the right edge, unless it sits in something that scrolls on purpose. */
+const overflowing = (page: Page) => page.evaluate(() => [...document.querySelectorAll<HTMLElement>('main *')]
+  .filter((el) => el.getBoundingClientRect().right > window.innerWidth + 1 && el.getBoundingClientRect().width > 0 && !el.closest('.table-scroll, .tabs-bar, .scroll-x, .visually-hidden'))
+  .slice(0, 5).map((el) => `${el.tagName}.${el.className} ${Math.round(el.getBoundingClientRect().right)}`));
+
+const recordRows = (page: Page) => page.locator('.table-card, .table tbody tr, [data-record]').count();
+
 for (const width of [360, 390, 768]) {
-  for (const path of [...MIGRATED, ...UNMIGRATED]) {
-    test(`no horizontal scroll at ${width}: ${path}`, async ({ page }) => {
+  for (const s of SCREENS) {
+    test(`no horizontal scroll at ${width}: ${s.path}`, async ({ page }) => {
       await page.setViewportSize({ width, height: 780 });
-      await mockApi(page, { persona: 'hr' });
-      await page.goto(path);
+      await mockApi(page, { persona: s.persona });
+      await page.goto(s.path);
       await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible();
       await page.waitForLoadState('networkidle');
       expect(await noSidewaysScroll(page)).toBeLessThanOrEqual(0);
+      expect(await overflowing(page)).toEqual([]);
+      if (s.minRows !== 0) expect(await recordRows(page), 'the mock must show real rows').toBeGreaterThanOrEqual(s.minRows ?? 1);
     });
   }
 }
 
-for (const path of MIGRATED) {
-  test(`44px touch targets at 360: ${path}`, async ({ page }) => {
+for (const s of SCREENS) {
+  test(`phone at 360, cards and 44px targets: ${s.path}`, async ({ page }) => {
     await page.setViewportSize({ width: 360, height: 780 });
-    await mockApi(page, { persona: 'employee' as Persona });
-    await page.goto(path);
+    await mockApi(page, { persona: s.persona });
+    await page.goto(s.path);
     await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible();
     await page.waitForLoadState('networkidle');
     expect(await tooSmall(page)).toEqual([]);
+    await expect(page.locator('main table:not(.pay-lines__table)')).toHaveCount(0);
   });
 }
 

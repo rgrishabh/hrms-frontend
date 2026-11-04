@@ -1,4 +1,13 @@
 import type { Page, Route } from '@playwright/test';
+import { respond as attendance } from './fixtures/attendance';
+import { respond as learning } from './fixtures/learning';
+import { respond as money } from './fixtures/money';
+import { respond as payroll } from './fixtures/payroll';
+import { respond as people } from './fixtures/people';
+import { respond as settings } from './fixtures/settings';
+import type { Fixture } from './fixtures/types';
+
+const FIXTURES: Fixture[] = [payroll, people, settings, attendance, money, learning];
 
 export const ALL_FEATURES: Record<string, boolean> = Object.fromEntries(['DOCUMENTS', 'ONBOARDING', 'OFFBOARDING', 'POLICIES', 'ATTENDANCE', 'ATTENDANCE_WEB', 'ATTENDANCE_MOBILE', 'ATTENDANCE_REGULARIZATION', 'SHIFTS', 'HOLIDAYS', 'LEAVE', 'OVERTIME', 'FIELD_DUTY', 'PAYROLL', 'PAYSLIPS', 'PAYROLL_STATUTORY', 'LOANS', 'ACCOUNTING_EXPORTS', 'EXPENSE_CLAIMS', 'TRAVEL', 'RECRUITMENT', 'PERFORMANCE_REVIEW', 'TRAINING', 'ASSET_MANAGEMENT', 'GRIEVANCE', 'POSH', 'REPORTS_ADVANCED', 'EMAIL_NOTIFICATIONS', 'PUSH_NOTIFICATIONS'].map((f) => [`FEATURE_${f}`, true]));
 
@@ -6,6 +15,7 @@ const SELF = ['attendance.self', 'employees.directory', 'leave.self', 'documents
 export const PERSONAS = {
   employee: { name: 'Asha Rao', roles: [{ key: 'employee', name: 'Employee' }], permissions: SELF },
   manager: { name: 'Meera Nair', roles: [{ key: 'reporting_manager', name: 'Reporting Manager' }], permissions: [...SELF, 'attendance.team.read', 'leave.team.read', 'expenses.team.read', 'overtime.team.read', 'field_duty.team.read', 'travel.team.read', 'loans.team.read', 'recruitment.requisition'] },
+  admin: { name: 'Ishaan Verma', roles: [{ key: 'tenant_admin', name: 'Administrator' }], permissions: [...SELF, 'settings.read', 'settings.manage', 'users.manage', 'security.manage', 'org.read', 'org.manage', 'employees.read', 'employees.manage', 'employees.bank.read', 'employees.bank.manage', 'employees.bank.approve', 'attendance.read', 'attendance.configure', 'attendance.devices.manage', 'attendance.lock', 'attendance.recalculate', 'audit.read', 'leave.read', 'leave.approve', 'leave.manage', 'documents.read', 'documents.manage', 'training.manage', 'competency.read', 'competency.manage', 'competency.assess', 'competency.authorize', 'policies.read', 'policies.manage', 'policies.publish', 'recruitment.read', 'recruitment.manage', 'recruitment.approve', 'recruitment.requisition', 'lifecycle.read', 'lifecycle.manage', 'payroll.read', 'payroll.manage', 'payroll.approve', 'payroll.statutory', 'grievance.manage', 'posh.admin', 'performance.manage', 'assets.manage', 'overtime.read', 'overtime.manage', 'field_duty.read', 'field_duty.manage', 'travel.read', 'travel.approve', 'loans.read', 'loans.manage', 'expenses.read', 'expenses.pay', 'expenses.manage', 'accounting.export', 'accounting.configure', 'reports.read', 'approvals.delegations'] },
   hr: { name: 'Kavita Menon', roles: [{ key: 'hr_admin', name: 'HR Administrator' }], permissions: [...SELF, 'settings.read', 'org.read', 'org.manage', 'employees.read', 'employees.manage', 'employees.bank.read', 'employees.bank.manage', 'attendance.read', 'attendance.configure', 'attendance.recalculate', 'audit.read', 'leave.read', 'leave.approve', 'leave.manage', 'documents.read', 'documents.manage', 'training.manage', 'competency.read', 'policies.read', 'policies.manage', 'policies.publish', 'recruitment.read', 'recruitment.manage', 'lifecycle.read', 'lifecycle.manage', 'payroll.read', 'grievance.manage', 'posh.admin', 'performance.manage', 'assets.manage', 'overtime.read', 'field_duty.read', 'travel.read', 'loans.read', 'approvals.delegations'] },
 } as const;
 export type Persona = keyof typeof PERSONAS;
@@ -24,7 +34,7 @@ const days = Array.from({ length: Math.max(1, Number(today.slice(8)) - 1) }, (_,
 });
 
 const EMPLOYEES = [
-  ['Asha', 'Rao', 'EMP-1001', 'Senior Analyst', 'Quality Control', 'active'], ['Meera', 'Nair', 'EMP-1002', 'Laboratory Manager', 'Quality Control', 'active'], ['Arjun', 'Rao', 'EMP-1003', 'Quality Manager', 'Quality Assurance', 'active'],
+  ['Venkata Subrahmanya Lakshminarayana', 'Krishnamurthy-Ramachandran', 'EMP-2026-INTERNATIONAL-000012345', 'Principal Regional Compliance and Occupational Health Coordinator', 'Quality Assurance and Regulatory Affairs', 'active'], ['Asha', 'Rao', 'EMP-1001', 'Senior Analyst', 'Quality Control', 'active'], ['Meera', 'Nair', 'EMP-1002', 'Laboratory Manager', 'Quality Control', 'active'], ['Arjun', 'Rao', 'EMP-1003', 'Quality Manager', 'Quality Assurance', 'active'],
   ['Kavita', 'Menon', 'EMP-1004', 'HR Administrator', 'People', 'active'], ['Rohan', 'Iyer', 'EMP-1005', 'Field Sampler', 'Operations', 'on_notice'], ['Ananya', 'Iyer', 'EMP-1006', 'Director', 'Leadership', 'active'], ['Vikram', 'Sethi', 'EMP-1007', 'Payroll Manager', 'Finance', 'active'],
 ].map(([first, last, code, designation, department, status], i) => ({ id: `e${i + 1}`, employee_code: code, first_name: first, last_name: last, work_email: `${first!.toLowerCase()}.${last!.toLowerCase()}@example.test`, designation, department_name: department, branch_name: 'Mumbai HQ', date_of_joining: `202${i}-0${i + 1}-15`, status }));
 
@@ -33,7 +43,11 @@ const payslip = (period: string, gross: number, deductions: number) => ({ id: `p
 const FULL_EMPLOYEE = { ...EMPLOYEES[0], view: 'full', version: 3, phone: '+91 98200 00000', date_of_birth: '1992-04-18', legal_entity_id: 'l1', legal_entity_name: 'Example Laboratories Pvt Ltd', branch_id: 'b1', department_id: 'd1', grade: 'L4', employment_type: 'permanent', reporting_manager_id: 'e2', reporting_manager_name: 'Meera Nair', probation_end_date: '2020-07-15', confirmation_date: '2020-07-20', contract_end_date: null, exit_date: null };
 
 /** Exact-path handlers. Anything else gets an empty page, so unmigrated pages at least load. */
-function respond(url: URL, persona: Persona): unknown {
+function respond(url: URL, persona: Persona, method: string): unknown {
+  for (const fixture of FIXTURES) {
+    const answer = fixture(url, persona, method);
+    if (answer !== undefined) return answer;
+  }
   const p = url.pathname.replace('/api/v1', '');
   if (p === '/dashboard') {
     return {
@@ -92,7 +106,7 @@ export async function mockApi(page: Page, options: MockOptions = {}) {
         : route.fulfill({ json: me });
     }
     if (options.fail?.some((f) => path.startsWith(f))) return route.fulfill({ status: 500, contentType: 'application/problem+json', body: JSON.stringify({ type: 'about:blank', title: 'Something failed on the server', status: 500 }) });
-    return route.fulfill({ json: respond(url, persona) });
+    return route.fulfill({ json: respond(url, persona, route.request().method()) });
   });
 }
 

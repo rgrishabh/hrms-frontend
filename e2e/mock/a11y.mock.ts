@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { test, expect, type Page } from '@playwright/test';
-import { forceTheme, mockApi, type Persona } from './api';
-import { MIGRATED } from './routes';
+import { forceTheme, mockApi } from './api';
+import { SCREENS } from './routes';
 
 const AXE = readFileSync('node_modules/axe-core/axe.min.js', 'utf8');
 
@@ -16,15 +16,15 @@ async function axe(page: Page): Promise<string[]> {
   return violations.map((v) => `${v.id}: ${v.nodes.slice(0, 3).map((n) => `${n.html.slice(0, 140)} | ${(n.failureSummary ?? '').slice(0, 200)}`).join(' || ')}`);
 }
 
-const cases: { name: string; persona: Persona; color: string }[] = [{ name: 'green brand', persona: 'hr', color: '#14532d' }, { name: 'yellow brand', persona: 'employee', color: '#ffd700' }];
+const cases: { name: string; color: string }[] = [{ name: 'green brand', color: '#14532d' }, { name: 'yellow brand', color: '#ffd700' }];
 
 for (const theme of ['light', 'dark'] as const) {
   for (const c of cases) {
-    for (const path of MIGRATED) {
-      test(`axe with real contrast: ${path}, ${theme}, ${c.name}`, async ({ page }) => {
+    for (const s of SCREENS) {
+      test(`axe with real contrast: ${s.path}, ${theme}, ${c.name}`, async ({ page }) => {
         await forceTheme(page, theme);
-        await mockApi(page, { persona: c.persona, primaryColor: c.color });
-        await page.goto(path);
+        await mockApi(page, { persona: s.persona, primaryColor: c.color });
+        await page.goto(s.path);
         await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible();
         await page.waitForLoadState('networkidle');
         expect(await axe(page)).toEqual([]);

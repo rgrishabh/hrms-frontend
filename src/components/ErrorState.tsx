@@ -1,5 +1,5 @@
-import { CircleAlert, Lock, WifiOff } from 'lucide-react';
-import { ApiError, errorMessage } from '../api';
+import { CircleAlert, Lock, Settings2, WifiOff } from 'lucide-react';
+import { ApiError, errorMessage, isNotConfigured } from '../api';
 import { ERROR_SURFACE_ATTR } from '../contract';
 import { Button } from './Button';
 import './ErrorState.css';
@@ -7,6 +7,7 @@ import './ErrorState.css';
 const surface = { [ERROR_SURFACE_ATTR]: '' };
 
 function describe(error: unknown): { title: string; detail: string; retryable: boolean; icon: typeof CircleAlert } {
+  if (isNotConfigured(error)) return { title: 'Not set up yet', detail: errorMessage(error), retryable: false, icon: Settings2 };
   if (error instanceof ApiError) {
     if (error.status === 0) return { title: 'You appear to be offline', detail: 'Check your connection and try again.', retryable: true, icon: WifiOff };
     if (error.status === 403) return { title: 'You do not have access to this', detail: 'Ask your administrator if you need it.', retryable: false, icon: Lock };

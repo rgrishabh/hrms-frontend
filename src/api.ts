@@ -111,8 +111,30 @@ function upload<T>(url: string, form: FormData): Promise<T> {
   return send<T>(url, { method: 'POST', body: form, headers: csrfToken ? { 'x-csrf-token': csrfToken } : {} }, false);
 }
 
+/** A file from the API. Failures throw like any other call, so a problem body is never saved as the file. */
+async function blob(url: string): Promise<{ blob: Blob; fileName: string | null }> {
+  setInflight(inflight + 1);
+  try {
+    let res: Response;
+    try {
+      res = await fetch(url, { credentials: 'same-origin' });
+    } catch {
+      throw new ApiError({ type: 'about:blank', title: 'Cannot reach the server. Check your connection and try again.', status: 0, code: 'network_error' });
+    }
+    if (!res.ok) {
+      if (res.status === 401) window.dispatchEvent(new Event('hrms:unauthorized'));
+      throw new ApiError(toProblem(res, await res.text()));
+    }
+    const name = /filename="?([^";]+)"?/i.exec(res.headers.get('content-disposition') ?? '')?.[1] ?? null;
+    return { blob: await res.blob(), fileName: name };
+  } finally {
+    setInflight(inflight - 1);
+  }
+}
+
 /* The `any` defaults serve unmigrated pages until the generated client lands; migrated pages always pass T. */
 export const api = {
+  blob,
   upload: <T = any>(url: string, form: FormData) => upload<T>(url, form),
   get: <T = any>(url: string) => request<T>('GET', url),
   post: <T = any>(url: string, body: unknown = {}) => request<T>('POST', url, body),
@@ -130,9 +152,14 @@ export const qs = (o: Record<string, unknown>) => {
 
 export interface Paged<T> { items: T[]; page: number; pageSize: number; total: number }
 
+/** A feature that is on, but missing something only an administrator can supply. */
+export const isNotConfigured = (e: unknown): boolean => e instanceof ApiError && e.code === 'feature_not_configured';
+const NOT_CONFIGURED = 'This feature is switched on but not set up yet. Ask your administrator to finish setting it up.';
+
 /** Human message for any thrown value, with field errors appended. */
 export function errorMessage(e: unknown): string {
   if (e instanceof ApiError) {
+    if (isNotConfigured(e)) return NOT_CONFIGURED;
     const fields = e.errors.map((f) => { const k = (f.path ?? f.field ?? '').replace(/^\w+\./, ''); return k ? `${k}: ${f.message}` : f.message; });
     return fields.length ? `${e.message}: ${fields.join('; ')}` : e.message;
   }

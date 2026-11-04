@@ -1,13 +1,10 @@
 import { test, expect } from '@playwright/test';
-import { forceTheme, mockApi, type Persona } from './api';
+import { forceTheme, mockApi } from './api';
+import type { Screen } from './fixtures/types';
+import { SCREENS } from './routes';
 
 const OUT = process.env.SCREENSHOT_DIR ?? 'test-results/screens';
-const PAGES: { name: string; path: string; persona: Persona }[] = [
-  { name: 'dashboard-employee', path: '/', persona: 'employee' }, { name: 'dashboard-hr', path: '/', persona: 'hr' }, { name: 'attendance', path: '/attendance/me', persona: 'employee' },
-  { name: 'leave', path: '/leave', persona: 'employee' }, { name: 'leave-team', path: '/leave?tab=team', persona: 'manager' }, { name: 'payslips', path: '/payslips', persona: 'employee' }, { name: 'approvals', path: '/approvals', persona: 'manager' },
-  { name: 'notifications', path: '/notifications', persona: 'employee' }, { name: 'employees', path: '/employees', persona: 'hr' }, { name: 'employee', path: '/employees/e1', persona: 'hr' }, { name: 'documents', path: '/documents', persona: 'hr' },
-  { name: 'profile', path: '/profile', persona: 'employee' }, { name: 'account', path: '/account', persona: 'employee' }, { name: 'legacy-payroll', path: '/payroll', persona: 'hr' },
-];
+const PAGES: Screen[] = [...SCREENS, { name: 'dashboard-employee', path: '/', persona: 'employee', minRows: 0 }];
 
 for (const width of [360, 1440]) {
   for (const theme of ['light', 'dark'] as const) {
