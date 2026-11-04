@@ -3,13 +3,14 @@ import { api, qs } from '../api';
 import { useAuth } from '../auth';
 import { fmtDate, fmtDateTime, fmtMinutes, todayLocal } from '../format';
 import { useLoad, Loading, ErrorBox, StatusBadge, Empty, Modal, Field, Tabs, Confirm, useToast, errText } from '../ui';
+import { RosterSetup } from './Rosters';
 
-type Tab = 'shifts' | 'holidays' | 'devices' | 'locks';
+type Tab = 'shifts' | 'rosters' | 'holidays' | 'devices' | 'locks';
 
 export function AttendanceAdmin() {
   const { can, canAny, hasModule } = useAuth();
   const tabs: { key: Tab; label: string }[] = [];
-  if (canAny('attendance.configure') && hasModule('shifts')) tabs.push({ key: 'shifts', label: 'Shifts' });
+  if (canAny('attendance.configure') && hasModule('shifts')) tabs.push({ key: 'shifts', label: 'Shifts' }, { key: 'rosters', label: 'Rosters' });
   if (canAny('attendance.configure') && hasModule('holidays')) tabs.push({ key: 'holidays', label: 'Holidays' });
   if (canAny('attendance.devices.manage') && hasModule('attendance')) tabs.push({ key: 'devices', label: 'Biometric devices' });
   if (canAny('attendance.lock', 'attendance.read')) tabs.push({ key: 'locks', label: 'Payroll locks' });
@@ -17,9 +18,10 @@ export function AttendanceAdmin() {
   if (!tabs.length) return <Empty>There is nothing to set up here with your permissions and the modules that are on.</Empty>;
   return (
     <div className="stack">
-      <div><h1>Attendance setup</h1><p className="sub">Shift policies, holiday calendars, devices and payroll period locks.</p></div>
+      <div><h1>Attendance setup</h1><p className="sub">Shift policies, rotating rosters, holiday calendars, devices and payroll period locks.</p></div>
       <Tabs tabs={tabs} value={tab} onChange={setTab} />
       {tab === 'shifts' && <Shifts />}
+      {tab === 'rosters' && <RosterSetup />}
       {tab === 'holidays' && <Holidays />}
       {tab === 'devices' && <Devices />}
       {tab === 'locks' && <Locks canLock={can('attendance.lock')} />}
