@@ -27,7 +27,11 @@ import { Performance } from './pages/Performance';
 import { Assets } from './pages/Assets';
 import { Overtime } from './pages/Overtime';
 import { FieldDuty } from './pages/FieldDuty';
+<<<<<<< HEAD
 import { Accounting } from './pages/Accounting';
+=======
+import { Travel } from './pages/Travel';
+>>>>>>> origin/develop
 import { Reports } from './pages/Reports';
 import { MfaVerify, MfaEnroll, RecoveryCodes } from './Mfa';
 import { runtimeEnv, environmentLabel } from './runtime/env';
@@ -227,6 +231,7 @@ function Shell({ cfg, children, unread }: { cfg: PublicConfig; children: ReactNo
       { to: '/leave', label: 'Leave', show: hasModule('leave') && canAny('leave.self', 'leave.team.read', 'leave.read', 'leave.manage') },
       { to: '/overtime', label: 'Overtime', show: hasModule('overtime') && ((can('overtime.self') && !!me.user.employeeId) || canAny('overtime.team.read', 'overtime.read', 'overtime.approve', 'overtime.manage')) },
       { to: '/field-duty', label: 'Field duty', show: hasModule('field_duty') && ((can('field_duty.self') && !!me.user.employeeId) || canAny('field_duty.team.read', 'field_duty.read', 'field_duty.approve', 'field_duty.manage')) },
+      { to: '/travel', label: 'Travel', show: hasModule('travel') && ((can('travel.self') && !!me.user.employeeId) || canAny('travel.team.read', 'travel.read', 'travel.approve', 'expenses.pay')) },
       // Everyone can be on an interview panel, so the page is shown whenever the module is on.
       { to: '/recruitment', label: 'Recruitment', show: hasModule('recruitment') },
       { to: '/payslips', label: 'Payslips', show: hasModule('payroll.payslips') && can('payslips.self') && !!me?.user.employeeId },
@@ -315,7 +320,11 @@ function App() {
         <Route path="/assets" element={<Assets />} />
         <Route path="/overtime" element={<Overtime />} />
         <Route path="/field-duty" element={<FieldDuty />} />
+<<<<<<< HEAD
         <Route path="/accounting" element={<Accounting />} />
+=======
+        <Route path="/travel" element={<Travel />} />
+>>>>>>> origin/develop
         <Route path="/reports" element={<Reports />} />
         <Route path="/employees" element={<Employees />} />
         <Route path="/employees/:id" element={<EmployeeProfile />} />
