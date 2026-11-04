@@ -1,3 +1,4 @@
+import { useSearchParams } from 'react-router-dom';
 import { useState } from 'react';
 import { api, qs } from '../api';
 import { useAuth } from '../auth';
@@ -13,7 +14,9 @@ export function Expenses() {
   if (can('expenses.team.read')) tabs.push({ key: 'team', label: 'Team claims' });
   if (canAny('expenses.pay', 'expenses.read')) tabs.push({ key: 'finance', label: 'Finance' });
   if (can('expenses.manage')) tabs.push({ key: 'categories', label: 'Categories' });
-  const [tab, setTab] = useState<Tab>(tabs[0]?.key ?? 'mine');
+  const [params, setParams] = useSearchParams();
+  const tab = (tabs.find((t) => t.key === params.get('tab'))?.key ?? tabs[0]?.key ?? 'mine') as Tab;
+  const setTab = (t: Tab) => setParams({ tab: t }, { replace: true });
   if (!tabs.length) return <Empty>You do not have access to expenses.</Empty>;
   return (
     <div className="stack">

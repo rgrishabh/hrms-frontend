@@ -1,3 +1,4 @@
+import { useSearchParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { api, qs, ApiError } from '../api';
 import { useAuth } from '../auth';
@@ -14,7 +15,9 @@ export function Leave() {
   if (me!.user.employeeId && can('leave.self')) tabs.push({ key: 'mine', label: 'My leave' });
   if (canAny('leave.team.read', 'leave.read', 'leave.manage')) tabs.push({ key: 'team', label: 'Team calendar' });
   if (can('leave.manage')) tabs.push({ key: 'admin', label: 'Administration' });
-  const [tab, setTab] = useState<Tab>(tabs[0]?.key ?? 'mine');
+  const [params, setParams] = useSearchParams();
+  const tab = (tabs.find((t) => t.key === params.get('tab'))?.key ?? tabs[0]?.key ?? 'mine') as Tab;
+  const setTab = (t: Tab) => setParams({ tab: t }, { replace: true });
   if (!tabs.length) return <Empty>You do not have access to leave.</Empty>;
   return (
     <div className="stack">
