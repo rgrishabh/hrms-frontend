@@ -112,6 +112,7 @@ test('a requisition becomes a hire: request, approval, candidate, interview, off
   await login(page, 'director');
   await page.goto('/approvals');
   const offerRow = page.getByRole('row').filter({ hasText: `${candidate} — Analytical Chemist` });
+  await expect(offerRow, 'the hiring approver sees the offer to approve').toHaveCount(1);
   await expect(offerRow).not.toContainText('540');
   await approve(page, `${candidate} — Analytical Chemist`);
 
