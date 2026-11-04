@@ -44,6 +44,6 @@ test('a loan: apply, manager and finance approve, payroll disburses, the schedul
   await row.getByRole('button', { name: 'Details' }).click();
   const d = page.getByRole('dialog', { name: /^Loan — ₹25,000\.00/ });
   await expect(d.getByRole('table', { name: 'Schedule' }).getByRole('row')).toHaveCount(7);   // header + 6 instalments
-  await expect(d.locator('.stat').filter({ hasText: 'Outstanding' })).toContainText('₹25,000.00');
+  await expect(d.locator('.tile').filter({ hasText: 'Outstanding' })).toContainText('₹25,000.00');
   await noErrors(page);
 });
