@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { SmsSettings } from './SmsSettings';
+import { Roles } from './Roles';
 import { NavLink, Navigate, Route, Routes } from 'react-router-dom';
 import { api, qs } from '../api';
 import { useAuth } from '../auth';
@@ -19,6 +20,7 @@ export function SettingsCenter() {
     { to: 'installation', label: 'Installation', show: can('settings.read') },
     { to: 'organization', label: 'Legal entities & branches', show: canAny('org.read') },
     { to: 'users', label: 'Users & permissions', show: can('users.manage') },
+    { to: 'roles', label: 'Roles', show: canAny('users.manage', 'settings.read') },
     { to: 'sms', label: 'SMS', show: hasModule('notifications.sms') && can('settings.manage') },
     { to: 'jobs', label: 'Scheduled jobs', show: can('settings.read') },
     { to: 'audit', label: 'Audit history', show: can('audit.read') },
@@ -34,6 +36,7 @@ export function SettingsCenter() {
         <Route path="installation" element={<Installation />} />
         <Route path="organization" element={<Organization />} />
         <Route path="users" element={<Users />} />
+        <Route path="roles" element={<Roles />} />
         <Route path="sms" element={<SmsSettings />} />
         <Route path="jobs" element={<Jobs />} />
         <Route path="audit" element={<Audit />} />
