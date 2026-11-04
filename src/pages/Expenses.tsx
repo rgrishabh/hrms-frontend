@@ -31,8 +31,10 @@ export function Expenses() {
 
 function ClaimList({ scope }: { scope: 'mine' | 'team' }) {
   const toast = useToast();
+  const [params] = useSearchParams();
   const [page, setPage] = useState(1);
-  const [open, setOpen] = useState<string | null>(null);
+  // ?claim=<id> opens a claim directly (e.g. a trip's claim started from Travel).
+  const [open, setOpen] = useState<string | null>(scope === 'mine' ? params.get('claim') : null);
   const [creating, setCreating] = useState(false);
   const { data, loading, error, reload } = useLoad(() => api.get(`/api/v1/expenses/claims${qs({ scope, page, pageSize: 20 })}`), [scope, page]);
   return (
@@ -91,6 +93,9 @@ function ClaimDetail({ id, onClose, onChanged }: { id: string; onClose: () => vo
         <div className="stack">
           <div className="row"><StatusBadge status={c.status} /><span className="muted">{c.employee_name}</span><span className="spacer" /><strong>{money(c.total)}</strong></div>
           <div className="muted" style={{ fontSize: 13 }}>{c.purpose}{c.project ? ` · ${c.project}` : ''}{c.payment_reference ? ` · paid, ref ${c.payment_reference}` : ''}</div>
+          {c.travel_request_id && <div className="alert info" style={{ margin: 0 }}>Claim for a trip{Number(c.advance_adjusted) > 0
+            ? <>: {money(c.advance_adjusted)} set off against the travel advance, {money(Number(c.total) - Number(c.advance_adjusted))} to reimburse.</>
+            : '. When it is approved, any travel advance still outstanding is set off first; only the rest is reimbursed.'}</div>}
           {!c.items.length ? <div className="muted">No items yet.</div> : (
             <div className="table-wrap"><table className="t"><thead><tr><th>Date</th><th>Category</th><th>Description</th><th>Amount</th><th>Receipt</th>{c.editable && <th />}</tr></thead><tbody>
               {c.items.map((i: any) => <tr key={i.id}><td>{fmtDate(i.expense_date)}</td><td>{i.category_name}</td>
@@ -174,7 +179,8 @@ function Finance() {
         {!payables.data?.items.length ? <div className="muted">Nothing to pay.</div> : (
           <div className="table-wrap"><table className="t"><thead><tr><th /><th>Employee</th><th>Claim</th><th>Amount</th><th>Approved</th></tr></thead><tbody>
             {payables.data.items.map((p: any) => <tr key={p.id}><td><input type="checkbox" checked={!!selected[p.id]} onChange={(e) => setSelected({ ...selected, [p.id]: e.target.checked })} aria-label={`Select ${p.title}`} /></td>
-              <td>{p.employee_name} <span className="muted mono">{p.employee_code}</span></td><td>{p.title}</td><td>{money(p.total)}</td><td>{fmtDate(p.approved_at.slice(0, 10))} · {p.age_days}d</td></tr>)}
+              <td>{p.employee_name} <span className="muted mono">{p.employee_code}</span></td><td>{p.title}</td>
+              <td>{money(p.payable)}{Number(p.advance_adjusted) > 0 && <div className="muted" style={{ fontSize: 12 }}>{money(p.total)} less {money(p.advance_adjusted)} advance</div>}</td><td>{fmtDate(p.approved_at.slice(0, 10))} · {p.age_days}d</td></tr>)}
           </tbody></table></div>)}
       </div>}
       <div className="card stack">
