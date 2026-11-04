@@ -81,10 +81,10 @@ function FileCase({ kind, onClose, onDone }: { kind: 'posh' | 'grievance'; onClo
         </div>
         <Field label="What happened" hint="Facts: what, where, who was present. At least 20 characters."><textarea required minLength={20} rows={6} value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} /></Field>
         <Field label={kind === 'posh' ? 'Respondent (the person complained against)' : 'Person involved (optional)'}>
-          <div className="stack" style={{ gap: 4 }}><input placeholder="Search employee (optional)" value={search} onChange={(e) => setSearch(e.target.value)} />
-            <select value={respondent} onChange={(e) => setRespondent(e.target.value)}><option value="">— not an employee / not named —</option>
+          <div className="stack" style={{ gap: 4 }}><input placeholder="Search employee (optional)" aria-label="Search employees" value={search} onChange={(e) => setSearch(e.target.value)} />
+            <select aria-label={kind === 'posh' ? 'Respondent' : 'Person involved'} value={respondent} onChange={(e) => setRespondent(e.target.value)}><option value="">— not an employee / not named —</option>
               {(emps.data?.items ?? []).map((x: any) => <option key={x.id} value={x.id}>{x.first_name} {x.last_name ?? ''} ({x.employee_code})</option>)}</select>
-            <input placeholder="Or describe (e.g. a visitor or contractor)" value={f.respondentText} onChange={(e) => setF({ ...f, respondentText: e.target.value })} /></div></Field>
+            <input placeholder="Or describe (e.g. a visitor or contractor)" aria-label="Or describe the person" value={f.respondentText} onChange={(e) => setF({ ...f, respondentText: e.target.value })} /></div></Field>
         {kind === 'posh' && <Field label="If this is more than three months after the incident, why?" hint="The Committee may extend the time limit for reasons recorded"><textarea value={f.lateReason} onChange={(e) => setF({ ...f, lateReason: e.target.value })} /></Field>}
         {kind === 'grievance' && <label className="row"><input type="checkbox" checked={f.anonymous} onChange={(e) => setF({ ...f, anonymous: e.target.checked })} /> Raise anonymously (HR will not see your name; you can still follow it here)</label>}
         <ErrorBox error={error} />

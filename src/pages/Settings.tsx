@@ -288,8 +288,8 @@ function UserForm({ user, self, roles, onClose, onSaved }: any) {
           <Field label="Email"><input type="email" required value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} /></Field>
           <Field label="Display name"><input required value={f.displayName} onChange={(e) => setF({ ...f, displayName: e.target.value })} /></Field>
           <Field label="Initial password" hint="Share securely; the user should change it after first sign-in"><input type="password" autoComplete="new-password" required value={f.initialPassword} onChange={(e) => setF({ ...f, initialPassword: e.target.value })} /></Field>
-          <Field label="Link to employee record (optional)"><input placeholder="Search employees" value={empSearch} onChange={(e) => setEmpSearch(e.target.value)} />
-            <select value={f.employeeId} onChange={(e) => setF({ ...f, employeeId: e.target.value })}><option value="">Not linked</option>{emps.data?.items.filter((x: any) => !x.user_id).map((x: any) => <option key={x.id} value={x.id}>{x.first_name} {x.last_name} ({x.employee_code})</option>)}</select></Field>
+          <Field label="Link to employee record (optional)"><input placeholder="Search employees" aria-label="Search employees to link" value={empSearch} onChange={(e) => setEmpSearch(e.target.value)} />
+            <select aria-label="Link to employee record" value={f.employeeId} onChange={(e) => setF({ ...f, employeeId: e.target.value })}><option value="">Not linked</option>{emps.data?.items.filter((x: any) => !x.user_id).map((x: any) => <option key={x.id} value={x.id}>{x.first_name} {x.last_name} ({x.employee_code})</option>)}</select></Field>
         </>}
         <fieldset style={{ border: '1px solid var(--border)', borderRadius: 6 }}><legend>Roles</legend>
           <div className="grid grid-2" style={{ gap: 6 }}>{roles.map((r: any) => (
