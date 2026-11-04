@@ -7,6 +7,7 @@ import { PageHeader } from '../components/PageHeader';
 import { QueryState } from '../components/QueryState';
 import { Table, type Column } from '../components/Table';
 import { AttendanceCalendar } from '../features/attendance/AttendanceCalendar';
+import { PunchCard } from '../features/attendance/PunchCard';
 import type { Regularization } from '../features/attendance/types';
 import { fmtDate, fmtTime } from '../format';
 import { useApiQuery } from '../lib/query';
@@ -20,11 +21,12 @@ const columns: Column<Regularization>[] = [
 ];
 
 export function MyAttendance() {
-  const { me } = useAuth();
+  const { me, hasFeature } = useAuth();
   const regs = useApiQuery<{ items: Regularization[] }>('/api/v1/attendance/regularizations?scope=mine&pageSize=10');
   return (
     <div className="stack-6">
       <PageHeader title="My attendance" description="Daily results are calculated from your punches, shift and holidays. Select a day for details." />
+      {me?.user.employeeId && hasFeature('FEATURE_ATTENDANCE_WEB', 'FEATURE_ATTENDANCE_MOBILE') && <PunchCard />}
       {me?.user.employeeId && <AttendanceCalendar employeeId={me.user.employeeId} self />}
       <div className="stack-3">
         <h2>My correction requests</h2>

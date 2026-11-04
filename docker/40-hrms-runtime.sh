@@ -64,7 +64,7 @@ for u in "$BRAND_LOGO_URL" "$BRAND_LOGO_DARK_URL" "$BRAND_FAVICON_URL"; do o=$(h
   echo 'add_header X-Content-Type-Options "nosniff" always;'
   echo 'add_header X-Frame-Options "DENY" always;'
   echo 'add_header Referrer-Policy "no-referrer" always;'
-  echo 'add_header Permissions-Policy "camera=(), microphone=(), geolocation=(self)" always;'
+  echo 'add_header Permissions-Policy "camera=(self), microphone=(), geolocation=(self)" always;'
   echo 'add_header Cross-Origin-Opener-Policy "same-origin" always;'
   [ "$HSTS" = "true" ] && echo 'add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;'
 } > "$OUT/headers.conf"
