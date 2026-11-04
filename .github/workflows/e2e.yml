@@ -72,7 +72,7 @@ jobs:
             -e DATABASE_URL="postgres://hrms_app:$app_pw@localhost:5432/hrms" -e DATABASE_SSL=disable \
             -e DATA_ENCRYPTION_KEY="$(openssl rand -base64 32)" -e COOKIE_SECURE=false -e MFA_ENFORCEMENT=off \
             -e JOBS_ENABLED=false -e MAIL_TRANSPORT=disabled -e STORAGE_DRIVER=local -e STORAGE_PATH=/tmp/storage \
-            -e ENABLED_MODULES=default,attendance.mobile,attendance.biometric,expenses,training,lab.competency,core.policies,recruitment,core.onboarding,core.offboarding,payroll,payroll.payslips,payroll.statutory,posh,grievance,performance,assets,overtime,field_duty,travel,reports.advanced \
+            -e ENABLED_MODULES=default,attendance.mobile,attendance.biometric,expenses,training,lab.competency,core.policies,recruitment,core.onboarding,core.offboarding,payroll,payroll.payslips,payroll.statutory,posh,grievance,performance,assets,overtime,field_duty,travel,advances_loans,reports.advanced \
             "$BACKEND_IMAGE" serve
           for _ in $(seq 1 30); do curl -sf http://127.0.0.1:4000/ready >/dev/null && exit 0; sleep 2; done
           docker logs api; exit 1
