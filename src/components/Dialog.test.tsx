@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { fireEvent, screen } from '@testing-library/react';
+import { fireEvent, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { expectNoAxeViolations } from '../test/axe';
@@ -87,6 +87,14 @@ describe('Modal', () => {
     const backdrop = screen.getByRole('dialog').parentElement!;
     fireEvent.mouseDown(backdrop); fireEvent.mouseUp(backdrop);
     expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('typing in a dialog opened from this one does not mark this one as changed', async () => {
+    const onClose = vi.fn();
+    renderUi(<Modal title="Outer" onClose={onClose}><Modal title="Inner" onClose={vi.fn()}><Input label="Name" /></Modal></Modal>);
+    await userEvent.type(screen.getByRole('textbox', { name: 'Name' }), 'A');
+    fireEvent.click(within(screen.getByRole('dialog', { name: 'Outer' })).getAllByRole('button', { name: 'Close' })[0]!);
+    expect(onClose).toHaveBeenCalledOnce();
   });
 
   it('has no axe violations', async () => {
