@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Inbox, Send } from 'lucide-react';
 import { api } from '../api';
+import { useAuth } from '../auth';
 import { StatusBadge } from '../components/Badge';
 import { Button } from '../components/Button';
 import { ConfirmDialog } from '../components/ConfirmDialog';
@@ -13,12 +14,13 @@ import { Table, type Column } from '../components/Table';
 import { TabPanel, Tabs, useTabParam } from '../components/Tabs';
 import { useToast } from '../components/Toast';
 import { Delegations } from '../features/approvals/Delegations';
+import { ReassignForm } from '../features/approvals/ReassignForm';
 import { ProfileChangeView } from '../features/profile/PersonalDetails';
 import { fmtDateTime } from '../format';
 import { invalidateApi, useApiQuery } from '../lib/query';
 
-const ENTITY_LABEL: Record<string, string> = { attendance_regularization: 'Attendance correction', leave_request: 'Leave', expense_claim: 'Expense claim', lab_authorization: 'Technical authorization', job_requisition: 'Job requisition', job_offer: 'Job offer', separation: 'Separation', probation_review: 'Probation review', salary_change: 'Salary change', payroll_run: 'Payroll run', overtime_claim: 'Overtime', field_duty: 'Field duty', travel_request: 'Travel', employee_loan: 'Advance / loan', employee_profile_change: 'Personal details' };
-const APPROVER_GROUP: Record<string, string> = { 'attendance.approve': 'HR approvers', 'leave.approve': 'HR approvers', 'expenses.approve': 'Finance approvers', 'competency.authorize': 'Quality', 'recruitment.approve': 'HR approvers', 'lifecycle.manage': 'HR approvers', 'profile.approve': 'HR approvers', 'payroll.approve': 'Payroll approvers' };
+const ENTITY_LABEL: Record<string, string> = { attendance_regularization: 'Attendance correction', leave_request: 'Leave', expense_claim: 'Expense claim', lab_authorization: 'Technical authorization', job_requisition: 'Job requisition', job_offer: 'Job offer', separation: 'Separation', probation_review: 'Probation review', salary_change: 'Salary change', payroll_run: 'Payroll run', overtime_claim: 'Overtime', field_duty: 'Field duty', travel_request: 'Travel', employee_loan: 'Advance / loan', employee_profile_change: 'Personal details', employee_bank_change: 'Bank account change' };
+const APPROVER_GROUP: Record<string, string> = { 'attendance.approve': 'HR approvers', 'leave.approve': 'HR approvers', 'expenses.approve': 'Finance approvers', 'competency.authorize': 'Quality', 'recruitment.approve': 'HR approvers', 'lifecycle.manage': 'HR approvers', 'profile.approve': 'HR approvers', 'payroll.approve': 'Payroll approvers', 'employees.bank.approve': 'Bank detail approvers', 'approvals.escalations': 'HR approvers' };
 
 interface InboxItem { id: string; summary: string; via?: string; on_behalf_of?: string | null; entity_type: string; requester_name: string; created_at: string }
 interface MineItem { id: string; summary: string; status: string; created_at: string; decided_at: string | null }
@@ -64,6 +66,9 @@ const TABS = ['inbox', 'mine', 'away'] as const;
 
 export function Approvals() {
   const toast = useToast();
+  const { canAny } = useAuth();
+  const canReassign = canAny('approvals.escalations', 'users.manage');
+  const [reassign, setReassign] = useState<{ id: string; summary: string } | null>(null);
   const [tab, setTab] = useTabParam(TABS);
   const inbox = useApiQuery<{ items: InboxItem[] }>('/api/v1/approvals/inbox');
   const mine = useApiQuery<{ items: MineItem[] }>('/api/v1/approvals/mine');
@@ -90,6 +95,7 @@ export function Approvals() {
           <Button size="sm" variant="primary" onClick={() => setAction({ id: r.id, kind: 'approve', summary: r.summary })}>Approve</Button>
           <Button size="sm" onClick={() => setAction({ id: r.id, kind: 'return', summary: r.summary })}>Return</Button>
           <Button size="sm" variant="danger-ghost" onClick={() => setAction({ id: r.id, kind: 'reject', summary: r.summary })}>Reject</Button>
+          {canReassign && <Button size="sm" variant="ghost" onClick={() => setReassign({ id: r.id, summary: r.summary })}>Reassign</Button>}
         </div>
       ),
     },
@@ -150,6 +156,7 @@ export function Approvals() {
           onConfirm={async () => { await api.post(`/api/v1/approvals/${cancelId}/cancel`); toast('Request cancelled'); await invalidateApi('/api/v1/approvals'); }}
         />
       )}
+      {reassign && <ReassignForm request={reassign} onClose={() => setReassign(null)} />}
       {detail && <Detail id={detail} onClose={() => setDetail(null)} />}
     </div>
   );

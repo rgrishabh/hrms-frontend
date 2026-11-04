@@ -26,7 +26,7 @@ interface Delegation {
 const period = (d: Pick<Delegation, 'starts_on' | 'ends_on'>) => (d.starts_on === d.ends_on ? fmtDate(d.starts_on) : `${fmtDate(d.starts_on)} – ${fmtDate(d.ends_on)}`);
 const isOpen = (d: Delegation) => d.state === 'active' || d.state === 'scheduled';
 
-async function searchDelegates(text: string): Promise<PickerItem[]> {
+export async function searchDelegates(text: string): Promise<PickerItem[]> {
   const r = await api.get<{ items: { id: string; name: string; code: string | null; designation: string | null }[] }>(`/api/v1/approvals/delegates${qs({ q: text })}`);
   return r.items.map((x) => ({ id: x.id, label: x.name, description: [x.designation, x.code].filter(Boolean).join(' · ') }));
 }
