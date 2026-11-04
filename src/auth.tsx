@@ -25,7 +25,7 @@ export interface Me {
   permissions: string[];
   csrfToken: string;
   organization: { id: string; name: string };
-  preferences: { timezone: string; dateFormat: string; emailNotifications: boolean };
+  preferences: { timezone: string; dateFormat: string; emailNotifications: boolean; smsNotifications?: boolean };
   /** Central capability map from the server — the only source for module visibility. */
   capabilities: Record<string, boolean>;
 }

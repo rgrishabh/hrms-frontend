@@ -147,6 +147,7 @@ export function ChangePasswordForm({ forced, onDone }: { forced?: boolean; onDon
 function Account() {
   const { me, logout, refresh, hasModule } = useAuth();
   const toast = useToast();
+  const [sms, setSms] = useState<boolean>(me!.preferences.smsNotifications ?? true);
   return (
     <div className="stack" style={{ maxWidth: 520 }}>
       <div><h1>My account</h1><p className="sub">{me!.user.email}</p></div>
@@ -157,6 +158,14 @@ function Account() {
             catch (x) { toast(errText(x), 'error'); }
           }} /> Email me about approvals, decisions, reminders and security notices</label>
           <span className="muted" style={{ fontSize: 12 }}>You always see notifications in the app.</span></div>)}
+      {hasModule('notifications.sms') && (
+        <div className="card stack"><h2>SMS</h2>
+          <label className="row"><input type="checkbox" checked={sms} onChange={async (e) => {
+            const on = e.target.checked; setSms(on);   // reflect the click at once; undo if saving fails
+            try { await api.put('/api/v1/auth/preferences', { smsNotifications: on }); await refresh(); toast(on ? 'SMS on' : 'SMS off'); }
+            catch (x) { setSms(!on); toast(errText(x), 'error'); }
+          }} /> Text me important notifications (approvals waiting, payslips, payments)</label>
+          <span className="muted" style={{ fontSize: 12 }}>Sent to the mobile number on your employee record.</span></div>)}
       <div className="card"><h2>Change password</h2><ChangePasswordForm onDone={() => toast('Password changed')} /></div>
       <MfaCard />
       <div className="card stack"><h2>Sessions</h2><p className="muted" style={{ margin: 0 }}>Sign out of every browser and device, including this one.</p>

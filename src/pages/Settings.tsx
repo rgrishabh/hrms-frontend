@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { SmsSettings } from './SmsSettings';
 import { NavLink, Navigate, Route, Routes } from 'react-router-dom';
 import { api, qs } from '../api';
 import { useAuth } from '../auth';
@@ -10,7 +11,7 @@ const TIMEZONES = ['Asia/Kolkata', 'Asia/Dubai', 'Asia/Singapore', 'Europe/Londo
 const SOURCE_LABEL: Record<string, string> = { default: 'Default', deployment: 'Installation default', platform: 'Installation default', tenant: 'Organization setting', branch: 'Branch override', deployment_ceiling: 'Capped by installation limit' };
 
 export function SettingsCenter() {
-  const { can, canAny } = useAuth();
+  const { can, canAny, hasModule } = useAuth();
   const sections = [
     { to: 'general', label: 'General', show: can('settings.read') },
     { to: 'attendance', label: 'Attendance policy', show: can('settings.read') },
@@ -18,6 +19,7 @@ export function SettingsCenter() {
     { to: 'installation', label: 'Installation', show: can('settings.read') },
     { to: 'organization', label: 'Legal entities & branches', show: canAny('org.read') },
     { to: 'users', label: 'Users & permissions', show: can('users.manage') },
+    { to: 'sms', label: 'SMS', show: hasModule('notifications.sms') && can('settings.manage') },
     { to: 'jobs', label: 'Scheduled jobs', show: can('settings.read') },
     { to: 'audit', label: 'Audit history', show: can('audit.read') },
   ].filter((s) => s.show);
@@ -32,6 +34,7 @@ export function SettingsCenter() {
         <Route path="installation" element={<Installation />} />
         <Route path="organization" element={<Organization />} />
         <Route path="users" element={<Users />} />
+        <Route path="sms" element={<SmsSettings />} />
         <Route path="jobs" element={<Jobs />} />
         <Route path="audit" element={<Audit />} />
         {/* Absolute targets: relative links inside a splat route resolve against the full URL in React Router v7. */}
