@@ -1,0 +1,47 @@
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
+  min-height: var(--control-height); padding: 0 var(--space-3);
+  border: 1px solid transparent; border-radius: var(--radius);
+  font-size: var(--text-base); font-weight: var(--weight-medium); line-height: 1.2; text-decoration: none; white-space: nowrap;
+  cursor: pointer; user-select: none;
+  transition: background-color var(--duration-fast) var(--ease), border-color var(--duration-fast) var(--ease), color var(--duration-fast) var(--ease);
+}
+.btn svg { width: 16px; height: 16px; flex: none; }
+.btn:disabled { cursor: not-allowed; opacity: 0.55; }
+.btn--sm { min-height: var(--control-height-sm); padding: 0 var(--space-2); font-size: var(--text-sm); }
+.btn--lg { min-height: var(--touch-target); padding: 0 var(--space-5); font-size: var(--text-md); }
+.btn--block { width: 100%; }
+.btn--icon { padding: 0; width: var(--control-height); }
+.btn--icon.btn--sm { width: var(--control-height-sm); }
+
+.btn--primary { background: var(--brand); color: var(--on-brand); }
+.btn--primary:hover:not(:disabled) { background: var(--brand-hover); }
+.btn--primary:active:not(:disabled) { background: var(--brand-active); }
+
+.btn--secondary { background: var(--surface); border-color: var(--border-strong); color: var(--text); }
+.btn--secondary:hover:not(:disabled) { background: var(--surface-2); }
+.btn--secondary:active:not(:disabled) { background: var(--surface-3); }
+
+.btn--ghost { background: transparent; color: var(--text-2); }
+.btn--ghost:hover:not(:disabled) { background: var(--surface-2); color: var(--text); }
+.btn--ghost:active:not(:disabled) { background: var(--surface-3); }
+
+.btn--danger { background: var(--danger-solid); color: var(--on-danger); }
+.btn--danger:hover:not(:disabled) { filter: brightness(0.92); }
+
+.btn--danger-ghost { background: transparent; border-color: var(--danger); color: var(--danger); }
+.btn--danger-ghost:hover:not(:disabled) { background: var(--danger-bg); }
+
+.btn--link { min-height: 0; padding: 0; background: none; color: var(--brand-text); text-align: left; white-space: normal; text-decoration: underline; text-decoration-color: transparent; font-weight: var(--weight-medium); }
+.btn--link:hover:not(:disabled) { text-decoration-color: currentcolor; }
+
+.btn__spinner { width: 14px; height: 14px; flex: none; border: 2px solid currentcolor; border-right-color: transparent; border-radius: 50%; animation: btn-spin 0.7s linear infinite; }
+@keyframes btn-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .btn__spinner { animation-duration: 2s; } }
+
+/* Touch: every control reaches the 44px target, including small ones. */
+@media (pointer: coarse), (max-width: 860px) {
+  .btn:not(.btn--link) { min-height: var(--touch-target); }
+  .btn--icon:not(.btn--link) { width: var(--touch-target); }
+  .btn--link { min-height: var(--touch-target); display: inline-flex; align-items: center; }
+}

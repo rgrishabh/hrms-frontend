@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 
 // The API resolves the tenant from the Host header, so the dev proxy must
@@ -10,9 +10,15 @@ export default defineConfig({
     allowedHosts: ['.localhost'],
     proxy: {
       '/api': { target: 'http://127.0.0.1:4000', changeOrigin: false },
-      '/health': { target: 'http://127.0.0.1:4000', changeOrigin: false },
-      '/ready': { target: 'http://127.0.0.1:4000', changeOrigin: false },
+      '/brand': { target: 'http://127.0.0.1:4000', changeOrigin: false },
       '/branding': { target: 'http://127.0.0.1:4000', changeOrigin: false },
     },
+  },
+  test: {
+    environment: 'jsdom',
+    setupFiles: ['./src/test/setup.ts'],
+    include: ['src/**/*.test.{ts,tsx}'],
+    css: false,
+    restoreMocks: true,
   },
 });

@@ -1,0 +1,10 @@
+.tile-grid { display: grid; gap: var(--space-3); grid-template-columns: repeat(auto-fill, minmax(min(100%, 168px), 1fr)); }
+.tile { display: block; min-width: 0; padding: var(--space-3) var(--space-4); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); color: inherit; text-decoration: none; }
+.tile--link:hover { border-color: var(--border-strong); background: var(--surface-2); }
+.tile__label { font-size: var(--text-sm); color: var(--text-2); }
+.tile__value { margin-top: var(--space-1); font-size: var(--text-xl); font-weight: var(--weight-semibold); line-height: 1.2; letter-spacing: -0.01em; overflow-wrap: anywhere; }
+.tile__detail { margin-top: var(--space-1); font-size: var(--text-xs); color: var(--text-3); }
+.tile--good .tile__value { color: var(--ok); }
+.tile--warn .tile__value { color: var(--warn); }
+.tile--bad .tile__value { color: var(--danger); }
+@media (max-width: 480px) { .tile-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
