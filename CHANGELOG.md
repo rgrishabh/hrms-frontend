@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Removed
+
+* SMS: settings page, account preference, e2e spec and the CI variables.
+* `GET /api/v1/public/config`: the app reads `GET /api/v1/config/public`. `me.capabilities` is replaced by `features` from that endpoint.
+* The `{ error: { ... } }` response shape: only RFC 7807 is read.
+* `style-src 'unsafe-inline'` from the CSP.
+* `BRAND_SHORT_NAME`, and the unused `brandShortName` in `env.js`. `PRODUCT_NAME` remains as a fallback for `BRAND_PRODUCT_NAME`.
+* The theme-independent brand gradient on the sign-in page.
+
 ## [1.1.0](https://github.com/rgrishabh/hrms-frontend/compare/v1.0.0...v1.1.0) (2026-11-04)
 
 

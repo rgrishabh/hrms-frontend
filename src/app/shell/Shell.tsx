@@ -1,4 +1,5 @@
 import { Suspense, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
+import { useIsFetching } from '@tanstack/react-query';
 import { NavLink, useLocation } from 'react-router-dom';
 import { Bell, Menu, Search, WifiOff } from 'lucide-react';
 import { inflightStore } from '../../api';
@@ -30,7 +31,8 @@ export function Shell({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
   const unread = useUnreadCount();
   const online = useOnline();
-  const inflight = useSyncExternalStore(inflightStore.subscribe, inflightStore.get);
+  // Requests on the wire, plus queries between retries: a page waiting to retry has not settled.
+  const inflight = useSyncExternalStore(inflightStore.subscribe, inflightStore.get) + useIsFetching();
   const main = useRef<HTMLElement>(null);
   const firstRender = useRef(true);
 

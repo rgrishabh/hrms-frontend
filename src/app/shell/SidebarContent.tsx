@@ -5,14 +5,12 @@ import { Avatar } from '../../components/Avatar';
 import { Badge } from '../../components/Badge';
 import { Button, ButtonLink } from '../../components/Button';
 import { Select } from '../../components/Select';
-import { getThemePreference, setThemePreference, type ThemePreference } from '../../lib/theme';
 import { useInstallPrompt } from '../../pwa/install';
 import { environmentLabel, runtimeEnv } from '../../runtime/env';
 import { VIEW_LABEL, type ViewId } from '../registry';
 import { useNavigationModel } from '../useViewer';
 import { BrandMark } from './BrandMark';
 import { SupportLine } from './SupportLine';
-import { useState } from 'react';
 
 const ENV = runtimeEnv();
 const ENV_LABEL = environmentLabel(ENV);
@@ -21,7 +19,6 @@ const ENV_LABEL = environmentLabel(ENV);
 export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const { config, me, logout } = useAuth();
   const { views, view, setView, groups } = useNavigationModel();
-  const [theme, setTheme] = useState<ThemePreference>(getThemePreference);
   const install = useInstallPrompt();
   if (!config || !me) return null;
   return (
@@ -60,8 +57,6 @@ export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
             <div className="side__user-role">{me.roles.map((r) => r.name).join(', ')}</div>
           </div>
         </div>
-        <Select label="Theme" hideLabel value={theme} onChange={(e) => { const t = e.target.value as ThemePreference; setTheme(t); setThemePreference(t); }}
-          options={[{ value: 'system', label: 'Theme: system' }, { value: 'light', label: 'Theme: light' }, { value: 'dark', label: 'Theme: dark' }]} />
         <div className="cluster">
           <ButtonLink to="/account" size="sm" variant="ghost" icon={<Settings2 aria-hidden="true" />} onClick={onNavigate}>Account</ButtonLink>
           <Button size="sm" variant="ghost" icon={<LogOut aria-hidden="true" />} onClick={() => void logout()}>Sign out</Button>

@@ -41,7 +41,7 @@
 
 /* Touch: every control reaches the 44px target, including small ones. */
 @media (pointer: coarse), (max-width: 860px) {
-  .btn:not(.btn--link) { min-height: var(--touch-target); }
+  .btn:not(.btn--link) { min-height: var(--touch-target); min-width: var(--touch-target); }
   .btn--icon:not(.btn--link) { width: var(--touch-target); }
   .btn--link { min-height: var(--touch-target); display: inline-flex; align-items: center; }
 }

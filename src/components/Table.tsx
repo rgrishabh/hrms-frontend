@@ -86,7 +86,7 @@ export function Table<T>({ label, columns, rows, rowKey, sort, onSort, paginatio
             <thead>
               <tr>
                 {visible.map((c) => (
-                  <th key={c.key} scope="col" aria-sort={c.sortable ? ariaSort(sort, c.key) : undefined} className={c.align === 'right' ? 'table__num' : undefined}>
+                  <th key={c.key} scope="col" aria-sort={c.sortable ? ariaSort(sort, c.key) : undefined} className={c.align === 'right' || c.card === 'actions' ? 'table__num' : undefined}>
                     {c.sortable && onSort ? (
                       <button type="button" className="table__sort" onClick={() => onSort(nextSort(sort, c.key))}>
                         {c.header}

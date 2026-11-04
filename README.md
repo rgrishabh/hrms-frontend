@@ -7,7 +7,7 @@ API: [hrms-backend](https://github.com/rgrishabh/hrms-backend) · environments a
 
 ```bash
 npm ci
-npm run dev        # http://localhost:5173 — proxies /api, /health, /ready, /branding to the backend on :4000
+npm run dev        # http://localhost:5173 — proxies /api, /brand, /branding to the backend on :4000
 npm run lint && npm test && npm run build
 ```
 
@@ -35,7 +35,7 @@ re-runnable on the same data.
 ## Same origin as the API
 
 Authentication uses a session cookie plus a CSRF header, so the SPA and the API must be served from the **same origin**.
-The reverse proxy in every environment routes `/api/*`, `/health*`, `/ready` and `/branding/*` to the backend and everything
+The reverse proxy in every environment routes `/api/*`, `/health*`, `/ready`, `/brand/*` and `/branding/*` to the backend and everything
 else to this container (Caddy in dev, ALB listener rules in prod). nginx returns 404 for those paths if they ever reach it.
 
 ## Image

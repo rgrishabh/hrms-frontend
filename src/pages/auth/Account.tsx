@@ -10,6 +10,8 @@ import { Checkbox, Input } from '../../components/Input';
 import { PageHeader } from '../../components/PageHeader';
 import { SkeletonRows } from '../../components/Skeleton';
 import { useToast } from '../../components/Toast';
+import { Select } from '../../components/Select';
+import { getThemePreference, setThemePreference, type ThemePreference } from '../../lib/theme';
 import { PushToggle } from '../../pwa/PushToggle';
 import { ChangePasswordForm } from './ChangePasswordForm';
 import './account.css';
@@ -22,10 +24,14 @@ export function Account() {
   const { me, logout, refresh, hasFeature, config } = useAuth();
   const toast = useToast();
   const [revoking, setRevoking] = useState(false);
+  const [theme, setTheme] = useState<ThemePreference>(getThemePreference);
   if (!me) return null;
   return (
     <div className="stack-4 account">
       <PageHeader title="My account" description={me.user.email} />
+      <Card title="Appearance">
+        <Select label="Theme" value={theme} onChange={(e) => { const t = e.target.value as ThemePreference; setTheme(t); setThemePreference(t); }} options={[{ value: 'system', label: 'Same as this device' }, { value: 'light', label: 'Light' }, { value: 'dark', label: 'Dark' }]} />
+      </Card>
       {hasFeature('FEATURE_EMAIL_NOTIFICATIONS') && (
         <Card title="Email notifications">
           <Checkbox

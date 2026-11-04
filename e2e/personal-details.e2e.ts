@@ -21,7 +21,7 @@ test('an employee updates contacts directly; a nominee change waits for HR, who 
   await nominees.getByRole('button', { name: /Edit|Add/ }).click();
   dlg = page.getByRole('dialog', { name: 'Edit nominees' });
   await expect(dlg).toContainText('HR checks changes to nominees');
-  const entry = dlg.getByRole('group', { name: 'Nominees entry 1' });
+  const entry = dlg.getByRole('region', { name: 'Nominees entry 1' });
   await entry.getByLabel('For', { exact: true }).selectOption('pf');
   await entry.getByLabel('Name', { exact: true }).fill(nominee);
   await entry.getByLabel('Relationship', { exact: true }).fill('Mother');

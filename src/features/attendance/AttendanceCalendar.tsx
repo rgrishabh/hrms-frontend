@@ -69,9 +69,10 @@ export function AttendanceCalendar({ employeeId, self }: { employeeId: string; s
                     const r = days.get(d);
                     const label = r ? STATUS_LABEL[r.status] ?? r.status : 'No record';
                     return (
-                      <button key={d} type="button" className={`att-day att-day--${r?.status ?? 'none'}`} aria-pressed={selected === d} aria-label={`${fmtDate(d)}, ${label}`} onClick={() => setSelected(d)}>
+                      <button key={d} type="button" className={`att-day att-day--${r?.status ?? 'none'}`} aria-pressed={selected === d} onClick={() => setSelected(d)}>
                         <span className="att-day__n tnum">{Number(d.slice(8))}</span>
-                        {r && <span className="att-day__status">{label}</span>}
+                        <span className="visually-hidden">{fmtDate(d)}</span>
+                        <span className="att-day__status">{label}</span>
                         {r && r.worked_minutes > 0 && <span className="att-day__worked tnum">{fmtMinutes(r.worked_minutes)}</span>}
                       </button>
                     );

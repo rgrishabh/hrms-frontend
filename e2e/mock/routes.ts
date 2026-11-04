@@ -1,0 +1,3 @@
+/** Paths used by the browser checks. Migrated pages get the strict layout and accessibility checks. */
+export const MIGRATED = ['/', '/attendance/me', '/leave', '/leave?tab=team', '/payslips', '/approvals', '/approvals?tab=mine', '/notifications', '/employees', '/employees/e1', '/documents', '/profile', '/account'] as const;
+export const UNMIGRATED = ['/attendance/roster', '/attendance/team', '/attendance/admin', '/overtime', '/field-duty', '/travel', '/loans', '/expenses', '/payroll', '/accounting', '/recruitment', '/lifecycle', '/performance', '/competency', '/cases', '/policies', '/assets', '/reports', '/settings/general'] as const;

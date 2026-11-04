@@ -6,7 +6,8 @@
     "strict": true,
     "noEmit": true,
     "skipLibCheck": true,
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "types": ["node"]
   },
-  "include": ["./*.ts", "../playwright.config.ts"]
+  "include": ["./*.ts", "./mock/*.ts", "../playwright.config.ts", "../playwright.mock.config.ts"]
 }
