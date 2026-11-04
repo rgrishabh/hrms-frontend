@@ -15,6 +15,10 @@ const overflowing = (page: Page) => page.evaluate(() => [...document.querySelect
   .filter((el) => el.getBoundingClientRect().right > window.innerWidth + 1 && el.getBoundingClientRect().width > 0 && !el.closest('.table-scroll, .tabs-bar, .scroll-x, .visually-hidden'))
   .slice(0, 5).map((el) => `${el.tagName}.${el.className} ${Math.round(el.getBoundingClientRect().right)}`));
 
+const brokenAmounts = (page: Page) => page.evaluate(() => [...document.querySelectorAll<HTMLElement>('.tile__value .money')]
+  .filter((el) => el.getClientRects().length > 1 || el.getBoundingClientRect().height > parseFloat(getComputedStyle(el).fontSize) * 1.8)
+  .map((el) => el.textContent));
+
 const recordRows = (page: Page) => page.locator('.table-card, .table tbody tr, [data-record]').count();
 
 for (const width of [360, 390, 768]) {
@@ -27,6 +31,7 @@ for (const width of [360, 390, 768]) {
       await page.waitForLoadState('networkidle');
       expect(await noSidewaysScroll(page)).toBeLessThanOrEqual(0);
       expect(await overflowing(page)).toEqual([]);
+      expect(await brokenAmounts(page), 'an amount in a tile breaks across lines').toEqual([]);
       if (s.minRows !== 0) expect(await recordRows(page), 'the mock must show real rows').toBeGreaterThanOrEqual(s.minRows ?? 1);
     });
   }

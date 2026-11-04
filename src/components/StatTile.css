@@ -8,3 +8,5 @@
 .tile--warn .tile__value { color: var(--warn); }
 .tile--bad .tile__value { color: var(--danger); }
 @media (max-width: 480px) { .tile-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* An amount needs more room than a count: a figure never breaks across lines at normal sizes. */
+.tile-grid:has(.money) { grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); }
