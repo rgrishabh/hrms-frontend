@@ -58,13 +58,13 @@ export function localInputToIso(value: string): string {
 
 export const STATUS_LABEL: Record<string, string> = {
   present: 'Present', half_day: 'Half day', absent: 'Absent', missing_punch: 'Missing punch', weekly_off: 'Weekly off',
-  holiday: 'Holiday', not_joined: 'Not employed', not_calculated: 'Not calculated', on_leave: 'On leave',
+  holiday: 'Holiday', not_joined: 'Not employed', not_calculated: 'Not calculated', on_leave: 'On leave', on_duty: 'On field duty',
   self_submitted: 'Self-review done', manager_submitted: 'Manager review done', in_repair: 'In repair',
   not_started: 'Not started', acknowledged: 'Acknowledged', finalized: 'Finalized', available: 'Available', issued: 'Issued', lost: 'Lost',
 };
 
 export const EXCEPTION_LABEL: Record<string, string> = {
-  late_arrival: 'Late arrival', early_exit: 'Early exit', missing_out_punch: 'Missing out-punch', out_without_in: 'Out without in',
+  duty_on_leave: 'Field duty during full-day leave', late_arrival: 'Late arrival', early_exit: 'Early exit', missing_out_punch: 'Missing out-punch', out_without_in: 'Out without in',
   consecutive_in_punches: 'Consecutive in-punches', repeat_punches_ignored: 'Repeat punches ignored', short_hours: 'Short hours',
   insufficient_hours: 'Insufficient hours', worked_on_weekly_off: 'Worked on weekly off', worked_on_holiday: 'Worked on holiday', worked_on_leave: 'Worked while on leave',
 };
