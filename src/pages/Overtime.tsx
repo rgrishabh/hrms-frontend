@@ -1,105 +1,162 @@
 import { useState } from 'react';
-import { api, qs } from '../api';
+import { Clock, Hourglass } from 'lucide-react';
+import { api, qs, type Paged } from '../api';
 import { useAuth } from '../auth';
+import { Alert } from '../components/Alert';
+import { StatusBadge } from '../components/Badge';
+import { Button } from '../components/Button';
+import { Card } from '../components/Card';
+import { ConfirmDialog } from '../components/ConfirmDialog';
+import { DatePicker } from '../components/DatePicker';
+import { EmptyState } from '../components/EmptyState';
+import { FilterBar } from '../components/FilterBar';
+import { FormActions } from '../components/FormActions';
+import { Input, Textarea } from '../components/Input';
+import { Modal } from '../components/Modal';
+import { PageHeader } from '../components/PageHeader';
+import { QueryState } from '../components/QueryState';
+import { Select } from '../components/Select';
+import { StatGrid, StatTile } from '../components/StatTile';
+import { Table, type Column } from '../components/Table';
+import { TabPanel, Tabs, useTabParam, type TabItem } from '../components/Tabs';
+import { useToast } from '../components/Toast';
+import { useSubmit, type FieldErrors } from '../components/useSubmit';
+import { useTableState } from '../components/useTableState';
 import { fmtDate, fmtMinutes, fmtTime } from '../format';
-import { useLoad, Loading, ErrorBox, Empty, Modal, Field, Tabs, Pager, StatusBadge, Confirm, useToast, errText } from '../ui';
+import { invalidateApi, useApiQuery } from '../lib/query';
+import '../features/attendance/Roster.css';
 
 type Tab = 'mine' | 'team' | 'all';
+type Payout = 'pay' | 'comp_off';
 const PAYOUT: Record<string, string> = { pay: 'Pay', comp_off: 'Compensatory off' };
+const STATUSES = ['pending', 'approved', 'returned', 'rejected', 'cancelled'];
 const hours = (m: number) => `${Math.round((m / 60) * 100) / 100} h`;
 /** Days off earned (whole halves of the configured day), as the server computes it. */
 const compDays = (minutes: number, dayMinutes: number) => Math.floor(minutes / (dayMinutes / 2)) / 2;
+const reload = () => invalidateApi('/api/v1/overtime');
+
+interface EligibleDay { work_date: string; overtime_minutes: number; first_in: string | null; last_out: string | null; worked_minutes: number; shift_code: string | null }
+interface PayoutOptions { pay: boolean; payBlocker: string | null; compOff: { code: string; name: string; dayMinutes: number } | null }
+interface Eligible { items: EligibleDay[]; windowDays: number; minMinutes: number; payout: PayoutOptions }
+interface Claim {
+  id: string; work_date: string; minutes: number; recorded_minutes: number; payout: Payout; status: string; reason: string; name: string; employee_code: string;
+  payroll_period: string | null; payroll_status: string | null; comp_off_days: number | string | null; cancel_reason: string | null;
+}
 
 export function Overtime() {
   const { canAny, can, me } = useAuth();
-  const tabs: { key: Tab; label: string }[] = [];
-  if (me!.user.employeeId && can('overtime.self')) tabs.push({ key: 'mine', label: 'My overtime' });
+  const tabs: TabItem<Tab>[] = [];
+  if (me?.user.employeeId && can('overtime.self')) tabs.push({ key: 'mine', label: 'My overtime' });
   if (can('overtime.team.read')) tabs.push({ key: 'team', label: 'My team' });
   if (canAny('overtime.read', 'overtime.approve', 'overtime.manage')) tabs.push({ key: 'all', label: 'All claims' });
-  const [tab, setTab] = useState<Tab>(tabs[0]?.key ?? 'mine');
-  if (!tabs.length) return <Empty>You do not have access to overtime.</Empty>;
+  const [tab, setTab] = useTabParam<Tab>(tabs.length ? tabs.map((t) => t.key) : ['mine']);
   return (
-    <div className="stack">
-      <div><h1>Overtime</h1><p className="sub">Overtime recorded by attendance, claimed as pay or compensatory off, approved by the manager and HR.</p></div>
-      {tabs.length > 1 && <Tabs tabs={tabs} value={tab} onChange={setTab} />}
-      {tab === 'mine' ? <Mine /> : <Claims scope={tab} />}
+    <div className="stack-4">
+      <PageHeader title="Overtime" description="Overtime recorded by attendance, claimed as pay or compensatory off, approved by the manager and HR." />
+      {!tabs.length ? <EmptyState title="You do not have access to overtime." /> : (
+        <>
+          {tabs.length > 1 && <Tabs label="Overtime" idBase="overtime" tabs={tabs} value={tab} onChange={setTab} />}
+          <TabPanel idBase="overtime" tab={tab}>
+            {/* The key resets filters and page: one tab's filters must not silently narrow another's list. */}
+            {tab === 'mine' ? <Mine /> : <Claims key={tab} scope={tab} />}
+          </TabPanel>
+        </>
+      )}
     </div>
   );
+}
+
+function outcome(c: Claim) {
+  if (c.status === 'cancelled' && c.cancel_reason) return `Cancelled: ${c.cancel_reason}`;
+  if (c.status !== 'approved') return '—';
+  if (c.payout === 'comp_off') return `${Number(c.comp_off_days)} day${Number(c.comp_off_days) === 1 ? '' : 's'} added to leave`;
+  return c.payroll_period ? `In ${c.payroll_period} payroll${['finalized', 'paid'].includes(c.payroll_status ?? '') ? '' : ' (not final yet)'}` : 'In the next payroll';
 }
 
 function Mine() {
   const toast = useToast();
-  const eligible = useLoad(() => api.get('/api/v1/overtime/eligible'), []);
-  const claims = useLoad(() => api.get('/api/v1/overtime/claims?scope=mine&pageSize=50'), []);
-  const [claim, setClaim] = useState<any | null>(null);
-  const [withdraw, setWithdraw] = useState<any | null>(null);
-  const reload = () => { eligible.reload(); claims.reload(); };
-  if (eligible.loading) return <Loading />;
-  if (eligible.error) return <ErrorBox error={eligible.error} />;
-  const e = eligible.data;
+  const [page, setPage] = useState(1);
+  const eligible = useApiQuery<Eligible>('/api/v1/overtime/eligible');
+  const claims = useApiQuery<Paged<Claim>>(`/api/v1/overtime/claims${qs({ scope: 'mine', page, pageSize: 25 })}`, { placeholderData: (p) => p });
+  const [claim, setClaim] = useState<EligibleDay | null>(null);
+  const [withdraw, setWithdraw] = useState<Claim | null>(null);
+  const can = (e: Eligible) => e.payout.pay || !!e.payout.compOff;
+  const dayColumns = (e: Eligible): Column<EligibleDay>[] => [
+    { key: 'date', header: 'Date', card: 'title', cell: (d) => <span className="tnum">{fmtDate(d.work_date)}</span> },
+    { key: 'shift', header: 'Shift', cell: (d) => d.shift_code ?? '—' },
+    { key: 'times', header: 'In – out', cell: (d) => `${fmtTime(d.first_in)} – ${fmtTime(d.last_out)}` },
+    { key: 'worked', header: 'Worked', cell: (d) => fmtMinutes(d.worked_minutes) },
+    { key: 'overtime', header: 'Overtime', cell: (d) => <strong>{fmtMinutes(d.overtime_minutes)}</strong> },
+    { key: 'actions', header: 'Actions', card: 'actions', cell: (d) => <div className="table__actions"><Button size="sm" variant="primary" disabled={!can(e)} onClick={() => setClaim(d)}>Claim</Button></div> },
+  ];
+  const claimColumns: Column<Claim>[] = [
+    { key: 'date', header: 'Date', card: 'title', cell: (c) => <span className="tnum">{fmtDate(c.work_date)}</span> },
+    { key: 'hours', header: 'Hours', cell: (c) => hours(c.minutes) },
+    { key: 'as', header: 'Taken as', cell: (c) => PAYOUT[c.payout] },
+    { key: 'status', header: 'Status', card: 'status', cell: (c) => <StatusBadge status={c.status} /> },
+    { key: 'outcome', header: 'Outcome', cell: (c) => <div className={`text-sm text-2${c.cancel_reason ? ' cell-wrap' : ''}`}>{outcome(c)}</div> },
+    { key: 'actions', header: 'Actions', card: 'actions', cell: (c) => (c.status === 'pending' ? <div className="table__actions"><Button size="sm" onClick={() => setWithdraw(c)}>Withdraw</Button></div> : null) },
+  ];
   return (
-    <div className="stack">
-      <section className="card stack" aria-labelledby="ot-days">
-        <h2 id="ot-days">Overtime to claim</h2>
-        <p className="muted">Days in the last {e.windowDays} days where attendance recorded at least {e.minMinutes} minutes of overtime. If a day is wrong, correct your attendance first.</p>
-        {!e.payout.pay && <div className="alert info">Overtime cannot be taken as pay yet: {e.payout.payBlocker}.{e.payout.compOff ? ' You can take it as compensatory off.' : ''}</div>}
-        {!e.items.length ? <Empty>No unclaimed overtime.</Empty> : (
-          <div className="table-wrap"><table className="t" aria-label="Overtime to claim"><thead><tr><th>Date</th><th>Shift</th><th>In – out</th><th>Worked</th><th>Overtime</th><th /></tr></thead><tbody>
-            {e.items.map((d: any) => <tr key={d.work_date}><td>{fmtDate(d.work_date)}</td><td>{d.shift_code ?? '—'}</td><td>{fmtTime(d.first_in)} – {fmtTime(d.last_out)}</td>
-              <td>{fmtMinutes(d.worked_minutes)}</td><td><strong>{fmtMinutes(d.overtime_minutes)}</strong></td>
-              <td><button className="btn sm primary" disabled={!e.payout.pay && !e.payout.compOff} onClick={() => setClaim(d)}>Claim</button></td></tr>)}
-          </tbody></table></div>)}
-      </section>
-      <section className="card stack" aria-labelledby="ot-claims">
-        <h2 id="ot-claims">My claims</h2>
-        {claims.loading ? <Loading /> : claims.error ? <ErrorBox error={claims.error} /> : !claims.data.items.length ? <Empty>No overtime claims yet.</Empty> : (
-          <div className="table-wrap"><table className="t" aria-label="My overtime claims"><thead><tr><th>Date</th><th>Hours</th><th>Taken as</th><th>Status</th><th>Outcome</th><th /></tr></thead><tbody>
-            {claims.data.items.map((c: any) => <tr key={c.id}><td>{fmtDate(c.work_date)}</td><td>{hours(c.minutes)}</td><td>{PAYOUT[c.payout]}</td><td><StatusBadge status={c.status} /></td>
-              <td>{outcome(c)}</td>
-              <td>{c.status === 'pending' && <button className="btn sm" onClick={() => setWithdraw(c)}>Withdraw</button>}</td></tr>)}
-          </tbody></table></div>)}
-      </section>
-      {claim && <ClaimForm day={claim} payout={e.payout} onClose={() => setClaim(null)} onSaved={() => { toast('Overtime claimed; sent for approval'); reload(); }} />}
-      {withdraw && <Confirm title="Withdraw overtime claim" message={`Withdraw your claim for ${hours(withdraw.minutes)} on ${fmtDate(withdraw.work_date)}? You can claim the day again.`}
-        confirmLabel="Withdraw" onClose={() => setWithdraw(null)}
-        onConfirm={async () => { await api.post(`/api/v1/overtime/claims/${withdraw.id}/withdraw`); toast('Claim withdrawn'); reload(); }} />}
+    <div className="stack-6">
+      <Card title="Overtime to claim">
+        <QueryState query={eligible}>
+          {(e) => (
+            <div className="stack-3">
+              <p className="text-sm text-2">Days in the last {e.windowDays} days where attendance recorded at least {e.minMinutes} minutes of overtime. If a day is wrong, correct your attendance first.</p>
+              {!e.payout.pay && <Alert>Overtime cannot be taken as pay yet: {e.payout.payBlocker}.{e.payout.compOff ? ' You can take it as compensatory off.' : ''}</Alert>}
+              {!e.items.length
+                ? <EmptyState compact icon={<Hourglass />} title="No unclaimed overtime." />
+                : <Table label="Overtime to claim" columns={dayColumns(e)} rows={e.items} rowKey={(d) => d.work_date} />}
+              {claim && <ClaimForm day={claim} payout={e.payout} onClose={() => setClaim(null)} />}
+            </div>
+          )}
+        </QueryState>
+      </Card>
+      <div className="stack-3">
+        <h2>My claims</h2>
+        <QueryState query={claims} isEmpty={(d) => !d.items.length} empty={<EmptyState compact icon={<Clock />} title="No overtime claims yet." />}>
+          {(d) => <Table label="My overtime claims" columns={claimColumns} rows={d.items} rowKey={(c) => c.id} refreshing={claims.isPlaceholderData} pagination={{ page: d.page, pageSize: d.pageSize, total: d.total, onPage: setPage }} />}
+        </QueryState>
+      </div>
+      {withdraw && (
+        <ConfirmDialog
+          title="Withdraw overtime claim"
+          message={`Withdraw your claim for ${hours(withdraw.minutes)} on ${fmtDate(withdraw.work_date)}? You can claim the day again.`}
+          confirmLabel="Withdraw"
+          onClose={() => setWithdraw(null)}
+          onConfirm={async () => { await api.post(`/api/v1/overtime/claims/${withdraw.id}/withdraw`); toast('Claim withdrawn'); await reload(); }}
+        />
+      )}
     </div>
   );
 }
 
-function outcome(c: any) {
-  if (c.status === 'cancelled' && c.cancel_reason) return <span className="muted">Cancelled: {c.cancel_reason}</span>;
-  if (c.status !== 'approved') return <span className="muted">—</span>;
-  if (c.payout === 'comp_off') return `${Number(c.comp_off_days)} day${Number(c.comp_off_days) === 1 ? '' : 's'} added to leave`;
-  return c.payroll_period ? `In ${c.payroll_period} payroll${['finalized', 'paid'].includes(c.payroll_status) ? '' : ' (not final yet)'}` : 'In the next payroll';
-}
-
-function ClaimForm({ day, payout, onClose, onSaved }: { day: any; payout: any; onClose: () => void; onSaved: () => void }) {
-  const [minutes, setMinutes] = useState<number>(day.overtime_minutes);
-  const [as, setAs] = useState<'pay' | 'comp_off'>(payout.pay ? 'pay' : 'comp_off');
+function ClaimForm({ day, payout, onClose }: { day: EligibleDay; payout: PayoutOptions; onClose: () => void }) {
+  const toast = useToast();
+  const [minutes, setMinutes] = useState<number | ''>(day.overtime_minutes);
+  const [as, setAs] = useState<Payout>(payout.pay ? 'pay' : 'comp_off');
   const [reason, setReason] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
   const comp = payout.compOff;
-  const days = comp ? compDays(minutes || 0, comp.dayMinutes) : 0;
+  const days = comp ? compDays(Number(minutes) || 0, comp.dayMinutes) : 0;
+  const s = useSubmit(async () => {
+    await api.post('/api/v1/overtime/claims', { workDate: day.work_date, minutes, payout: as, reason });
+    toast('Overtime claimed; sent for approval');
+    await reload();
+    onClose();
+  }, { validate: (): FieldErrors => (as === 'comp_off' && days <= 0 && comp ? { minutes: `Needs at least ${fmtMinutes(comp.dayMinutes / 2)} for half a day off` } : {}) });
   return (
     <Modal title={`Claim overtime — ${fmtDate(day.work_date)}`} onClose={onClose}>
-      <form className="stack" onSubmit={async (ev) => {
-        ev.preventDefault(); setError(null); setBusy(true);
-        try { await api.post('/api/v1/overtime/claims', { workDate: day.work_date, minutes, payout: as, reason }); onSaved(); onClose(); } catch (x) { setError(errText(x)); } finally { setBusy(false); }
-      }}>
-        <Field label="Minutes" hint={`Attendance recorded ${fmtMinutes(day.overtime_minutes)} of overtime; you can claim up to that.`}>
-          <input type="number" min={1} max={day.overtime_minutes} required value={minutes || ''} onChange={(e) => setMinutes(Number(e.target.value))} />
-        </Field>
-        <fieldset style={{ border: '1px solid var(--border)', borderRadius: 6 }}><legend>Take it as</legend>
-          <label className="row"><input type="radio" name="payout" checked={as === 'pay'} disabled={!payout.pay} onChange={() => setAs('pay')} /> Pay{!payout.pay && <span className="muted"> (not available: {payout.payBlocker})</span>}</label>
-          <label className="row"><input type="radio" name="payout" checked={as === 'comp_off'} disabled={!comp} onChange={() => setAs('comp_off')} /> Compensatory off{comp ? ` (${comp.name})` : <span className="muted"> (not offered)</span>}</label>
-          {as === 'comp_off' && comp && <div className="muted" style={{ fontSize: 12 }}>{days > 0 ? `Earns ${days} day${days === 1 ? '' : 's'} off (${fmtMinutes(comp.dayMinutes)} of overtime = 1 day).` : `Needs at least ${fmtMinutes(comp.dayMinutes / 2)} for half a day off.`}</div>}
+      <form className="stack-3" onSubmit={s.submit}>
+        <Input label="Minutes" hint={`Attendance recorded ${fmtMinutes(day.overtime_minutes)} of overtime. You can claim up to that.`} type="number" inputMode="numeric" min={1} max={day.overtime_minutes} required error={s.errors['minutes']} value={minutes} onChange={(e) => { setMinutes(e.target.value === '' ? '' : Number(e.target.value)); s.clearError('minutes'); }} />
+        <fieldset className="choice-group">
+          <legend>Take it as</legend>
+          <label className="check"><input type="radio" name="payout" checked={as === 'pay'} disabled={!payout.pay} onChange={() => setAs('pay')} /><span>Pay{!payout.pay && <span className="text-2"> (not available: {payout.payBlocker})</span>}</span></label>
+          <label className="check"><input type="radio" name="payout" checked={as === 'comp_off'} disabled={!comp} onChange={() => setAs('comp_off')} /><span>Compensatory off{comp ? ` (${comp.name})` : <span className="text-2"> (not offered)</span>}</span></label>
+          {as === 'comp_off' && comp && <p className="text-xs text-2">{days > 0 ? `Earns ${days} day${days === 1 ? '' : 's'} off (${fmtMinutes(comp.dayMinutes)} of overtime = 1 day).` : `Needs at least ${fmtMinutes(comp.dayMinutes / 2)} for half a day off.`}</p>}
         </fieldset>
-        <Field label="Reason"><textarea required minLength={3} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="What needed the extra time (batch, client deadline, sampling trip…)" /></Field>
-        <ErrorBox error={error} />
-        <div className="row"><span className="spacer" /><button type="button" className="btn" onClick={onClose}>Cancel</button>
-          <button className="btn primary" disabled={busy || (as === 'comp_off' && days <= 0)}>{busy ? 'Sending…' : 'Submit for approval'}</button></div>
+        <Textarea label="Reason" required minLength={3} error={s.errors['reason']} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="What needed the extra time" />
+        <FormActions error={s.error} busy={s.busy} busyLabel="Sending…" submitLabel="Submit for approval" onCancel={onClose} />
       </form>
     </Modal>
   );
@@ -108,38 +165,55 @@ function ClaimForm({ day, payout, onClose, onSaved }: { day: any; payout: any; o
 function Claims({ scope }: { scope: 'team' | 'all' }) {
   const toast = useToast();
   const { can } = useAuth();
-  const [f, setF] = useState({ status: '', period: '' });
-  const [page, setPage] = useState(1);
-  const [cancel, setCancel] = useState<any | null>(null);
-  const { data, loading, error, reload } = useLoad(() => api.get(`/api/v1/overtime/claims${qs({ scope, status: f.status || undefined, period: f.period || undefined, page, pageSize: 25 })}`), [scope, f, page]);
-  const set = (p: Partial<typeof f>) => { setF({ ...f, ...p }); setPage(1); };
-  const totals = data?.minutesByStatus ?? {};
+  const [cancel, setCancel] = useState<Claim | null>(null);
+  const manage = scope === 'all' && can('overtime.manage');
+  const columns: Column<Claim>[] = [
+    { key: 'employee', header: 'Employee', card: 'title', required: true, cell: (c) => <>{c.name}<div className="table__cell-sub mono">{c.employee_code}</div></> },
+    { key: 'date', header: 'Date', card: 'subtitle', cell: (c) => <span className="tnum">{fmtDate(c.work_date)}</span> },
+    { key: 'hours', header: 'Hours', cell: (c) => <span className="nowrap">{hours(c.minutes)}</span> },
+    { key: 'recorded', header: 'Recorded', cell: (c) => <span className="nowrap">{fmtMinutes(c.recorded_minutes)}</span> },
+    { key: 'as', header: 'Taken as', cell: (c) => PAYOUT[c.payout] },
+    { key: 'reason', header: 'Reason', cell: (c) => <div className="cell-wrap">{c.reason}</div> },
+    { key: 'status', header: 'Status', card: 'status', cell: (c) => <StatusBadge status={c.status} /> },
+    { key: 'outcome', header: 'Outcome', cell: (c) => <div className={`text-sm text-2${c.cancel_reason ? ' cell-wrap' : ''}`}>{outcome(c)}</div> },
+    { key: 'actions', header: 'Actions', card: 'actions', cell: (c) => (manage && c.status === 'approved' && !['pending', 'approved', 'finalized', 'paid'].includes(c.payroll_status ?? '') ? <div className="table__actions"><Button size="sm" variant="danger-ghost" onClick={() => setCancel(c)}>Cancel</Button></div> : null) },
+  ];
+  const table = useTableState(`overtime.${scope}`, columns, { filters: { status: '', period: '' } });
+  const { status, period } = table.filters;
+  const query = useApiQuery<Paged<Claim> & { minutesByStatus?: Record<string, number> }>(`/api/v1/overtime/claims${qs({ scope, status, period, page: table.page, pageSize: 25 })}`, { placeholderData: (p) => p });
+  const totals = query.data?.minutesByStatus;
   return (
-    <div className="stack">
-      <div className="row" style={{ flexWrap: 'wrap' }}>
-        <Field label="Month"><input type="month" value={f.period} onChange={(e) => set({ period: e.target.value })} /></Field>
-        <Field label="Status"><select value={f.status} onChange={(e) => set({ status: e.target.value })}><option value="">All</option>
-          {['pending', 'approved', 'returned', 'rejected', 'cancelled'].map((s) => <option key={s} value={s}>{s[0]!.toUpperCase() + s.slice(1)}</option>)}</select></Field>
-        <span className="spacer" />
-        {!loading && <div className="muted">Approved {hours(totals.approved ?? 0)} · pending {hours(totals.pending ?? 0)}</div>}
+    <div className="stack-3">
+      <div className="filters-labelled">
+        <FilterBar activeCount={table.activeFilterCount} onClear={table.clearFilters}>
+          <DatePicker mode="month" label="Month" value={period} onChange={(e) => table.setFilter('period', e.target.value)} />
+          <Select label="Status" placeholder="All" value={status} options={STATUSES.map((s) => ({ value: s, label: s[0]!.toUpperCase() + s.slice(1) }))} onChange={(e) => table.setFilter('status', e.target.value)} />
+        </FilterBar>
       </div>
-      {loading ? <Loading /> : error ? <ErrorBox error={error} /> : !data.items.length ? <Empty>No overtime claims match.</Empty> : (<>
-        <div className="table-wrap"><table className="t" aria-label="Overtime claims"><thead><tr><th>Employee</th><th>Date</th><th>Hours</th><th>Recorded</th><th>Taken as</th><th>Reason</th><th>Status</th><th>Outcome</th><th /></tr></thead><tbody>
-          {data.items.map((c: any) => <tr key={c.id}><td>{c.name}<div className="muted mono" style={{ fontSize: 12 }}>{c.employee_code}</div></td><td>{fmtDate(c.work_date)}</td>
-            <td>{hours(c.minutes)}</td><td className="muted">{fmtMinutes(c.recorded_minutes)}</td><td>{PAYOUT[c.payout]}</td><td style={{ maxWidth: 260 }}>{c.reason}</td>
-            <td><StatusBadge status={c.status} /></td><td>{outcome(c)}</td>
-            <td>{scope === 'all' && can('overtime.manage') && c.status === 'approved' && !['pending', 'approved', 'finalized', 'paid'].includes(c.payroll_status ?? '') &&
-              <button className="btn sm danger" onClick={() => setCancel(c)}>Cancel</button>}</td></tr>)}
-        </tbody></table></div>
-        <Pager page={data.page} pageSize={data.pageSize} total={data.total} onPage={setPage} />
-      </>)}
-      {cancel && <Confirm title="Cancel approved overtime" danger requireComment confirmLabel="Cancel claim" onClose={() => setCancel(null)}
-        message={<>Cancel {cancel.name}'s {hours(cancel.minutes)} on {fmtDate(cancel.work_date)}? {cancel.payout === 'comp_off' ? 'The compensatory off is taken back from their leave.' : 'It will not be paid.'}</>}
-        onConfirm={async (reason) => {
-          const r = await api.post(`/api/v1/overtime/claims/${cancel.id}/cancel`, { reason });
-          toast(r.payrollRunToRecompute ? `Claim cancelled. Recompute the ${r.payrollRunToRecompute} payroll run.` : 'Claim cancelled');
-          reload();
-        }} />}
+      {totals && (
+        <StatGrid label="Overtime totals">
+          <StatTile tileKey="overtime_approved" label="Approved" value={hours(totals['approved'] ?? 0)} />
+          <StatTile tileKey="overtime_pending" label="Pending" value={hours(totals['pending'] ?? 0)} />
+        </StatGrid>
+      )}
+      <QueryState query={query} isEmpty={(d) => !d.items.length} empty={<EmptyState icon={<Clock />} title="No overtime claims match." />}>
+        {(d) => <Table label="Overtime claims" columns={columns} rows={d.items} rowKey={(c) => c.id} refreshing={query.isPlaceholderData} hidden={table.hidden} onToggleColumn={table.toggleColumn} views={table.views} pagination={{ page: d.page, pageSize: d.pageSize, total: d.total, onPage: table.setPage }} />}
+      </QueryState>
+      {cancel && (
+        <ConfirmDialog
+          title="Cancel approved overtime"
+          danger
+          requireComment
+          confirmLabel="Cancel claim"
+          onClose={() => setCancel(null)}
+          message={`Cancel ${cancel.name}'s ${hours(cancel.minutes)} on ${fmtDate(cancel.work_date)}? ${cancel.payout === 'comp_off' ? 'The compensatory off is taken back from their leave.' : 'It will not be paid.'}`}
+          onConfirm={async (reason) => {
+            const r = await api.post<{ payrollRunToRecompute?: string }>(`/api/v1/overtime/claims/${cancel.id}/cancel`, { reason });
+            toast(r.payrollRunToRecompute ? `Claim cancelled. Recompute the ${r.payrollRunToRecompute} payroll run.` : 'Claim cancelled');
+            await reload();
+          }}
+        />
+      )}
     </div>
   );
 }
