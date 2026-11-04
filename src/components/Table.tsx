@@ -55,6 +55,8 @@ export interface TableProps<T> {
   /** Dims the rows while new ones load, keeping the old ones in place. */
   refreshing?: boolean;
   footer?: ReactNode;
+  /** A summary row: a real tfoot on desktop, a last card on phones. Return nothing for a column with no summary. */
+  foot?: (column: Column<T>, index: number) => ReactNode;
 }
 
 function nextSort(current: SortState | null | undefined, key: string): SortState | null {
@@ -69,7 +71,7 @@ const ariaSort = (sort: SortState | null | undefined, key: string) => (sort?.key
  * scroll sideways to reach an action. It holds no data rules of its own: page, sort, filters, visible
  * columns and saved views come from outside (see useTableState).
  */
-export function Table<T>({ label, columns, rows, rowKey, sort, onSort, pagination, hidden = [], onToggleColumn, views, onExport, exportFormats = ['csv', 'xlsx'], empty, refreshing, footer }: TableProps<T>) {
+export function Table<T>({ label, columns, rows, rowKey, sort, onSort, pagination, hidden = [], onToggleColumn, views, onExport, exportFormats = ['csv', 'xlsx'], empty, refreshing, footer, foot }: TableProps<T>) {
   const asCards = useMediaQuery(CARD_LIST_QUERY);
   const visible = columns.filter((c) => !hidden.includes(c.key));
   const toolbar = onToggleColumn || views || onExport;
@@ -79,6 +81,14 @@ export function Table<T>({ label, columns, rows, rowKey, sort, onSort, paginatio
       {!rows.length && empty ? <div className="data-table__empty">{empty}</div> : asCards ? (
         <ul className="table-cards list-plain" aria-label={label}>
           {rows.map((row) => <CardRow key={rowKey(row)} row={row} columns={visible} />)}
+          {foot && (
+            <li className="table-card table-card--foot">
+              <div className="table-card__title">{foot(visible[0]!, 0)}</div>
+              <dl className="table-card__rows">
+                {visible.slice(1).map((c, i) => { const v = foot(c, i + 1); return v === null || v === undefined || v === '' ? null : <div key={c.key} className="table-card__row"><dt>{c.header}</dt><dd className="tnum">{v}</dd></div>; })}
+              </dl>
+            </li>
+          )}
         </ul>
       ) : (
         <div className="table-scroll" tabIndex={0} role="group" aria-label={`${label}, scrollable`}>
@@ -104,6 +114,7 @@ export function Table<T>({ label, columns, rows, rowKey, sort, onSort, paginatio
                 </tr>
               ))}
             </tbody>
+            {foot && <tfoot><tr>{visible.map((c, i) => <td key={c.key} className={c.align === 'right' ? 'table__num' : undefined}>{foot(c, i)}</td>)}</tr></tfoot>}
           </table>
         </div>
       )}

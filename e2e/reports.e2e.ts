@@ -34,14 +34,14 @@ test('HR runs headcount, regroups it and downloads the CSV and Excel', async ({ 
   const total = Number((await table.locator('tfoot td').nth(1).innerText()).replace(/,/g, ''));
   expect(total).toBeGreaterThan(50);
 
-  const [download] = await Promise.all([page.waitForEvent('download'), page.getByRole('link', { name: 'Download CSV' }).click()]);
+  const [download] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Download CSV' }).click()]);
   expect(download.suggestedFilename()).toMatch(/^headcount-\d{4}-\d{2}-\d{2}\.csv$/);
   const csv = (await readFile((await download.path())!, 'utf8')).replace(/^﻿/, '');
   const lines = csv.trim().split(/\r\n/);
   expect(lines[0]).toMatch(/^Branch,Headcount,/);
   expect(lines.at(-1)).toMatch(new RegExp(`^Total,${total},`));
 
-  const [xl] = await Promise.all([page.waitForEvent('download'), page.getByRole('link', { name: 'Download Excel' }).click()]);
+  const [xl] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Download Excel' }).click()]);
   expect(xl.suggestedFilename()).toMatch(/^headcount-\d{4}-\d{2}-\d{2}\.xlsx$/);
   const book = await readFile((await xl.path())!);
   expect(book.subarray(0, 2).toString()).toBe('PK');

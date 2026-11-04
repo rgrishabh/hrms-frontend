@@ -34,6 +34,12 @@ export function fmtDateTime(iso: string | null | undefined): string {
   return `${fmtDate(local)} ${fmtTime(iso)}`;
 }
 
+/** The tenant-timezone date of a timestamp. Never slice an ISO timestamp: that gives the UTC date. */
+export function fmtDateOfInstant(iso: string | null | undefined): string {
+  if (!iso) return '—';
+  return fmtDate(new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(iso)));
+}
+
 export const fmtMinutes = (m: number | null | undefined) => (m == null ? '—' : `${Math.floor(m / 60)}h ${String(m % 60).padStart(2, '0')}m`);
 
 /** Money in the installation's currency and locale. */

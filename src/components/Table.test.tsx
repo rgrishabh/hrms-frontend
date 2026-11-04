@@ -18,6 +18,16 @@ const columns: Column<Row>[] = [
 afterEach(resetViewport);
 
 describe('Table on desktop', () => {
+  it('a summary row is a real tfoot on desktop and a last card on phones', () => {
+    const foot = (c: Column<Row>, i: number) => (i === 0 ? 'Total' : c.key === 'days' ? '5' : null);
+    const { unmount } = renderUi(<Table label="Days" columns={columns} rows={rows} rowKey={(r) => r.id} foot={foot} />);
+    expect(screen.getByRole('table').querySelector('tfoot')?.textContent).toContain('Total');
+    unmount();
+    setViewport(360);
+    renderUi(<Table label="Days" columns={columns} rows={rows} rowKey={(r) => r.id} foot={foot} />);
+    expect(within(screen.getByRole('list', { name: 'Days' })).getAllByRole('listitem').at(-1)!.textContent).toContain('Total');
+    resetViewport();
+  });
   it('is a real, named table with row semantics', () => {
     renderUi(<Table label="People" columns={columns} rows={rows} rowKey={(r) => r.id} />);
     const table = screen.getByRole('table', { name: 'People' });

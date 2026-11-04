@@ -1,0 +1,17 @@
+.report-grid { display: grid; gap: var(--space-3); grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); }
+.report-tile { position: relative; display: flex; flex-direction: column; gap: var(--space-1); padding: var(--space-3) var(--space-4); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); min-width: 0; overflow-wrap: anywhere; transition: border-color var(--duration) var(--ease); }
+.report-tile:hover { border-color: var(--border-strong); }
+.report-tile__link { font-weight: var(--weight-semibold); }
+/* The whole tile is the target, so it is reachable with a thumb. The link stays the one tab stop. */
+.report-tile__link::after { content: ""; position: absolute; inset: 0; border-radius: var(--radius); }
+.report-tile__link:focus-visible { outline: none; }
+.report-tile__link:focus-visible::after { outline: 2px solid var(--brand-ring); outline-offset: 2px; }
+.report-options { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-3); padding: var(--space-3) var(--space-4); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+.report-options > * { flex: 0 1 200px; min-width: 0; }
+.report-options > :last-child { flex: none; }
+.report-negative { color: var(--danger); font-weight: var(--weight-semibold); }
+.report-email { overflow-wrap: anywhere; }
+@media (max-width: 720px) {
+  .report-options > * { flex: 1 1 100%; }
+  .report-options .btn { width: 100%; }
+}
