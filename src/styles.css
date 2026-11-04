@@ -89,8 +89,8 @@ a.tile:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 .btn.danger { color: var(--danger); border-color: var(--danger); }
 .btn.sm { padding: 4px 10px; font-size: 13px; }
 .btn.lg { padding: 12px 22px; font-size: 16px; }
-label.field { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 500; }
-label.field .hint { font-weight: 400; color: var(--muted); font-size: 12px; }
+label.field, .field[role="group"] { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 500; }
+label.field .hint, .field .hint { font-weight: 400; color: var(--muted); font-size: 12px; }
 label.field .err { color: var(--danger); font-weight: 400; font-size: 12px; }
 input, select, textarea { font: inherit; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--text); min-width: 0; }
 input[type=color] { padding: 2px; height: 36px; width: 56px; }

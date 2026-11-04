@@ -291,8 +291,8 @@ function AdjustForm({ types, year, onClose }: { types: any[]; year: number; onCl
         e.preventDefault(); setError(null);
         try { await api.post('/api/v1/leave/adjustments', f); toast('Balance adjusted'); onClose(); } catch (x) { setError(errText(x)); }
       }}>
-        <Field label="Employee"><input placeholder="Search" value={search} onChange={(e) => setSearch(e.target.value)} />
-          <select required value={f.employeeId} onChange={(e) => setF({ ...f, employeeId: e.target.value })}><option value="">Select…</option>
+        <Field label="Employee"><input placeholder="Search" aria-label="Search employees" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <select required aria-label="Employee" value={f.employeeId} onChange={(e) => setF({ ...f, employeeId: e.target.value })}><option value="">Select…</option>
             {emps.data?.items.map((x: any) => <option key={x.id} value={x.id}>{x.first_name} {x.last_name} ({x.employee_code})</option>)}</select></Field>
         <div className="form-grid">
           <Field label="Leave type"><select value={f.leaveTypeId} onChange={(e) => setF({ ...f, leaveTypeId: e.target.value })}>{types.map((t: any) => <option key={t.id} value={t.id}>{t.name}</option>)}</select></Field>

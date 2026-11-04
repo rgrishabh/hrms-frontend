@@ -58,8 +58,8 @@ function EmployeePicker({ value, onChange, label }: { value: string | null; onCh
   const { data } = useLoad(() => api.get(`/api/v1/employees${qs({ search: search || undefined, pageSize: 20 })}`), [search]);
   return (
     <Field label={label}><div className="stack" style={{ gap: 4 }}>
-      <input placeholder="Search name or code" value={search} onChange={(e) => setSearch(e.target.value)} />
-      <select value={value ?? ''} onChange={(e) => onChange(e.target.value || null)}><option value="">—</option>
+      <input placeholder="Search name or code" aria-label={`Search for ${label.toLowerCase()}`} value={search} onChange={(e) => setSearch(e.target.value)} />
+      <select aria-label={label} value={value ?? ''} onChange={(e) => onChange(e.target.value || null)}><option value="">—</option>
         {(data?.items ?? []).map((e: any) => <option key={e.id} value={e.id}>{e.first_name} {e.last_name ?? ''} ({e.employee_code})</option>)}</select>
     </div></Field>
   );
@@ -399,12 +399,12 @@ function ScheduleInterview({ applicationId, nextRound, onClose, onDone }: { appl
           <Field label="Duration (minutes)"><input type="number" min={10} max={480} value={f.durationMin} onChange={(e) => setF({ ...f, durationMin: Number(e.target.value) })} /></Field>
         </div>
         <Field label="Room or meeting link"><input value={f.location} onChange={(e) => setF({ ...f, location: e.target.value })} /></Field>
-        <Field label="Panel"><div className="stack" style={{ gap: 4 }}>
-          <div className="row" style={{ flexWrap: 'wrap', gap: 4 }}>{panel.map((p) => <span key={p.id} className="badge info">{p.display_name} <button type="button" className="btn sm" onClick={() => setPanel(panel.filter((x) => x.id !== p.id))}>×</button></span>)}</div>
-          <input placeholder="Search people" value={search} onChange={(e) => setSearch(e.target.value)} />
+        <div className="field" role="group" aria-labelledby="iv-panel"><span id="iv-panel">Panel</span><div className="stack" style={{ gap: 4 }}>
+          <div className="row" style={{ flexWrap: 'wrap', gap: 4 }}>{panel.map((p) => <span key={p.id} className="badge info">{p.display_name} <button type="button" className="btn sm" aria-label={`Remove ${p.display_name}`} onClick={() => setPanel(panel.filter((x) => x.id !== p.id))}>×</button></span>)}</div>
+          <input placeholder="Search people" aria-label="Search people for the panel" value={search} onChange={(e) => setSearch(e.target.value)} />
           <div className="stack" style={{ gap: 2, maxHeight: 160, overflow: 'auto' }}>{(users.data?.items ?? []).filter((u: any) => !panel.some((p) => p.id === u.id)).map((u: any) =>
             <button type="button" key={u.id} className="btn sm" style={{ textAlign: 'left' }} onClick={() => setPanel([...panel, u])}>+ {u.display_name}{u.designation ? ` · ${u.designation}` : ''}</button>)}</div>
-        </div></Field>
+        </div></div>
         <ErrorBox error={error} />
         <div className="row"><span className="spacer" /><button type="button" className="btn" onClick={onClose}>Cancel</button><button className="btn primary" disabled={!panel.length}>Schedule</button></div>
       </form>
@@ -422,7 +422,10 @@ function FeedbackForm({ interview, onClose, onDone }: { interview: any; onClose:
         e.preventDefault(); setError(null);
         try { await api.post(`/api/v1/recruitment/interviews/${interview.id}/feedback`, f); toast('Feedback submitted'); onDone(); onClose(); } catch (x) { setError(errText(x)); }
       }}>
-        <Field label="Rating"><div className="row">{[1, 2, 3, 4, 5].map((n) => <button type="button" key={n} className={`btn sm ${f.rating >= n ? 'primary' : ''}`} onClick={() => setF({ ...f, rating: n })}>★ {n}</button>)}</div></Field>
+        {/* A group, not a <label>: a label around buttons would name the first button after the whole row. */}
+        <div className="field" role="group" aria-labelledby="fb-rating"><span id="fb-rating">Rating</span>
+          <div className="row">{[1, 2, 3, 4, 5].map((n) => <button type="button" key={n} aria-label={`${n} of 5`} aria-pressed={f.rating === n}
+            className={`btn sm ${f.rating >= n ? 'primary' : ''}`} onClick={() => setF({ ...f, rating: n })}>★ {n}</button>)}</div></div>
         <Field label="Recommendation"><select required value={f.recommendation} onChange={(e) => setF({ ...f, recommendation: e.target.value })}><option value="">Select…</option>
           {Object.entries(REC).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></Field>
         <Field label="Notes" hint="Evidence for your rating: what the candidate did well or not. Submitted once; colleagues see it after submitting theirs."><textarea required minLength={10} rows={6} value={f.notes} onChange={(e) => setF({ ...f, notes: e.target.value })} /></Field>

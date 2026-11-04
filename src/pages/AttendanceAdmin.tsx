@@ -239,8 +239,8 @@ function MapDialog({ initial, onClose, onDone }: { initial: string; onClose: () 
         catch (err) { toast(errText(err), 'error'); }
       }}>
         <Field label="Device user ID"><input required value={deviceUserId} onChange={(e) => setDeviceUserId(e.target.value)} /></Field>
-        <Field label="Employee"><input placeholder="Search" value={search} onChange={(e) => setSearch(e.target.value)} />
-          <select required value={employeeId} onChange={(e) => setEmployeeId(e.target.value)}><option value="">Select…</option>{emps.data?.items.map((x: any) => <option key={x.id} value={x.id}>{x.first_name} {x.last_name} ({x.employee_code})</option>)}</select></Field>
+        <Field label="Employee"><input placeholder="Search" aria-label="Search employees" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <select required aria-label="Employee" value={employeeId} onChange={(e) => setEmployeeId(e.target.value)}><option value="">Select…</option>{emps.data?.items.map((x: any) => <option key={x.id} value={x.id}>{x.first_name} {x.last_name} ({x.employee_code})</option>)}</select></Field>
         <div className="row"><span className="spacer" /><button type="button" className="btn" onClick={onClose}>Cancel</button><button className="btn primary">Save mapping</button></div>
       </form>
     </Modal>

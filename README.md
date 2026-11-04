@@ -19,7 +19,8 @@ acknowledgement, issuing / returning a calibrated instrument, reports (HR groupi
 download, a manager limited to their own team), the dashboard (tiles per role that agree with
 the reports they open), leave from application through manager approval to cancellation, a
 returned request with a required reason, and an expense claim from receipt upload through manager
-and finance approval, a maker–checker payment batch and payment. The flows clean up after
+and finance approval, a maker–checker payment batch and payment, and recruitment from a manager's
+requisition through candidate, interview feedback, offer and management sign-off to the hire. The flows clean up after
 themselves (or use unique names and free dates), so the suite can be re-run on the same data. They need an installation loaded
 with the backend's **synthetic** demo data (`npm run demo` in hrms-backend) and `MFA_ENFORCEMENT=off`.
 
