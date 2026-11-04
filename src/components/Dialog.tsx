@@ -21,13 +21,15 @@ export interface DialogProps {
   kind: 'modal' | 'drawer';
   side?: 'left' | 'right';
   className?: string;
+  /** For a dialog whose form resets after saving: says when there is unsaved work, instead of "anything typed since opening". */
+  dirty?: boolean;
 }
 
 /**
  * The shared base of Modal and Drawer: portal, focus trap, focus restore, stack-aware Escape, scroll
  * lock, and a guard so a filled-in form is not lost to a stray click or Escape.
  */
-export function Dialog({ title, description, onClose, children, footer, persistent, size = 'md', kind, side = 'right', className }: DialogProps) {
+export function Dialog({ title, description, onClose, children, footer, persistent, size = 'md', kind, side = 'right', className, dirty: dirtyProp }: DialogProps) {
   const panel = useRef<HTMLDivElement>(null);
   const titleId = useId();
   const descriptionId = useId();
@@ -37,7 +39,7 @@ export function Dialog({ title, description, onClose, children, footer, persiste
 
   const dismiss = () => {
     if (persistent) return;
-    if (dirty) { setAskDiscard(true); return; }
+    if (dirtyProp ?? dirty) { setAskDiscard(true); return; }
     onClose();
   };
 
@@ -92,7 +94,7 @@ export function Dialog({ title, description, onClose, children, footer, persiste
         tabIndex={-1}
         className={[`dialog dialog--${kind} dialog--${size}`, className].filter(Boolean).join(' ')}
         onKeyDown={onKeyDown}
-        onInput={() => setDirty(true)}
+        onInput={(e) => { if (panel.current?.contains(e.target as Node)) setDirty(true); }}
       >
         <header className="dialog__header">
           <div className="grow">
