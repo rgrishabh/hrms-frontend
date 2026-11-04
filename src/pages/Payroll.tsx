@@ -103,6 +103,7 @@ function RunDetail({ id, onClose }: { id: string; onClose: () => void }) {
             {r.status === 'finalized' && <button className="btn primary" onClick={() => setPaid(true)}>Mark paid</button>}
             {editable && <button className="btn danger" onClick={() => run('cancel', undefined, 'Cancelled')}>Cancel run</button>}
             <span className="spacer" />
+            <a className="btn sm" href={`/api/v1/payroll/runs/${id}/register.xlsx`} style={{ textDecoration: 'none' }}>Register Excel</a>
             <a className="btn sm" href={`/api/v1/payroll/runs/${id}/register.csv`} style={{ textDecoration: 'none' }}>Register CSV</a>
             {['finalized', 'paid'].includes(r.status) && <>{['bank', 'pf', 'esi'].map((x) => <a key={x} className="btn sm" href={`/api/v1/payroll/runs/${id}/${x}.csv`} style={{ textDecoration: 'none' }}>{x.toUpperCase()} CSV</a>)}</>}
           </div>}

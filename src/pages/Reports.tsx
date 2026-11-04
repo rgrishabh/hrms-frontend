@@ -35,7 +35,7 @@ export function Reports() {
   const def = key ? items.find((i) => i.key === key) : undefined;
   return (
     <div className="stack">
-      <div><h1>Reports</h1><p className="sub">Headcount, attrition, attendance, leave, pay and compliance reports. View on screen or download as CSV; downloads are recorded.</p></div>
+      <div><h1>Reports</h1><p className="sub">Headcount, attrition, attendance, leave, pay and compliance reports. View on screen or download as Excel or CSV; downloads are recorded.</p></div>
       {snapshot ? <SnapshotView id={snapshot} />
         : !items.length ? <Empty>No reports are available for your role.</Empty>
         : key && !def ? <><ErrorBox error="This report is not available to you." /><Link to="/reports">All reports</Link></>
@@ -249,6 +249,7 @@ function Result({ data, csvHref }: { data: ReportData; csvHref: string }) {
         <span className="muted">{data.rows.length === 1 ? '1 row' : `${nf.format(data.rows.length)} rows`} · generated {fmtDateTime(data.generatedAt)}</span>
         <span className="spacer" />
         {data.rows.length > 10 && textCols.length > 0 && <input type="search" placeholder="Filter rows" aria-label="Filter rows" value={filter} onChange={(e) => setFilter(e.target.value)} style={{ maxWidth: 220 }} />}
+        <a className="btn sm" href={csvHref.replace('/export.csv', '/export.xlsx')} style={{ textDecoration: 'none' }} download>Download Excel</a>
         <a className="btn sm" href={csvHref} style={{ textDecoration: 'none' }} download>Download CSV</a>
       </div>
       {data.notes.map((n) => <div key={n} className="muted" style={{ fontSize: 13 }}>{n}</div>)}

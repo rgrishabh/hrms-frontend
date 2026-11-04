@@ -1,8 +1,24 @@
 import { test, expect } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
+import { inflateRawSync } from 'node:zlib';
 import { login, noErrors } from './helpers';
 
-test('HR runs headcount, regroups it and downloads the CSV', async ({ page }) => {
+/** The text of one part of a downloaded .xlsx (a ZIP), read from its central directory. */
+function xlsxPart(buf: Buffer, name: string): string {
+  const eocd = buf.lastIndexOf(Buffer.from([0x50, 0x4b, 0x05, 0x06]));
+  let p = buf.readUInt32LE(eocd + 16);
+  for (let i = 0; i < buf.readUInt16LE(eocd + 10); i++) {
+    const size = buf.readUInt32LE(p + 20), n = buf.readUInt16LE(p + 28), local = buf.readUInt32LE(p + 42);
+    if (buf.toString('utf8', p + 46, p + 46 + n) === name) {
+      const start = local + 30 + buf.readUInt16LE(local + 26) + buf.readUInt16LE(local + 28);
+      return inflateRawSync(buf.subarray(start, start + size)).toString('utf8');
+    }
+    p += 46 + n + buf.readUInt16LE(p + 30) + buf.readUInt16LE(p + 32);
+  }
+  throw new Error(`${name} not in workbook`);
+}
+
+test('HR runs headcount, regroups it and downloads the CSV and Excel', async ({ page }) => {
   await login(page, 'hr.head');
   await page.getByLabel('Main navigation').getByRole('link', { name: 'Reports', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'People' })).toBeVisible();
@@ -24,6 +40,14 @@ test('HR runs headcount, regroups it and downloads the CSV', async ({ page }) =>
   const lines = csv.trim().split(/\r\n/);
   expect(lines[0]).toMatch(/^Branch,Headcount,/);
   expect(lines.at(-1)).toMatch(new RegExp(`^Total,${total},`));
+
+  const [xl] = await Promise.all([page.waitForEvent('download'), page.getByRole('link', { name: 'Download Excel' }).click()]);
+  expect(xl.suggestedFilename()).toMatch(/^headcount-\d{4}-\d{2}-\d{2}\.xlsx$/);
+  const book = await readFile((await xl.path())!);
+  expect(book.subarray(0, 2).toString()).toBe('PK');
+  const sheet = xlsxPart(book, 'xl/worksheets/sheet1.xml');
+  expect(sheet).toContain('<t xml:space="preserve">Branch</t>');
+  expect(sheet).toMatch(new RegExp(`<t xml:space="preserve">Total</t></is></c><c r="B\\d+"[^>]*><v>${total}</v>`));
 
   // Sorting by a number column puts the largest first on the second click.
   await table.getByRole('button', { name: 'Headcount' }).click();
