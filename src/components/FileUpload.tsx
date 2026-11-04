@@ -66,6 +66,7 @@ export function FileUpload({ label, hint, accept, maxBytes, file, onChange, requ
             required={required}
             aria-describedby={hint ? `${id}-hint` : undefined}
             aria-invalid={shown ? true : undefined}
+            onInvalid={(e) => { e.preventDefault(); setLocalError(e.currentTarget.validationMessage); }}
             onChange={(e) => take(e.target.files?.[0])}
           />
         </div>

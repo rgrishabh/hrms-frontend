@@ -2,3 +2,4 @@
 .notice--info { background: var(--info-bg); color: var(--info); }
 .notice--ok { background: var(--ok-bg); color: var(--ok); }
 .notice--warn { background: var(--warn-bg); color: var(--warn); }
+.notice a { color: inherit; text-decoration: underline; }
