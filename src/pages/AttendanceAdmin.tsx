@@ -9,11 +9,12 @@ type Tab = 'shifts' | 'holidays' | 'devices' | 'locks';
 export function AttendanceAdmin() {
   const { can, canAny, hasModule } = useAuth();
   const tabs: { key: Tab; label: string }[] = [];
-  if (canAny('attendance.configure')) tabs.push({ key: 'shifts', label: 'Shifts' }, { key: 'holidays', label: 'Holidays' });
+  if (canAny('attendance.configure') && hasModule('shifts')) tabs.push({ key: 'shifts', label: 'Shifts' });
+  if (canAny('attendance.configure') && hasModule('holidays')) tabs.push({ key: 'holidays', label: 'Holidays' });
   if (canAny('attendance.devices.manage') && hasModule('attendance')) tabs.push({ key: 'devices', label: 'Biometric devices' });
   if (canAny('attendance.lock', 'attendance.read')) tabs.push({ key: 'locks', label: 'Payroll locks' });
   const [tab, setTab] = useState<Tab>(tabs[0]?.key ?? 'shifts');
-  if (!tabs.length) return <Empty>You do not have attendance administration permissions.</Empty>;
+  if (!tabs.length) return <Empty>There is nothing to set up here with your permissions and the modules that are on.</Empty>;
   return (
     <div className="stack">
       <div><h1>Attendance setup</h1><p className="sub">Shift policies, holiday calendars, devices and payroll period locks.</p></div>
