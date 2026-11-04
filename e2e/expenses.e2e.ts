@@ -75,7 +75,7 @@ test('an expense claim goes from the employee through manager and finance approv
   await page.goto('/expenses');
   const row = page.getByRole('row').filter({ hasText: title });
   await expect(row).toContainText('Paid');
-  await row.click();
+  await row.getByRole('button', { name: title }).click();
   await expect(page.getByRole('dialog', { name: title })).toContainText(`paid, ref ${ref}`);
   await noErrors(page);
 });
