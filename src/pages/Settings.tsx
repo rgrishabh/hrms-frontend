@@ -54,7 +54,9 @@ function ValueEditor({ s, value, onChange }: { s: any; value: any; onChange: (v:
   return <input value={value ?? ''} onChange={(e) => onChange(e.target.value)} />;
 }
 
-const show = (v: any, s: any) => (s.control === 'weekdays' ? (v as number[]).map((i) => WEEKDAYS[i]).join(', ') || 'None' : s.control === 'boolean' ? (v ? 'Enabled' : 'Disabled') : String(v));
+const show = (v: any, s: any) => (v === null || v === '' ? (s.options?.find((o: any) => o.value === '')?.label ?? 'Not set')
+  : s.control === 'weekdays' ? (v as number[]).map((i) => WEEKDAYS[i]).join(', ') || 'None' : s.control === 'boolean' ? (v ? 'Enabled' : 'Disabled')
+  : s.control === 'select' ? (s.options?.find((o: any) => o.value === v)?.label ?? String(v)) : String(v));
 
 function SettingRow({ s, branchId, onSaved }: { s: any; branchId: string; onSaved: () => void }) {
   const toast = useToast();
