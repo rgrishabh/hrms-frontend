@@ -3,6 +3,7 @@ import { api } from '../api';
 import { fmtDateTime } from '../format';
 import { useLoad, Loading, ErrorBox, StatusBadge, Empty, Confirm, Tabs, Modal, useToast } from '../ui';
 import { ProfileChangeView } from './PersonalDetails';
+import { Delegations } from './Delegations';
 
 const ENTITY_LABEL: Record<string, string> = { attendance_regularization: 'Attendance correction', leave_request: 'Leave', expense_claim: 'Expense claim', lab_authorization: 'Technical authorization', job_requisition: 'Job requisition', job_offer: 'Job offer', separation: 'Separation', probation_review: 'Probation review', salary_change: 'Salary change', payroll_run: 'Payroll run', overtime_claim: 'Overtime', field_duty: 'Field duty', travel_request: 'Travel', employee_loan: 'Advance / loan', employee_profile_change: 'Personal details' };
 
@@ -17,7 +18,8 @@ function Detail({ id, onClose }: { id: string; onClose: () => void }) {
           {data.steps.map((s: any) => (
             <div key={s.step_index} className="card" style={{ padding: 12 }}>
               <div className="row"><strong>Step {s.step_index + 1}</strong><span className="muted">{s.approver_name ?? (['attendance.approve', 'leave.approve'].includes(s.approver_permission) ? 'HR approvers' : s.approver_permission === 'expenses.approve' ? 'Finance approvers' : s.approver_permission === 'competency.authorize' ? 'Quality' : s.approver_permission === 'recruitment.approve' || s.approver_permission === 'lifecycle.manage' || s.approver_permission === 'profile.approve' ? 'HR approvers' : s.approver_permission === 'payroll.approve' ? 'Payroll approvers' : s.approver_permission)}</span><span className="spacer" /><StatusBadge status={s.status} /></div>
-              {s.acted_by_name && <div className="muted">{s.acted_by_name} · {fmtDateTime(s.acted_at)}</div>}
+              {s.escalated_at && <div className="muted">Escalated to {s.escalated_to_name ?? 'HR'} · {fmtDateTime(s.escalated_at)}</div>}
+              {s.acted_by_name && <div className="muted">{s.acted_by_name}{s.acted_for_name ? ` for ${s.acted_for_name}` : ''}{s.acted_via === 'escalation' ? ' (escalated)' : ''} · {fmtDateTime(s.acted_at)}</div>}
               {s.comment && <div>“{s.comment}”</div>}
             </div>
           ))}
@@ -29,7 +31,7 @@ function Detail({ id, onClose }: { id: string; onClose: () => void }) {
 
 export function Approvals() {
   const toast = useToast();
-  const [tab, setTab] = useState<'inbox' | 'mine'>('inbox');
+  const [tab, setTab] = useState<'inbox' | 'mine' | 'away'>('inbox');
   const inbox = useLoad(() => api.get('/api/v1/approvals/inbox'), []);
   const mine = useLoad(() => api.get('/api/v1/approvals/mine'), []);
   const [action, setAction] = useState<{ id: string; kind: 'approve' | 'reject' | 'return'; summary: string } | null>(null);
@@ -38,11 +40,13 @@ export function Approvals() {
   return (
     <div className="stack">
       <div><h1>Approvals</h1><p className="sub">You can never approve your own requests.</p></div>
-      <Tabs tabs={[{ key: 'inbox', label: `Awaiting me (${inbox.data?.items.length ?? 0})` }, { key: 'mine', label: 'My requests' }]} value={tab} onChange={setTab} />
+      <Tabs tabs={[{ key: 'inbox', label: `Awaiting me (${inbox.data?.items.length ?? 0})` }, { key: 'mine', label: 'My requests' }, { key: 'away', label: "While I'm away" }]} value={tab} onChange={setTab} />
       {tab === 'inbox' && (inbox.loading ? <Loading /> : inbox.error ? <ErrorBox error={inbox.error} /> : !inbox.data.items.length ? <Empty>Nothing waiting for you.</Empty> : (
         <div className="table-wrap"><table className="t"><thead><tr><th>Request</th><th>Type</th><th>From</th><th>Submitted</th><th /></tr></thead><tbody>
           {inbox.data.items.map((r: any) => (
-            <tr key={r.id}><td><button className="btn sm" style={{ border: 'none', padding: 0, background: 'none', color: 'var(--brand)', textAlign: 'left' }} onClick={() => setDetail(r.id)}>{r.summary}</button></td>
+            <tr key={r.id}><td><button className="btn sm" style={{ border: 'none', padding: 0, background: 'none', color: 'var(--brand)', textAlign: 'left' }} onClick={() => setDetail(r.id)}>{r.summary}</button>
+                {r.via === 'delegation' && <div className="muted">Covering for {r.on_behalf_of}</div>}
+                {r.via === 'escalation' && <div className="muted">Escalated: waiting on {r.on_behalf_of ?? 'the approver'}</div>}</td>
               <td>{ENTITY_LABEL[r.entity_type] ?? r.entity_type}</td><td>{r.requester_name}</td><td>{fmtDateTime(r.created_at)}</td>
               <td><div className="row" style={{ flexWrap: 'nowrap' }}>
                 <button className="btn sm primary" onClick={() => setAction({ id: r.id, kind: 'approve', summary: r.summary })}>Approve</button>
@@ -59,6 +63,7 @@ export function Approvals() {
               <td>{r.status === 'pending' && <button className="btn sm" onClick={() => setCancelId(r.id)}>Cancel</button>}</td></tr>))}
         </tbody></table></div>
       ))}
+      {tab === 'away' && <Delegations onChange={inbox.reload} />}
       {action && <Confirm title={`${action.kind[0]!.toUpperCase()}${action.kind.slice(1)} request`} message={action.summary}
         confirmLabel={action.kind === 'approve' ? 'Approve' : action.kind === 'reject' ? 'Reject' : 'Return for correction'} danger={action.kind === 'reject'}
         requireComment={action.kind !== 'approve'} onClose={() => setAction(null)}
