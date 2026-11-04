@@ -3,7 +3,7 @@ import { api } from '../api';
 import { fmtDateTime } from '../format';
 import { useLoad, Loading, ErrorBox, StatusBadge, Empty, Confirm, Tabs, Modal, useToast } from '../ui';
 
-const ENTITY_LABEL: Record<string, string> = { attendance_regularization: 'Attendance correction', leave_request: 'Leave', expense_claim: 'Expense claim', lab_authorization: 'Technical authorization', job_requisition: 'Job requisition', job_offer: 'Job offer', separation: 'Separation', probation_review: 'Probation review', salary_change: 'Salary change', payroll_run: 'Payroll run', overtime_claim: 'Overtime', field_duty: 'Field duty' };
+const ENTITY_LABEL: Record<string, string> = { attendance_regularization: 'Attendance correction', leave_request: 'Leave', expense_claim: 'Expense claim', lab_authorization: 'Technical authorization', job_requisition: 'Job requisition', job_offer: 'Job offer', separation: 'Separation', probation_review: 'Probation review', salary_change: 'Salary change', payroll_run: 'Payroll run', overtime_claim: 'Overtime', field_duty: 'Field duty', travel_request: 'Travel' };
 
 function Detail({ id, onClose }: { id: string; onClose: () => void }) {
   const { data, loading, error } = useLoad(() => api.get(`/api/v1/approvals/${id}`), [id]);
