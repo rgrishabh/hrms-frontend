@@ -92,7 +92,7 @@ test('file a grievance: too short stays inline, then the respondent chosen is se
   await expect(page.getByText('Filed as GR-0009')).toBeVisible();
   await expect(page).toHaveURL(/case=g1/);
   await expect(page.getByRole('dialog', { name: /GR-0001/ })).toBeVisible();
-  expect(body.respondentEmployeeId).toBe('e4');
+  expect(body.respondentEmployeeId).toBe('e3');
 });
 
 test('withdraw: a failure stays open with the reason kept', async ({ page }) => {

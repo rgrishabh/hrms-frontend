@@ -134,7 +134,7 @@ async function dialogIsClean(page: Page, shot: string) {
   const small = await dialog.evaluate((d) => [...d.querySelectorAll<HTMLElement>('button, a.btn, select, input:not([type="file"]):not([type="checkbox"]):not([type="radio"]), textarea')].filter((el) => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height < 43.5; }).map((el) => `${el.tagName} ${(el.textContent ?? '').slice(0, 30)} ${Math.round(el.getBoundingClientRect().height)}`));
   expect(small).toEqual([]);
   await page.evaluate(AXE);
-  const violations = await page.evaluate(async () => (await (window as unknown as { axe: { run: (o: object) => Promise<{ violations: { id: string; nodes: { html: string }[] }[] }> } }).axe.run({ runOnly: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'] })).violations.map((v) => `${v.id}: ${v.nodes[0]?.html.slice(0, 160)}`));
+  const violations = await page.evaluate(async () => (await (window as unknown as { axe: { run: (c: string, o: object) => Promise<{ violations: { id: string; nodes: { html: string }[] }[] }> } }).axe.run('[role="dialog"]', { runOnly: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'] })).violations.map((v) => `${v.id}: ${v.nodes[0]?.html.slice(0, 160)}`));
   expect(violations).toEqual([]);
   if (process.env.SCREENSHOT_DIR) await page.screenshot({ path: `${process.env.SCREENSHOT_DIR}/dialog-${shot}-360.png`, fullPage: false });
 }

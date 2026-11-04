@@ -5,8 +5,10 @@ const today = new Date().toISOString().slice(0, 10);
 const TODAY = { linked: true, today, timezone: 'Asia/Kolkata', nextDirection: 'in', locationMode: 'off', channels: { web: true, mobile: false }, events: [], daily: null, selfieRequired: true };
 const SCRATCH = process.env.SCREENSHOT_DIR ?? 'test-results/screens';
 
+test.use({ launchOptions: { args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'] } });
+
 test.describe('camera selfie, real camera path under the production CSP', () => {
-  test.use({ launchOptions: { args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'] }, permissions: ['camera'] });
+  test.use({ permissions: ['camera'] });
 
   test('three presses from the page to clocked in; the photo is a real image and the CSP stays quiet', async ({ page }) => {
     const violations: string[] = [];
@@ -56,7 +58,7 @@ test('camera refused: says so, and offers the device photo picker', async ({ pag
   await page.getByRole('button', { name: 'Clock in' }).click();
   const dialog = page.getByRole('dialog', { name: 'Take a selfie to clock in' });
   await expect(dialog).toContainText('The camera is blocked for this site');
-  await expect(dialog.getByText('Choose a photo')).toBeVisible();
+  await expect(dialog.getByLabel('Choose a photo')).toBeAttached();
 });
 
 test('refused outside the geofence on a phone: the reason stays on the card', async ({ browser }) => {

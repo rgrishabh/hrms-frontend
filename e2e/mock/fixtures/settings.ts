@@ -133,8 +133,8 @@ const POLICY_DETAIL = { id: 'p1', code: 'COC', title: 'Code of conduct', categor
 const ACKS = page([{ employee_id: 'e1', name: LONG.name, employee_code: LONG.code, branch: LONG.branch, department: LONG.title, acknowledged_at: null }, { employee_id: 'e2', name: 'Meera Nair', employee_code: 'EMP-1002', branch: 'Mumbai HQ', department: 'Quality Control', acknowledged_at: null }, { employee_id: 'e3', name: 'Rohan Iyer', employee_code: 'EMP-1005', branch: null, department: null, acknowledged_at: iso('2026-02-02') }]);
 
 export const respond: Fixture = (url, persona, method) => {
-  if (method !== 'GET') return { ok: true };
   const p = url.pathname.replace('/api/v1', '');
+  if (method !== 'GET') return /^\/(tenant|org|reports|policies)(\/|$)/.test(p) ? { ok: true } : undefined;
   if (p === '/org') return ORG;
   if (p === '/tenant/settings') return { items: SETTINGS };
   if (p === '/tenant/installation') return INSTALLATION;

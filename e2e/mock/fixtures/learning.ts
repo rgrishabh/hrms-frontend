@@ -71,7 +71,7 @@ const caseDetail = (id: string) => {
 export const respond: Fixture = (url, persona, method) => {
   const p = url.pathname.replace('/api/v1', '');
   if (!p.startsWith('/competency') && !p.startsWith('/cases')) return undefined;
-  if (method !== 'GET') return { ok: true, id: 'g1', reference: 'GR-0009', expiresOn: FUTURE };
+  if (method !== 'GET') return /^\/(competency|cases)(\/|$)/.test(p) ? { ok: true, id: 'g1', reference: 'GR-0009', expiresOn: FUTURE } : undefined;
   if (p === '/competency/me') return { authorizations: AUTHS.slice(0, 2), training: MY_TRAINING };
   if (p === '/competency/matrix') return MATRIX;
   if (p === '/competency/methods') return { items: METHODS };

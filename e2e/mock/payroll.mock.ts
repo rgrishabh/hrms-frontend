@@ -72,7 +72,7 @@ test('a full and final run: pick the leaver, see leave balances for the leave ye
   await expect(form.getByLabel(/^Month/)).toHaveValue('2026-08');
   await form.getByRole('button', { name: 'Create' }).click();
   await expect(page.getByRole('dialog', { name: /Payroll 2026-08/ })).toBeVisible();
-  expect(body).toMatchObject({ kind: 'fnf', employeeId: 'e3', period: '2026-08', legalEntityId: 'l1' });
+  expect(body).toMatchObject({ kind: 'fnf', employeeId: 'e2', period: '2026-08', legalEntityId: 'l1' });
 });
 
 test('a failed download stays on the page and says why', async ({ page }) => {

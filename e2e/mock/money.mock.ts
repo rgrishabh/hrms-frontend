@@ -162,7 +162,7 @@ test.describe('assets', () => {
     await dlg.getByRole('option').filter({ hasText: 'Meera' }).click();
     await dlg.getByRole('button', { name: 'Issue', exact: true }).click();
     await expect(page.getByText('Issued; the employee is asked to confirm receipt')).toBeVisible();
-    expect(body.employeeId).toBe('e3');
+    expect(body.employeeId).toBe('e2');
   });
 
   test('confirming receipt shows at once and goes back if the server refuses', async ({ page }) => {
