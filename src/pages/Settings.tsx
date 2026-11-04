@@ -247,6 +247,8 @@ function Users() {
   const [edit, setEdit] = useState<any>(null);
   const allRoles = [...(roles.data?.system ?? []), ...(roles.data?.custom ?? [])];
   const roleName = (k: string) => allRoles.find((r: any) => r.key === k)?.name ?? k;
+  // The server refuses changes to an account holding roles this user may not grant; say so instead of offering a form that fails.
+  const manageable = (u: any) => u.id === me!.user.id || u.roles.every((k: string) => allRoles.find((r: any) => r.key === k)?.grantable !== false);
   return (
     <div className="stack">
       <div className="row"><input placeholder="Search users" aria-label="Search users" value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} style={{ flex: '1 1 240px' }} /><button className="btn primary" onClick={() => setEdit({})}>Add user</button></div>
@@ -256,7 +258,7 @@ function Users() {
           <div className="table-wrap"><table className="t"><thead><tr><th>User</th><th>Roles</th><th>Employee</th><th>Status</th><th>Last sign-in</th><th /></tr></thead><tbody>
             {data.items.map((u: any) => <tr key={u.id}><td><div>{u.display_name}</div><div className="muted">{u.email}</div>{u.mfa_enabled && <span className="badge ok">2FA</span>}</td><td>{u.roles.map(roleName).join(', ')}</td>
               <td className="mono">{u.employee_code ?? '—'}</td><td><StatusBadge status={u.status} />{u.locked && <span className="badge warn" style={{ marginLeft: 4 }}>Locked</span>}</td>
-              <td>{u.last_login_at ? fmtDateTime(u.last_login_at) : '—'}</td><td><button className="btn sm" onClick={() => setEdit(u)}>Manage</button></td></tr>)}
+              <td>{u.last_login_at ? fmtDateTime(u.last_login_at) : '—'}</td><td>{manageable(u) ? <button className="btn sm" onClick={() => setEdit(u)}>Manage</button> : <span className="muted" style={{ fontSize: 12 }}>Administrator only</span>}</td></tr>)}
           </tbody></table></div>
           <Pager page={data.page} pageSize={data.pageSize} total={data.total} onPage={setPage} />
         </>
@@ -292,13 +294,14 @@ function UserForm({ user, self, roles, onClose, onSaved }: any) {
             <select aria-label="Link to employee record" value={f.employeeId} onChange={(e) => setF({ ...f, employeeId: e.target.value })}><option value="">Not linked</option>{emps.data?.items.filter((x: any) => !x.user_id).map((x: any) => <option key={x.id} value={x.id}>{x.first_name} {x.last_name} ({x.employee_code})</option>)}</select></Field>
         </>}
         <fieldset style={{ border: '1px solid var(--border)', borderRadius: 6 }}><legend>Roles</legend>
-          <div className="grid grid-2" style={{ gap: 6 }}>{roles.map((r: any) => (
-            <label key={r.key} className="row"><input type="checkbox" checked={selected.includes(r.key)} disabled={self && r.key === 'tenant_admin'}
+          <div className="grid grid-2" style={{ gap: 6 }}>{roles.filter((r: any) => r.grantable !== false || selected.includes(r.key)).map((r: any) => (
+            <label key={r.key} className="row"><input type="checkbox" checked={selected.includes(r.key)} disabled={(self && r.key === 'tenant_admin') || r.grantable === false}
               onChange={(e) => setSelected(e.target.checked ? [...selected, r.key] : selected.filter((x) => x !== r.key))} />{r.name}</label>))}</div>
         </fieldset>
         {!isNew && !self && <Field label="Account status"><select value={status} onChange={(e) => setStatus(e.target.value)}><option value="active">Active</option><option value="disabled">Disabled (signs out immediately)</option></select></Field>}
         {!isNew && user.locked && <button type="button" className="btn" onClick={async () => { await api.patch(`/api/v1/tenant/users/${user.id}`, { unlock: true }); onSaved(); onClose(); }}>Unlock account</button>}
         {!isNew && !self && user.mfa_enabled && <button type="button" className="btn" onClick={async () => { try { await api.patch(`/api/v1/tenant/users/${user.id}`, { resetMfa: true }); onSaved(); onClose(); } catch (x) { setError(errText(x)); } }}>Reset two-factor authentication (signs the user out)</button>}
+        {roles.some((r: any) => r.grantable === false) && <div className="muted" style={{ fontSize: 12 }}>Roles with permissions you do not hold yourself can only be granted by an administrator.</div>}
         {!isNew && <div className="muted" style={{ fontSize: 12 }}>Changing roles signs the user out so new permissions apply immediately.</div>}
         <ErrorBox error={error} />
         <div className="row"><span className="spacer" /><button type="button" className="btn" onClick={onClose}>Cancel</button><button className="btn primary" disabled={!selected.length}>Save</button></div>
