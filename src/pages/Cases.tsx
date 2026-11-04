@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { api, qs } from '../api';
 import { useAuth } from '../auth';
 import { fmtDate, fmtDateTime, todayLocal } from '../format';
-import { useLoad, Loading, ErrorBox, Empty, Modal, Field, Tabs, StatusBadge, Confirm, useToast, errText } from '../ui';
+import { useLoad, LoadFailed, Loading, ErrorBox, Empty, Modal, Field, Tabs, StatusBadge, Confirm, useToast, errText } from '../ui';
 
 type Tab = 'mine' | 'grievances' | 'posh' | 'committee';
 const POSH_CAT: Record<string, string> = { verbal: 'Verbal', physical: 'Physical', non_verbal: 'Non-verbal / gestures', quid_pro_quo: 'Quid pro quo', hostile_environment: 'Hostile environment', online: 'Online / messages', other: 'Other' };
@@ -29,7 +29,7 @@ export function Cases() {
       {tab === 'mine' && <Mine onOpen={(id) => setParams({ tab, case: id })} />}
       {tab === 'grievances' && <Handling kind="grievance" onOpen={(id) => setParams({ tab, case: id })} />}
       {tab === 'posh' && <Handling kind="posh" onOpen={(id) => setParams({ tab, case: id })} />}
-      {tab === 'committee' && <Committee data={ic.data} reload={ic.reload} />}
+      {tab === 'committee' && (ic.error ? <LoadFailed error={ic.error} onRetry={ic.reload} /> : <Committee data={ic.data} reload={ic.reload} />)}
       {open && <CaseDetail id={open} onClose={() => setParams({ tab })} />}
     </div>
   );
@@ -46,7 +46,8 @@ function Mine({ onOpen }: { onOpen: (id: string) => void }) {
       <div className="row"><span className="spacer" />
         {hasModule('grievance') && <button className="btn" onClick={() => setFiling('grievance')}>Raise a grievance</button>}
         {hasModule('posh') && <button className="btn primary" onClick={() => setFiling('posh')}>File a POSH complaint</button>}</div>
-      {g.loading || p.loading ? <Loading /> : !items.length ? <Empty>You have not raised any case.</Empty> : (
+      <ErrorBox error={g.error ?? p.error} />
+      {g.loading || p.loading ? <Loading /> : g.error || p.error ? null : !items.length ? <Empty>You have not raised any case.</Empty> : (
         <div className="table-wrap"><table className="t"><thead><tr><th>Reference</th><th>Kind</th><th>Category</th><th>Filed</th><th>Status</th></tr></thead><tbody>
           {items.map((c: any) => <tr key={c.id} className="clickable" onClick={() => onOpen(c.id)}><td className="mono">{c.reference}</td><td>{c.kind === 'posh' ? 'POSH' : 'Grievance'}{c.anonymous ? ' (anonymous)' : ''}</td>
             <td>{(c.kind === 'posh' ? POSH_CAT : GR_CAT)[c.category]}</td><td>{fmtDate(c.received_at.slice(0, 10))}</td><td><StatusBadge status={c.status} /></td></tr>)}
@@ -104,7 +105,7 @@ function Handling({ kind, onOpen }: { kind: 'posh' | 'grievance'; onOpen: (id: s
         {Object.entries(STATUS).filter(([k]) => (kind === 'posh' ? ['received', 'conciliation', 'inquiry', 'report_submitted', 'closed', 'withdrawn'] : ['open', 'in_progress', 'resolved', 'reopened', 'closed', 'withdrawn']).includes(k))
           .map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></Field></div>
       <ErrorBox error={error} />
-      {loading ? <Loading /> : !data.items.length ? <Empty>No cases.</Empty> : (
+      {loading ? <Loading /> : !data ? null : !data.items.length ? <Empty>No cases.</Empty> : (
         <div className="table-wrap"><table className="t"><thead><tr><th>Reference</th><th>Category</th><th>Complainant</th><th>Received</th><th>{kind === 'posh' ? 'Inquiry / report due' : 'Response due'}</th>{kind === 'grievance' && <th>Handler</th>}<th>Status</th></tr></thead><tbody>
           {data.items.map((c: any) => { const due = kind === 'posh' ? (c.status === 'report_submitted' ? c.report_due : c.inquiry_due) : c.sla_due; const open = !['closed', 'withdrawn'].includes(c.status);
             return <tr key={c.id} className="clickable" onClick={() => onOpen(c.id)}><td className="mono">{c.reference}</td><td>{(kind === 'posh' ? POSH_CAT : GR_CAT)[c.category]}</td>

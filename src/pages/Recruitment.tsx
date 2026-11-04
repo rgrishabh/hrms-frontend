@@ -83,7 +83,7 @@ function Requisitions({ onOpenApp }: { onOpenApp: (id: string) => void }) {
           employmentType: 'permanent', positions: 1, justification: '', budgetCtcMax: '', hiringManagerId: null, targetDate: '' })}>New requisition</button>}
       </div>
       <ErrorBox error={error} />
-      {loading ? <Loading /> : !data.items.length ? <Empty>No requisitions.</Empty> : (
+      {loading ? <Loading /> : !data ? null : !data.items.length ? <Empty>No requisitions.</Empty> : (
         <>
           <div className="table-wrap"><table className="t"><thead><tr><th>Req</th><th>Position</th><th>Branch</th><th>Hiring manager</th><th>Filled</th><th>Pipeline</th><th>Status</th></tr></thead><tbody>
             {data.items.map((r: any) => <tr key={r.id} className="clickable" onClick={() => setOpen(r.id)}>
@@ -94,8 +94,8 @@ function Requisitions({ onOpenApp }: { onOpenApp: (id: string) => void }) {
           <Pager page={data.page} pageSize={data.pageSize} total={data.total} onPage={setPage} />
         </>
       )}
-      {editing && <RequisitionForm init={editing} onClose={() => setEditing(null)} onSaved={(id) => { reload(); setOpen(id); }} />}
-      {open && <RequisitionDetail id={open} onClose={() => { setOpen(null); reload(); }} onEdit={(r) => setEditing(r)} onOpenApp={onOpenApp} />}
+      {editing && <RequisitionForm init={editing} onClose={() => { if (editing.id) setOpen(editing.id); setEditing(null); }} onSaved={(id) => { setEditing(null); reload(); setOpen(id); }} />}
+      {open && !editing && <RequisitionDetail id={open} onClose={() => { setOpen(null); reload(); }} onEdit={(r) => { setEditing(r); setOpen(null); }} onOpenApp={onOpenApp} />}
     </div>
   );
 }
@@ -211,7 +211,7 @@ function Candidates() {
       <div className="row"><input placeholder="Search name, email, phone, company" value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} style={{ flex: 1, maxWidth: 360 }} />
         <span className="spacer" />{can('recruitment.manage') && <button className="btn primary" onClick={() => setCreating(true)}>New candidate</button>}</div>
       <ErrorBox error={error} />
-      {loading ? <Loading /> : !data.items.length ? <Empty>No candidates.</Empty> : (
+      {loading ? <Loading /> : !data ? null : !data.items.length ? <Empty>No candidates.</Empty> : (
         <>
           <div className="table-wrap"><table className="t"><thead><tr><th>Name</th><th>Contact</th><th>Current role</th><th>Experience</th><th>Source</th><th>Applications</th><th>Keep until</th></tr></thead><tbody>
             {data.items.map((c: any) => <tr key={c.id} className="clickable" onClick={() => setOpen(c.id)}><td>{name(c)}{c.employee_id && <span className="badge ok" style={{ marginLeft: 6 }}>Hired</span>}</td>

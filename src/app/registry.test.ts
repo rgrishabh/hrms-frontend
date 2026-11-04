@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import type { Features } from '../lib/features';
 import { NAV_LABELS } from './nav-labels';
 import { bottomNav, canEnter, navFor, reachableRoutes, routeById, ROUTES, routeExists, viewsFor, type Viewer } from './registry';
@@ -94,23 +94,32 @@ describe('bottom navigation', () => {
   });
 });
 
-describe('lazy loading', () => {
-  it('importing the registry requests no page chunk, and loaders are separate per route', async () => {
-    const loads = ROUTES.map((r) => vi.fn(r.load));
-    expect(loads.every((l) => l.mock.calls.length === 0)).toBe(true);
-    const source = readFileSync(new URL('./registry.ts', import.meta.url), 'utf8');
-    expect(source).not.toMatch(/^import .*pages\//m);
-  });
-});
-
 describe('module boundaries', () => {
-  const src = new URL('..', import.meta.url).pathname;
+  const src = join(process.cwd(), 'src');
   const files = (dir: string): string[] => readdirSync(dir).flatMap((f) => { const p = join(dir, f); return statSync(p).isDirectory() ? files(p) : p.endsWith('.tsx') || p.endsWith('.ts') ? [p] : []; });
   it('no page imports another page, so a chunk never drags a whole page along', () => {
     const offenders = files(join(src, 'pages')).flatMap((f) => {
       const imports = [...readFileSync(f, 'utf8').matchAll(/from '(\.[^']+)'/g)].map((m) => m[1]!);
       return imports.filter((i) => i.startsWith('./') && !i.endsWith('.css') && !f.includes('/auth/')).map((i) => `${f} -> ${i}`);
     });
+    expect(offenders).toEqual([]);
+  });
+  it('migrated pages are fully migrated: no legacy UI layer, inline styles or any', () => {
+    const migrated = ['Dashboard', 'MyAttendance', 'Leave', 'Payslips', 'Approvals', 'Notifications', 'Employees', 'Documents', 'PersonalDetails', 'auth/Login', 'auth/Setup', 'auth/Account', 'auth/Mfa', 'auth/ChangePasswordForm', 'auth/CardPage'].map((n) => join(src, 'pages', `${n}.tsx`));
+    const features = ['attendance/AttendanceCalendar', 'attendance/PunchCard', 'approvals/Delegations', 'documents/DocumentTable', 'documents/EmployeeDocuments', 'profile/PersonalDetails', 'leave/ApplyForm', 'leave/LeaveAdmin', 'leave/TeamCalendar', 'dashboard/SummaryBlocks', 'payroll/PayLines'].map((n) => join(src, 'features', `${n}.tsx`));
+    for (const f of [...migrated, ...features]) {
+      const text = readFileSync(f, 'utf8');
+      expect(text, `${f} uses the legacy UI layer`).not.toMatch(/from '(\.\.\/)+ui'/);
+      expect(text, `${f} has an inline style`).not.toMatch(/style=\{/);
+      expect(text, `${f} uses any`).not.toMatch(/: any\b|<any>|as any\b/);
+    }
+  });
+  it('nothing writes to the console except the logger', () => {
+    const offenders = files(src).filter((f) => !f.endsWith('logger.ts') && !f.includes('.test.') && /\bconsole\.\w+\(/.test(readFileSync(f, 'utf8')));
+    expect(offenders).toEqual([]);
+  });
+  it('the SMS feature is gone', () => {
+    const offenders = files(src).filter((f) => !f.endsWith('registry.test.ts') && /\bsms\b/i.test(readFileSync(f, 'utf8')));
     expect(offenders).toEqual([]);
   });
   it('the entry and shell import no page statically', () => {

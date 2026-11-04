@@ -40,7 +40,7 @@ function Shifts() {
     <div className="stack">
       <div className="row"><span className="spacer" /><button className="btn primary" onClick={() => setEdit({ ...EMPTY_SHIFT })}>New shift</button></div>
       <ErrorBox error={error} />
-      {loading ? <Loading /> : !data.items.length ? <Empty>No shifts yet.</Empty> : (
+      {loading ? <Loading /> : !data ? null : !data.items.length ? <Empty>No shifts yet.</Empty> : (
         <div className="table-wrap"><table className="t"><thead><tr><th>Code</th><th>Name</th><th>Timing</th><th>Break</th><th>Grace</th><th>Full / half day</th><th>OT after</th><th>Status</th><th /></tr></thead><tbody>
           {data.items.map((s: any) => (
             <tr key={s.id}><td className="mono">{s.code}</td><td>{s.name}</td><td>{s.start_time.slice(0, 5)}–{s.end_time.slice(0, 5)}{s.overnight && <span className="badge info" style={{ marginLeft: 6 }}>Overnight</span>}</td>
@@ -141,7 +141,7 @@ function Holidays() {
       </form>
       <div className="row"><button className="btn sm" onClick={() => setYear(year - 1)}>‹ {year - 1}</button><strong>{year}</strong><button className="btn sm" onClick={() => setYear(year + 1)}>{year + 1} ›</button></div>
       <ErrorBox error={error} />
-      {loading ? <Loading /> : !data.items.length ? <Empty>No holidays for {year}.</Empty> : (
+      {loading ? <Loading /> : !data ? null : !data.items.length ? <Empty>No holidays for {year}.</Empty> : (
         <div className="table-wrap"><table className="t"><thead><tr><th>Date</th><th>Holiday</th><th>Applies to</th><th>Type</th><th /></tr></thead><tbody>
           {data.items.map((h: any) => <tr key={h.id}><td>{fmtDate(h.holiday_date)}</td><td>{h.name}</td><td>{h.branch_name ?? 'All branches'}</td><td>{h.optional ? 'Optional' : 'Mandatory'}</td>
             <td><button className="btn sm danger" onClick={() => setDel(h)}>Remove</button></td></tr>)}
@@ -154,6 +154,8 @@ function Holidays() {
 }
 
 function Devices() {
+  const [rotating, setRotating] = useState<any>(null);
+  const [toggling, setToggling] = useState<any>(null);
   const toast = useToast();
   const { hasModule } = useAuth();
   const { data, loading, error, reload } = useLoad(() => api.get('/api/v1/attendance/devices'), []);
@@ -171,7 +173,7 @@ function Devices() {
       {!hasModule('attendance.biometric') && <div className="alert warn">Biometric attendance is not fully active{bio ? `: ${bio.blockers.join('; ')}` : ''}. Devices can be registered once the module is enabled for this installation (deployment setting ENABLED_MODULES).</div>}
       <div className="row"><span className="spacer" /><button className="btn primary" onClick={() => setRegistering(true)}>Register device</button></div>
       <ErrorBox error={error} />
-      {loading ? <Loading /> : !data.items.length ? <Empty>No devices registered.</Empty> : (
+      {loading ? <Loading /> : !data ? null : !data.items.length ? <Empty>No devices registered.</Empty> : (
         <div className="table-wrap"><table className="t"><thead><tr><th>Device</th><th>Branch</th><th>Status</th><th>Last sync</th><th>Clock drift</th><th>Unmapped</th><th /></tr></thead><tbody>
           {data.items.map((d: any) => (
             <tr key={d.id}><td><div>{d.name}</div><div className="muted mono">{d.serial_number} · {d.api_key_prefix}</div></td><td>{d.branch_name}</td><td><StatusBadge status={d.status} /></td>
@@ -179,8 +181,8 @@ function Devices() {
               <td>{d.last_clock_drift_seconds != null ? `${d.last_clock_drift_seconds}s` : '—'}{d.last_error && <div className="badge warn">{d.last_error}</div>}</td>
               <td>{d.unmapped_events || '—'}</td>
               <td><div className="row" style={{ flexWrap: 'nowrap' }}>
-                <button className="btn sm" onClick={async () => { try { setNewKey((await api.post(`/api/v1/attendance/devices/${d.id}/rotate-key`)).apiKey); } catch (e) { toast(errText(e), 'error'); } }}>Rotate key</button>
-                <button className="btn sm" onClick={async () => { try { await api.patch(`/api/v1/attendance/devices/${d.id}`, { status: d.status === 'active' ? 'disabled' : 'active' }); reload(); } catch (e) { toast(errText(e), 'error'); } }}>{d.status === 'active' ? 'Disable' : 'Activate'}</button>
+                <button className="btn sm" onClick={() => setRotating(d)}>Rotate key</button>
+                <button className="btn sm" onClick={() => setToggling(d)}>{d.status === 'active' ? 'Disable' : 'Activate'}</button>
               </div></td></tr>))}
         </tbody></table></div>
       )}
@@ -214,8 +216,12 @@ function Devices() {
           </form>
         </Modal>
       )}
+      {rotating && <Confirm title="Rotate device key" confirmLabel="Rotate key" danger message={`The current key for ${rotating.name} stops working immediately. The device cannot sync until it is given the new key.`} onClose={() => setRotating(null)}
+        onConfirm={async () => { setNewKey((await api.post(`/api/v1/attendance/devices/${rotating.id}/rotate-key`)).apiKey); reload(); }} />}
+      {toggling && <Confirm title={toggling.status === 'active' ? 'Disable device' : 'Enable device'} confirmLabel={toggling.status === 'active' ? 'Disable' : 'Enable'} danger={toggling.status === 'active'} message={toggling.status === 'active' ? `${toggling.name} will stop sending attendance until it is enabled again.` : `${toggling.name} can send attendance again.`} onClose={() => setToggling(null)}
+        onConfirm={async () => { await api.patch(`/api/v1/attendance/devices/${toggling.id}`, { status: toggling.status === 'active' ? 'disabled' : 'active' }); reload(); }} />}
       {newKey && (
-        <Modal title="Device API key" onClose={() => setNewKey(null)}>
+        <Modal title="Device API key" persistent onClose={() => setNewKey(null)}>
           <div className="stack">
             <div className="alert warn">Copy this key into the device or bridge configuration now. It will not be shown again.</div>
             <div className="mono card">{newKey}</div>
@@ -265,7 +271,7 @@ function Locks({ canLock }: { canLock: boolean }) {
         </form>
       )}
       <ErrorBox error={error} />
-      {loading ? <Loading /> : !data.items.length ? <Empty>No locked periods.</Empty> : (
+      {loading ? <Loading /> : !data ? null : !data.items.length ? <Empty>No locked periods.</Empty> : (
         <div className="table-wrap"><table className="t"><thead><tr><th>Period</th><th>Locked by</th><th>Locked at</th></tr></thead><tbody>
           {data.items.map((l: any) => <tr key={l.id}><td>{fmtDate(l.period_start)} – {fmtDate(l.period_end)}</td><td>{l.locked_by}</td><td>{fmtDateTime(l.locked_at)}</td></tr>)}
         </tbody></table></div>

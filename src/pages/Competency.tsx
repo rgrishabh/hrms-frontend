@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { api, qs } from '../api';
 import { useAuth } from '../auth';
 import { fmtDate, fmtDateTime, todayLocal } from '../format';
-import { useLoad, Loading, ErrorBox, Empty, Modal, Field, Tabs, Pager, StatusBadge, useToast, errText } from '../ui';
+import { useLoad, LoadFailed, Loading, ErrorBox, Empty, Modal, Field, Tabs, Pager, StatusBadge, useToast, errText } from '../ui';
 
 type Tab = 'mine' | 'matrix' | 'authorizations' | 'assessments' | 'training' | 'setup';
 const ACTIVITY: Record<string, string> = { sampling: 'Sampling', perform: 'Perform test', review: 'Review results', authorize_report: 'Authorize reports' };
@@ -76,7 +76,7 @@ function Matrix() {
         <span className="spacer" /><span className="muted" style={{ fontSize: 12 }}>S sampling · P perform · R review · A authorize reports. Green = in force; amber = pending; red = suspended, review overdue or required training lapsed.</span>
       </div>
       <ErrorBox error={error} />
-      {loading ? <Loading /> : !data.methods.length ? <Empty>No active methods.</Empty> : !data.rows.length ? <Empty>No authorizations yet.</Empty> : (
+      {loading ? <Loading /> : !data ? null : !data.methods.length ? <Empty>No active methods.</Empty> : !data.rows.length ? <Empty>No authorizations yet.</Empty> : (
         <div className="table-wrap"><table className="t"><thead><tr><th>Employee</th>{data.methods.map((m: any) => <th key={m.id} title={m.name} className="mono">{m.code}</th>)}</tr></thead><tbody>
           {data.rows.map((r: any) => <tr key={r.employeeId}><td>{r.name} <span className="muted mono">{r.employeeCode}</span></td>
             {data.methods.map((m: any) => <td key={m.id}>{Object.entries(r.cells[m.id] ?? {}).map(([act, c]: [string, any]) =>
@@ -98,7 +98,7 @@ function Authorizations() {
         <option value="in_force">In force (incl. suspended)</option><option value="pending">Awaiting quality approval</option><option value="review_due">Review due within 30 days</option>
         <option value="suspended">Suspended</option><option value="ended">Ended</option><option value="">All</option></select></Field></div>
       <ErrorBox error={error} />
-      {loading ? <Loading /> : !data.items.length ? <Empty>Nothing to show.</Empty> : (
+      {loading ? <Loading /> : !data ? null : !data.items.length ? <Empty>Nothing to show.</Empty> : (
         <>
           <div className="table-wrap"><table className="t"><thead><tr><th>Employee</th><th>Method</th><th>Activity</th><th>Status</th><th>Review due</th><th>Training</th></tr></thead><tbody>
             {data.items.map((a: any) => <tr key={a.id} className="clickable" onClick={() => setOpen(a.id)}>
@@ -176,7 +176,7 @@ function Assessments() {
     <div className="stack">
       {can('competency.assess') && <div className="row"><span className="spacer" /><button className="btn primary" onClick={() => setAdding(true)}>Record assessment</button></div>}
       <ErrorBox error={error} />
-      {loading ? <Loading /> : !data.items.length ? <Empty>No assessments recorded.</Empty> : (
+      {loading ? <Loading /> : !data ? null : !data.items.length ? <Empty>No assessments recorded.</Empty> : (
         <>
           <div className="table-wrap"><table className="t"><thead><tr><th>Date</th><th>Employee</th><th>Method</th><th>Activity</th><th>Approach</th><th>Result</th><th>Assessor</th><th /></tr></thead><tbody>
             {data.items.map((s: any) => <tr key={s.id}><td>{fmtDate(s.assessed_on)}</td><td>{s.employee_name}</td><td className="mono">{s.method_code}</td><td>{ACTIVITY[s.activity]}</td>
@@ -236,7 +236,7 @@ function TrainingRecords() {
       <div className="row"><label className="row"><input type="checkbox" checked={expiring} onChange={(e) => { setExpiring(e.target.checked); setPage(1); }} /> Expired or expiring within 30 days</label>
         <span className="spacer" />{can('training.manage') && <button className="btn primary" onClick={() => setAdding(true)}>Record training</button>}</div>
       <ErrorBox error={error} />
-      {loading ? <Loading /> : !data.items.length ? <Empty>No training records.</Empty> : (
+      {loading ? <Loading /> : !data ? null : !data.items.length ? <Empty>No training records.</Empty> : (
         <>
           <div className="table-wrap"><table className="t"><thead><tr><th>Employee</th><th>Course</th><th>Completed</th><th>Valid until</th><th>Status</th><th>Trainer</th><th /></tr></thead><tbody>
             {data.items.map((t: any) => <tr key={t.id}><td>{t.employee_name} <span className="muted mono">{t.employee_code}</span></td><td><span className="mono">{t.course_code}</span> {t.course_name}</td>
@@ -296,7 +296,7 @@ function Setup() {
       <div className="card stack">
         <div className="row"><h3 style={{ margin: 0 }}>Training courses</h3><span className="spacer" />
           {can('training.manage') && <button className="btn sm primary" onClick={() => setCourse({ code: '', name: '', kind: 'method', description: '', validityMonths: '', status: 'active' })}>New course</button>}</div>
-        {courses.loading ? <Loading /> : !courses.data.items.length ? <div className="muted">No courses yet (e.g. lab induction, chemical safety, instrument operation per method).</div> : (
+        {courses.loading ? <Loading /> : !courses.data ? <LoadFailed error={courses.error} onRetry={courses.reload} /> : !courses.data.items.length ? <div className="muted">No courses yet (e.g. lab induction, chemical safety, instrument operation per method).</div> : (
           <div className="table-wrap"><table className="t"><thead><tr><th>Code</th><th>Name</th><th>Type</th><th>Validity</th><th>Records</th><th>Status</th><th /></tr></thead><tbody>
             {courses.data.items.map((c: any) => <tr key={c.id}><td className="mono">{c.code}</td><td>{c.name}</td><td>{c.kind}</td><td>{c.validity_months ? `${c.validity_months} months` : 'No expiry'}</td><td>{c.records}</td><td>{c.status}</td>
               <td>{can('training.manage') && <button className="btn sm" onClick={() => setCourse({ id: c.id, code: c.code, name: c.name, kind: c.kind, description: c.description ?? '', validityMonths: c.validity_months ?? '', status: c.status })}>Edit</button>}</td></tr>)}
@@ -305,7 +305,7 @@ function Setup() {
       {hasModule('lab.competency') && <div className="card stack">
         <div className="row"><h3 style={{ margin: 0 }}>Laboratory methods</h3><span className="spacer" />
           {can('competency.manage') && <button className="btn sm primary" onClick={() => setMethod({ code: '', name: '', standardRef: '', discipline: '', matrix: '', reviewMonths: 12, status: 'active', requiredCourseIds: [] })}>New method</button>}</div>
-        {methods.loading ? <Loading /> : !methods.data.items.length ? <div className="muted">No methods yet. Add the test methods in your scope with the training each one requires.</div> : (
+        {methods.loading ? <Loading /> : !methods.data ? <LoadFailed error={methods.error} onRetry={methods.reload} /> : !methods.data.items.length ? <div className="muted">No methods yet. Add the test methods in your scope with the training each one requires.</div> : (
           <div className="table-wrap"><table className="t"><thead><tr><th>Code</th><th>Method</th><th>Standard</th><th>Discipline / matrix</th><th>Required training</th><th>Review</th><th /></tr></thead><tbody>
             {methods.data.items.map((m: any) => <tr key={m.id}><td className="mono">{m.code}</td><td>{m.name}{m.status !== 'active' && <span className="badge" style={{ marginLeft: 6 }}>inactive</span>}</td><td>{m.standard_ref ?? '—'}</td>
               <td>{[m.discipline, m.matrix].filter(Boolean).join(' · ') || '—'}</td><td>{m.requirements.map((r: any) => r.code).join(', ') || '—'}</td><td>{m.review_months} mo</td>

@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { api, qs } from '../api';
 import { useAuth } from '../auth';
 import { fmtDate, fmtDateTime, todayLocal, addDays } from '../format';
-import { useLoad, Loading, ErrorBox, Empty, Modal, Field, Tabs, Pager, StatusBadge, Confirm, useToast, errText } from '../ui';
+import { useLoad, LoadFailed, Loading, ErrorBox, Empty, Modal, Field, Tabs, Pager, StatusBadge, Confirm, useToast, errText } from '../ui';
 import { EmployeePicker } from '../features/employees/EmployeePicker';
 
 type Tab = 'tasks' | 'onboarding' | 'probation' | 'separations' | 'templates';
@@ -98,7 +98,7 @@ function Onboarding() {
       <div className="row"><Field label="Status"><select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }}><option value="open">Open</option><option value="completed">Completed</option><option value="">All</option></select></Field>
         <span className="spacer" />{can('lifecycle.manage') && <button className="btn primary" onClick={() => setStarting(true)}>Start onboarding</button>}</div>
       <ErrorBox error={error} />
-      {loading ? <Loading /> : !data.items.length ? <Empty>No onboarding checklists. New hires from Recruitment get one automatically once a default template exists.</Empty> : (
+      {loading ? <Loading /> : !data ? null : !data.items.length ? <Empty>No onboarding checklists. New hires from Recruitment get one automatically once a default template exists.</Empty> : (
         <>
           <div className="table-wrap"><table className="t"><thead><tr><th>Employee</th><th>Joining</th><th>Progress</th><th>Overdue</th><th>Status</th></tr></thead><tbody>
             {data.items.map((c: any) => <tr key={c.id} className="clickable" onClick={() => setOpen(c.id)}><td>{c.employee_name} <span className="muted mono">{c.employee_code}</span></td>
@@ -129,7 +129,7 @@ function Probation() {
       <div className="row"><Field label="Status"><select value={status} onChange={(e) => setStatus(e.target.value)}>
         <option value="open">Waiting for recommendation</option><option value="pending">Waiting for HR</option><option value="approved">Decided</option><option value="">All</option></select></Field></div>
       <ErrorBox error={error} />
-      {loading ? <Loading /> : !data.items.length ? <Empty>No probation reviews.</Empty> : (
+      {loading ? <Loading /> : !data ? null : !data.items.length ? <Empty>No probation reviews.</Empty> : (
         <div className="table-wrap"><table className="t"><thead><tr><th>Employee</th><th>Joined</th><th>Probation ends</th><th>Recommendation</th><th>Status</th><th /></tr></thead><tbody>
           {data.items.map((r: any) => <tr key={r.id}><td>{r.employee_name} <span className="muted mono">{r.employee_code}</span><div className="muted" style={{ fontSize: 12 }}>{r.designation ?? ''}</div></td>
             <td>{fmtDate(r.date_of_joining)}</td><td>{fmtDate(r.probation_end)}</td>
@@ -171,7 +171,7 @@ function Separations() {
         {can('lifecycle.manage') && <button className="btn primary" onClick={() => setForm('hr')}>Start separation</button>}
       </div>
       <ErrorBox error={error} />
-      {loading ? <Loading /> : !data.items.length ? <Empty>No separations.</Empty> : (
+      {loading ? <Loading /> : !data ? null : !data.items.length ? <Empty>No separations.</Empty> : (
         <>
           <div className="table-wrap"><table className="t"><thead><tr><th>Employee</th><th>Kind</th><th>Notice</th><th>Last working day</th><th>Shortfall</th><th>F&amp;F</th><th>Status</th></tr></thead><tbody>
             {data.items.map((s: any) => <tr key={s.id} className="clickable" onClick={() => setOpen(s.id)}><td>{s.employee_name} <span className="muted mono">{s.employee_code}</span></td><td>{SEP_KIND[s.kind]}</td>
@@ -205,6 +205,9 @@ function Separations() {
   );
 }
 
+/** Answers already on file, without the server's bookkeeping fields. The backend replaces all answers, so the form must start from these. */
+const recordedAnswers = (saved: Record<string, unknown> | null | undefined) => Object.fromEntries(Object.entries(saved ?? {}).filter(([k]) => !k.startsWith('_')).map(([k, v]) => [k, String(v ?? '')]));
+
 function SeparationDetail({ id, onClose }: { id: string; onClose: () => void }) {
   const { can, me } = useAuth();
   const toast = useToast();
@@ -212,6 +215,8 @@ function SeparationDetail({ id, onClose }: { id: string; onClose: () => void }) 
   const [lwd, setLwd] = useState<string | null>(null);
   const [waive, setWaive] = useState(false);
   const [exit, setExit] = useState<Record<string, string> | null>(null);
+  const [exitError, setExitError] = useState<string | null>(null);
+  const [exitBusy, setExitBusy] = useState(false);
   const [confirm, setConfirm] = useState<'cancel' | 'complete' | null>(null);
   const [rehire, setRehire] = useState(true);
   const [checklistOpen, setChecklistOpen] = useState<string | null>(null);
@@ -228,7 +233,7 @@ function SeparationDetail({ id, onClose }: { id: string; onClose: () => void }) 
           <div className="row">
             {s.status === 'pending' && <button className="btn sm" onClick={() => run('post', `/api/v1/lifecycle/separations/${id}/withdraw`, undefined, 'Withdrawn')}>Withdraw request</button>}
             {s.status === 'pending' && can('lifecycle.manage') && <button className="btn sm" onClick={() => { setLwd(s.approved_lwd ?? s.requested_lwd); setWaive(s.waive_shortfall); }}>Set last working day</button>}
-            {['approved', 'completed'].includes(s.status) && (mine || can('lifecycle.manage')) && <button className="btn sm" onClick={() => setExit({ reasonForLeaving: '', whatWentWell: '', whatToImprove: '', wouldRecommend: '' })}>Exit interview</button>}
+            {['approved', 'completed'].includes(s.status) && (mine || can('lifecycle.manage')) && <button className="btn sm" onClick={() => { setExitError(null); setExit({ reasonForLeaving: '', whatWentWell: '', whatToImprove: '', wouldRecommend: '', ...recordedAnswers(s.exit_interview) }); }}>Exit interview</button>}
             {s.status === 'approved' && can('lifecycle.manage') && <><button className="btn sm danger" onClick={() => setConfirm('cancel')}>Cancel separation</button>
               <button className="btn sm primary" onClick={() => setConfirm('complete')}>Complete exit</button></>}
             {can('lifecycle.manage') && ['approved', 'completed'].includes(s.status) && <select value={s.fnf_status} onChange={(e) => run('post', `/api/v1/lifecycle/separations/${id}/fnf`, { status: e.target.value, note: s.fnf_note }, 'F&F status saved')}>
@@ -249,12 +254,16 @@ function SeparationDetail({ id, onClose }: { id: string; onClose: () => void }) 
           <div className="row"><span className="spacer" /><button type="button" className="btn" onClick={() => setLwd(null)}>Cancel</button><button className="btn primary">Save</button></div>
         </form></Modal>}
       {exit && <Modal title="Exit interview" onClose={() => setExit(null)}>
-        <form className="stack" onSubmit={async (e) => { e.preventDefault(); const answers = Object.fromEntries(Object.entries(exit).filter(([, v]) => v.trim()));
-          await run('post', `/api/v1/lifecycle/separations/${id}/exit-interview`, { answers }, 'Exit interview recorded'); setExit(null); }}>
+        <form className="stack" onSubmit={async (e) => {
+          e.preventDefault(); setExitError(null); setExitBusy(true);
+          const answers = Object.fromEntries(Object.entries(exit).filter(([, v]) => v.trim()));
+          try { await api.post(`/api/v1/lifecycle/separations/${id}/exit-interview`, { answers }); toast('Exit interview recorded'); reload(); setExit(null); }
+          catch (x) { setExitError(errText(x)); } finally { setExitBusy(false); } }}>
           {([['reasonForLeaving', 'Main reason for leaving'], ['whatWentWell', 'What worked well'], ['whatToImprove', 'What should we improve'], ['wouldRecommend', 'Would you recommend us as an employer? Why?']] as const).map(([k, label]) =>
             <Field key={k} label={label}><textarea value={exit[k]} onChange={(e) => setExit({ ...exit, [k]: e.target.value })} /></Field>)}
           <div className="muted" style={{ fontSize: 12 }}>Visible to HR only.</div>
-          <div className="row"><span className="spacer" /><button type="button" className="btn" onClick={() => setExit(null)}>Cancel</button><button className="btn primary">Save</button></div>
+          <ErrorBox error={exitError} />
+          <div className="row"><span className="spacer" /><button type="button" className="btn" onClick={() => setExit(null)}>Cancel</button><button className="btn primary" disabled={exitBusy}>Save</button></div>
         </form></Modal>}
       {confirm === 'cancel' && <Confirm title="Cancel separation" danger requireComment confirmLabel="Cancel separation" message="The employee returns to active and the exit clearance is cancelled."
         onClose={() => setConfirm(null)} onConfirm={async (reason) => run('post', `/api/v1/lifecycle/separations/${id}/cancel`, { reason }, 'Separation cancelled')} />}
@@ -270,13 +279,13 @@ function SeparationDetail({ id, onClose }: { id: string; onClose: () => void }) 
 
 function Templates() {
   const toast = useToast();
-  const { data, loading, reload } = useLoad(() => api.get('/api/v1/lifecycle/templates'), []);
+  const { data, loading, reload, error } = useLoad(() => api.get('/api/v1/lifecycle/templates'), []);
   const [edit, setEdit] = useState<any>(null);
   const blank = (kind: string) => ({ kind, name: '', isDefault: true, status: 'active', tasks: [{ title: '', description: '', owner: 'hr', offsetDays: 0 }] });
   return (
     <div className="stack">
       <div className="row"><span className="spacer" /><button className="btn" onClick={() => setEdit(blank('onboarding'))}>New onboarding template</button><button className="btn" onClick={() => setEdit(blank('offboarding'))}>New exit template</button></div>
-      {loading ? <Loading /> : !data.items.length ? <Empty>No templates yet. Create one onboarding and one exit template and mark them default.</Empty> : (
+      {loading ? <Loading /> : !data ? <LoadFailed error={error} onRetry={reload} /> : !data.items.length ? <Empty>No templates yet. Create one onboarding and one exit template and mark them default.</Empty> : (
         <div className="table-wrap"><table className="t"><thead><tr><th>Kind</th><th>Name</th><th>Tasks</th><th>Default</th><th>Status</th><th /></tr></thead><tbody>
           {data.items.map((t: any) => <tr key={t.id}><td>{t.kind === 'onboarding' ? 'Onboarding' : 'Exit'}</td><td>{t.name}</td><td>{t.tasks.length}</td><td>{t.is_default ? '✓' : ''}</td><td>{t.status}</td>
             <td><button className="btn sm" onClick={() => setEdit({ id: t.id, kind: t.kind, name: t.name, isDefault: t.is_default, status: t.status, tasks: t.tasks.map((k: any) => ({ ...k, description: k.description ?? '' })) })}>Edit</button></td></tr>)}

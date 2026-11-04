@@ -86,7 +86,7 @@ function Manage() {
     <div className="stack">
       {can('policies.manage') && <div className="row"><span className="spacer" /><button className="btn primary" onClick={() => setCreating(true)}>New policy</button></div>}
       <ErrorBox error={error} />
-      {loading ? <Loading /> : !data.items.length ? <Empty>No policies yet. Start with the code of conduct, POSH, leave and health & safety policies.</Empty> : (
+      {loading ? <Loading /> : !data ? null : !data.items.length ? <Empty>No policies yet. Start with the code of conduct, POSH, leave and health & safety policies.</Empty> : (
         <div className="table-wrap"><table className="t"><thead><tr><th>Code</th><th>Policy</th><th>Category</th><th>Published</th><th>Acknowledged</th><th>Status</th></tr></thead><tbody>
           {data.items.map((p: any) => <tr key={p.id} className="clickable" onClick={() => setOpen(p.id)}>
             <td className="mono">{p.code}</td><td>{p.title}{p.drafts > 0 && <span className="badge warn" style={{ marginLeft: 6 }}>Draft</span>}</td><td>{CATEGORY[p.category]}</td>
@@ -207,7 +207,7 @@ function AckReport({ version, onClose }: { version: any; onClose: () => void }) 
           <span className="spacer" /><a className="btn sm" href={`/api/v1/policies/versions/${version.id}/acknowledgements.xlsx`} style={{ textDecoration: 'none' }}>Export Excel</a>
             <a className="btn sm" href={`/api/v1/policies/versions/${version.id}/acknowledgements.csv`} style={{ textDecoration: 'none' }}>Export CSV</a></div>
         <ErrorBox error={error} />
-        {loading ? <Loading /> : !data.items.length ? <Empty>Nobody here.</Empty> : (
+        {loading ? <Loading /> : !data ? null : !data.items.length ? <Empty>Nobody here.</Empty> : (
           <>
             <div className="table-wrap"><table className="t"><thead><tr><th>Employee</th><th>Branch / department</th><th>Acknowledged</th></tr></thead><tbody>
               {data.items.map((r: any) => <tr key={r.employee_id}><td>{r.name} <span className="muted mono">{r.employee_code}</span></td><td className="muted">{[r.branch, r.department].filter(Boolean).join(' · ')}</td>

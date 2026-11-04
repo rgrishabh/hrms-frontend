@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { api, qs } from '../api';
 import { useAuth } from '../auth';
 import { fmtDate, fmtDateTime, money } from '../format';
-import { useLoad, Loading, ErrorBox, Empty, Modal, Field, Tabs, StatusBadge, Confirm, useToast, errText } from '../ui';
+import { useLoad, LoadFailed, Loading, ErrorBox, Empty, Modal, Field, Tabs, StatusBadge, Confirm, useToast, errText } from '../ui';
 import { PayLines } from '../features/payroll/PayLines';
 
 type Tab = 'runs' | 'salaries' | 'components' | 'statutory';
@@ -50,7 +50,7 @@ function Runs() {
     <div className="stack">
       {can('payroll.manage') && <div className="row"><span className="spacer" /><button className="btn primary" onClick={() => setCreating(true)}>New run</button></div>}
       <ErrorBox error={error} />
-      {loading ? <Loading /> : !data.items.length ? <Empty>No payroll runs yet. Set up components, salaries and statutory rules first.</Empty> : (
+      {loading ? <Loading /> : !data ? null : !data.items.length ? <Empty>No payroll runs yet. Set up components, salaries and statutory rules first.</Empty> : (
         <div className="table-wrap"><table className="t"><thead><tr><th>Period</th><th>Entity</th><th>Kind</th><th>Employees</th><th>Gross</th><th>Net</th><th>Warnings</th><th>Status</th></tr></thead><tbody>
           {data.items.map((r: any) => <tr key={r.id} className="clickable" onClick={() => setOpen(r.id)}><td className="mono">{r.period}</td><td>{r.legal_entity_name}</td>
             <td>{r.kind === 'fnf' ? `F&F · ${r.employee_name}` : 'Regular'}</td><td>{r.totals?.employees ?? '—'}</td><td>{r.totals?.gross != null ? money(r.totals.gross) : '—'}</td>
@@ -84,6 +84,7 @@ function RunDetail({ id, onClose }: { id: string; onClose: () => void }) {
   const [adj, setAdj] = useState<any>(null);
   const [ack, setAck] = useState(false);
   const [paid, setPaid] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<'finalize' | 'cancel' | null>(null);
   const run = async (path: string, body: unknown, msg: string) => { try { await api.post(`/api/v1/payroll/runs/${id}/${path}`, body); toast(msg); reload(); } catch (x) { toast(errText(x), 'error'); } };
   const editable = r && ['draft', 'computed'].includes(r.status);
   return (
@@ -100,9 +101,9 @@ function RunDetail({ id, onClose }: { id: string; onClose: () => void }) {
             {editable && <button className="btn primary" onClick={() => run('compute', undefined, 'Computed')}>{r.status === 'draft' ? 'Compute' : 'Recompute'}</button>}
             {r.status === 'computed' && r.warnings > 0 && !r.warnings_acknowledged && <button className="btn" onClick={() => setAck(true)}>Acknowledge {r.warnings} warning(s)</button>}
             {r.status === 'computed' && <button className="btn primary" onClick={() => run('submit', undefined, 'Sent for approval')}>Submit for approval</button>}
-            {r.status === 'approved' && <button className="btn primary" onClick={() => run('finalize', undefined, 'Finalized; payslips published')}>Finalize</button>}
+            {r.status === 'approved' && <button className="btn primary" onClick={() => setConfirmAction('finalize')}>Finalize</button>}
             {r.status === 'finalized' && <button className="btn primary" onClick={() => setPaid(true)}>Mark paid</button>}
-            {editable && <button className="btn danger" onClick={() => run('cancel', undefined, 'Cancelled')}>Cancel run</button>}
+            {editable && <button className="btn danger" onClick={() => setConfirmAction('cancel')}>Cancel run</button>}
             <span className="spacer" />
             <a className="btn sm" href={`/api/v1/payroll/runs/${id}/register.xlsx`} style={{ textDecoration: 'none' }}>Register Excel</a>
             <a className="btn sm" href={`/api/v1/payroll/runs/${id}/register.csv`} style={{ textDecoration: 'none' }}>Register CSV</a>
@@ -138,6 +139,10 @@ function RunDetail({ id, onClose }: { id: string; onClose: () => void }) {
           <Field label="Note"><input value={adj.note} onChange={(e) => setAdj({ ...adj, note: e.target.value })} /></Field>
           <div className="row"><span className="spacer" /><button type="button" className="btn" onClick={() => setAdj(null)}>Cancel</button><button className="btn primary">Add</button></div>
         </form></Modal>}
+      {confirmAction === 'finalize' && <Confirm title="Finalize payroll" confirmLabel="Finalize" danger message={`This locks ${r.period} for ${r.legal_entity_name} and publishes payslips to employees. It cannot be undone.`} onClose={() => setConfirmAction(null)}
+        onConfirm={async () => { await api.post(`/api/v1/payroll/runs/${id}/finalize`, {}); toast('Finalized; payslips published'); reload(); }} />}
+      {confirmAction === 'cancel' && <Confirm title="Cancel payroll run" confirmLabel="Cancel run" danger message={`Cancel the ${r.period} run? Computed results are discarded.`} onClose={() => setConfirmAction(null)}
+        onConfirm={async () => { await api.post(`/api/v1/payroll/runs/${id}/cancel`, {}); toast('Cancelled'); reload(); }} />}
       {ack && <Confirm title="Acknowledge warnings" requireComment confirmLabel="Acknowledge" message="Explain why the run can proceed (kept in the audit history)." onClose={() => setAck(false)}
         onConfirm={async (note) => run('acknowledge-warnings', { note }, 'Acknowledged')} />}
       {paid && <Confirm title="Record payment" requireComment confirmLabel="Mark paid" message="Bank / NEFT batch reference" onClose={() => setPaid(false)}
@@ -161,14 +166,15 @@ function Salaries() {
   return (
     <div className="stack">
       <div className="row"><input placeholder="Search employee" value={search} onChange={(e) => setSearch(e.target.value)} style={{ maxWidth: 320 }} />
-        <select value={emp?.id ?? ''} onChange={(e) => setEmp((emps.data?.items ?? []).find((x: any) => x.id === e.target.value) ?? null)}><option value="">Select employee…</option>
+        <select aria-label="Employee" value={emp?.id ?? ''} onChange={(e) => setEmp((emps.data?.items ?? []).find((x: any) => x.id === e.target.value) ?? null)}><option value="">Select employee…</option>
           {(emps.data?.items ?? []).map((e: any) => <option key={e.id} value={e.id}>{e.first_name} {e.last_name ?? ''} ({e.employee_code})</option>)}</select></div>
       {!emp ? <Empty>Pick an employee to see their salary history and statutory details.</Empty> : (
         <>
           <div className="card stack">
             <div className="row"><h3 style={{ margin: 0 }}>Salary history</h3><span className="spacer" />
               {can('payroll.manage') && <button className="btn sm primary" onClick={() => setForm({ effectiveFrom: new Date().toISOString().slice(0, 10), reason: '', amounts: {} })}>Propose change</button>}</div>
-            {sal.loading ? <Loading /> : !sal.data?.items.length ? <div className="muted">No salary yet.</div> : (
+            <ErrorBox error={sal.error} />
+            {sal.loading ? <Loading /> : !sal.data ? null : !sal.data.items.length ? <div className="muted">No salary yet.</div> : (
               <div className="table-wrap"><table className="t"><thead><tr><th>Effective</th><th>Components</th><th>Reason</th><th>Status</th></tr></thead><tbody>
                 {sal.data.items.map((s: any) => <tr key={s.id}><td>{fmtDate(s.effective_from)}</td><td style={{ fontSize: 12 }}>{Object.entries(s.amounts).map(([k, v]) => {
                   const c = comps.data?.items.find((x: any) => x.code === k); return `${k} ${c?.calc === 'percent' ? `${v}%` : money(v as number)}`; }).join(' · ')}</td>
@@ -179,7 +185,8 @@ function Salaries() {
             <div className="row"><h3 style={{ margin: 0 }}>Statutory details</h3><span className="spacer" />
               {can('payroll.manage') && st.data && <button className="btn sm" onClick={() => setStForm({ uan: st.data.uan ?? '', pfMemberId: st.data.pf_member_id ?? '', pfExcluded: st.data.pf_excluded,
                 esiIpNumber: st.data.esi_ip_number ?? '', pan: '', taxRegime: st.data.tax_regime, ptState: st.data.pt_state ?? '' })}>Edit</button>}</div>
-            {st.data && <div style={{ fontSize: 13 }}>UAN {st.data.uan ?? '—'} · PF {st.data.pf_excluded ? 'excluded' : 'covered'} · ESI IP {st.data.esi_ip_number ?? '—'} · PAN {st.data.pan ?? '—'} · {st.data.tax_regime} regime · PT state {st.data.pt_state ?? 'branch state'}</div>}
+            <ErrorBox error={st.error} />
+            {st.loading ? <Loading /> : st.data && <div style={{ fontSize: 13 }}>UAN {st.data.uan ?? '—'} · PF {st.data.pf_excluded ? 'excluded' : 'covered'} · ESI IP {st.data.esi_ip_number ?? '—'} · PAN {st.data.pan ?? '—'} · {st.data.tax_regime} regime · PT state {st.data.pt_state ?? 'branch state'}</div>}
           </div>
         </>
       )}
@@ -222,12 +229,12 @@ function Salaries() {
 function Components() {
   const { can } = useAuth();
   const toast = useToast();
-  const { data, loading, reload } = useLoad(() => api.get('/api/v1/payroll/components'), []);
+  const { data, loading, reload, error } = useLoad(() => api.get('/api/v1/payroll/components'), []);
   const [edit, setEdit] = useState<any>(null);
   return (
     <div className="stack">
       {can('payroll.manage') && <div className="row"><span className="spacer" /><button className="btn primary" onClick={() => setEdit({ code: '', name: '', kind: 'earning', calc: 'fixed', baseCodes: [], prorate: true, taxable: true, pfWage: false, esiWage: true, position: 0, status: 'active' })}>New component</button></div>}
-      {loading ? <Loading /> : !data.items.length ? <Empty>No components. Typical: BASIC (PF wages), HRA (% of BASIC), SPECIAL allowance; deductions like canteen.</Empty> : (
+      {loading ? <Loading /> : !data ? <LoadFailed error={error} onRetry={reload} /> : !data.items.length ? <Empty>No components. Typical: BASIC (PF wages), HRA (% of BASIC), SPECIAL allowance; deductions like canteen.</Empty> : (
         <div className="table-wrap"><table className="t"><thead><tr><th>Code</th><th>Name</th><th>Kind</th><th>Calculation</th><th>Flags</th><th>Status</th><th /></tr></thead><tbody>
           {data.items.map((c: any) => <tr key={c.id}><td className="mono">{c.code}</td><td>{c.name}</td><td>{c.kind}</td><td>{c.calc === 'percent' ? `% of ${c.base_codes.join(' + ')}` : 'Fixed monthly'}</td>
             <td style={{ fontSize: 12 }}>{[c.prorate && 'prorated', c.taxable && 'taxable', c.pf_wage && 'PF wage', c.esi_wage && 'ESI wage'].filter(Boolean).join(' · ')}</td><td>{c.status}</td>
@@ -259,14 +266,14 @@ function Components() {
 function StatutoryRules() {
   const { can, me } = useAuth();
   const toast = useToast();
-  const { data, loading, reload } = useLoad(() => api.get('/api/v1/payroll/statutory-rules'), []);
+  const { data, loading, reload, error } = useLoad(() => api.get('/api/v1/payroll/statutory-rules'), []);
   const [edit, setEdit] = useState<any>(null);
   const act = async (url: string, msg: string) => { try { await api.post(url); toast(msg); reload(); } catch (x) { toast(errText(x), 'error'); } };
   return (
     <div className="stack">
       <div className="alert warn">No statutory values are shipped. Enter each rule from the official notification or circular, cite it, and have a second person verify it against the source. Rates change — review rules at every change in law.</div>
       {can('payroll.statutory') && <div className="row"><span className="spacer" /><button className="btn primary" onClick={() => setEdit({ kind: 'pf', scope: 'IN', effectiveFrom: '', effectiveTo: '', params: '', sourceReference: '' })}>New rule</button></div>}
-      {loading ? <Loading /> : !data.items.length ? <Empty>No rules. Without rules no statutory deduction is made, and runs show warnings.</Empty> : (
+      {loading ? <Loading /> : !data ? <LoadFailed error={error} onRetry={reload} /> : !data.items.length ? <Empty>No rules. Without rules no statutory deduction is made, and runs show warnings.</Empty> : (
         <div className="table-wrap"><table className="t"><thead><tr><th>Rule</th><th>Scope</th><th>Effective</th><th>Source</th><th>Entered / verified</th><th>Status</th><th /></tr></thead><tbody>
           {data.items.map((r: any) => <tr key={r.id}><td>{RULE_LABEL[r.kind]}<div className="muted mono" style={{ fontSize: 11 }}>{JSON.stringify(r.params).slice(0, 90)}</div></td><td>{r.scope}</td>
             <td>{fmtDate(r.effective_from)}{r.effective_to ? ` – ${fmtDate(r.effective_to)}` : ' →'}</td><td style={{ fontSize: 12 }}>{r.source_reference}</td>

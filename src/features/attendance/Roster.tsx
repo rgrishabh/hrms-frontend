@@ -206,7 +206,7 @@ export function RosterSetup() {
           <button className="btn" onClick={() => setEnding(true)}>End roster…</button>
           <button className="btn primary" onClick={() => setForm(null)} disabled={!active.length}>New pattern</button></div>
         <p className="hint">A cycle of shifts and days off that repeats, e.g. two mornings, two evenings, two nights, two off. On rostered days the pattern decides days off instead of the weekly-off setting; holidays still apply.</p>
-        {patterns.loading || shifts.loading ? <Loading /> : patterns.error ? <ErrorBox error={patterns.error} /> : !patterns.data.items.length ? <Empty>No patterns yet.</Empty> : (
+        {patterns.loading || shifts.loading ? <Loading /> : patterns.error || shifts.error || !patterns.data || !shifts.data ? <ErrorBox error={patterns.error ?? shifts.error} /> : !patterns.data.items.length ? <Empty>No patterns yet.</Empty> : (
           <div className="table-wrap"><table className="t"><thead><tr><th>Pattern</th><th>Cycle</th><th>People</th><th>Status</th><th /></tr></thead><tbody>
             {patterns.data.items.map((p: any) => (
               <tr key={p.id}><td><strong className="mono">{p.code}</strong><div className="muted">{p.name}</div></td>
@@ -219,7 +219,7 @@ export function RosterSetup() {
       </section>
       <section className="card"><RosterGrid key={gridKey} title="Roster" /></section>
       {form !== undefined && <PatternForm pattern={form} shifts={active} onClose={() => setForm(undefined)} onSaved={() => done('Pattern saved')} />}
-      {assign && <AssignRoster pattern={assign} shifts={shifts.data.items} onClose={() => setAssign(null)} onDone={done} />}
+      {assign && shifts.data && <AssignRoster pattern={assign} shifts={shifts.data.items} onClose={() => setAssign(null)} onDone={done} />}
       {ending && <EndRoster onClose={() => setEnding(false)} onDone={done} />}
     </div>
   );

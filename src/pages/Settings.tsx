@@ -258,7 +258,7 @@ function Users() {
     <div className="stack">
       <div className="row"><input placeholder="Search users" aria-label="Search users" value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} style={{ flex: '1 1 240px' }} /><button className="btn primary" onClick={() => setEdit({})}>Add user</button></div>
       <ErrorBox error={error} />
-      {loading ? <Loading /> : !data.items.length ? <Empty>No users found.</Empty> : (
+      {loading ? <Loading /> : !data ? null : !data.items.length ? <Empty>No users found.</Empty> : (
         <>
           <div className="table-wrap"><table className="t"><thead><tr><th>User</th><th>Roles</th><th>Employee</th><th>Status</th><th>Last sign-in</th><th /></tr></thead><tbody>
             {data.items.map((u: any) => <tr key={u.id}><td><div>{u.display_name}</div><div className="muted">{u.email}</div>{u.mfa_enabled && <span className="badge ok">2FA</span>}</td><td>{u.roles.map(roleName).join(', ')}</td>
@@ -274,6 +274,7 @@ function Users() {
 }
 
 function UserForm({ user, self, roles, onClose, onSaved }: any) {
+  const [resetting, setResetting] = useState(false);
   const isNew = !user.id;
   const [f, setF] = useState({ email: '', displayName: '', initialPassword: '', employeeId: '' });
   const [selected, setSelected] = useState<string[]>(user.roles ?? ['employee']);
@@ -304,8 +305,10 @@ function UserForm({ user, self, roles, onClose, onSaved }: any) {
               onChange={(e) => setSelected(e.target.checked ? [...selected, r.key] : selected.filter((x) => x !== r.key))} />{r.name}</label>))}</div>
         </fieldset>
         {!isNew && !self && <Field label="Account status"><select value={status} onChange={(e) => setStatus(e.target.value)}><option value="active">Active</option><option value="disabled">Disabled (signs out immediately)</option></select></Field>}
-        {!isNew && user.locked && <button type="button" className="btn" onClick={async () => { await api.patch(`/api/v1/tenant/users/${user.id}`, { unlock: true }); onSaved(); onClose(); }}>Unlock account</button>}
-        {!isNew && !self && user.mfa_enabled && <button type="button" className="btn" onClick={async () => { try { await api.patch(`/api/v1/tenant/users/${user.id}`, { resetMfa: true }); onSaved(); onClose(); } catch (x) { setError(errText(x)); } }}>Reset two-factor authentication (signs the user out)</button>}
+        {!isNew && user.locked && <button type="button" className="btn" onClick={async () => { setError(null); try { await api.patch(`/api/v1/tenant/users/${user.id}`, { unlock: true }); onSaved(); onClose(); } catch (x) { setError(errText(x)); } }}>Unlock account</button>}
+        {!isNew && !self && user.mfa_enabled && <button type="button" className="btn" onClick={() => setResetting(true)}>Reset two-factor authentication</button>}
+        {resetting && <Confirm title="Reset two-factor authentication" confirmLabel="Reset" danger message={`${user.display_name ?? user.email} will have to set up two-factor authentication again at next sign-in. Their recovery codes stop working.`} onClose={() => setResetting(false)}
+          onConfirm={async () => { await api.patch(`/api/v1/tenant/users/${user.id}`, { resetMfa: true }); onSaved(); onClose(); }} />}
         {roles.some((r: any) => r.grantable === false) && <div className="muted" style={{ fontSize: 12 }}>Roles with permissions you do not hold yourself can only be granted by an administrator.</div>}
         {!isNew && <div className="muted" style={{ fontSize: 12 }}>Changing roles signs the user out so new permissions apply immediately.</div>}
         <ErrorBox error={error} />
@@ -325,7 +328,7 @@ function Audit() {
       <div className="row"><select aria-label="Category" value={category} onChange={(e) => { setCategory(e.target.value); setPage(1); }}><option value="">All categories</option>
         {['auth', 'configuration', 'data', 'security', 'access'].map((c) => <option key={c} value={c}>{c}</option>)}</select></div>
       <ErrorBox error={error} />
-      {loading ? <Loading /> : !data.items.length ? <Empty>No audit entries.</Empty> : (
+      {loading ? <Loading /> : !data ? null : !data.items.length ? <Empty>No audit entries.</Empty> : (
         <>
           <div className="table-wrap"><table className="t"><thead><tr><th>When</th><th>Actor</th><th>Action</th><th>Target</th><th>Details</th></tr></thead><tbody>
             {data.items.map((l: any) => <tr key={l.id}><td style={{ whiteSpace: 'nowrap' }}>{fmtDateTime(l.created_at)}</td><td>{l.actor_name ?? (l.actor_type === 'device' ? 'Device' : 'System')}</td>

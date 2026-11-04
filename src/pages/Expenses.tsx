@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { api, qs } from '../api';
 import { useAuth } from '../auth';
 import { fmtDate, fmtDateTime, money, todayLocal } from '../format';
-import { useLoad, Loading, ErrorBox, Empty, Modal, Field, Tabs, Pager, Confirm, StatusBadge, useToast, errText } from '../ui';
+import { useLoad, LoadFailed, Loading, ErrorBox, Empty, Modal, Field, Tabs, Pager, Confirm, StatusBadge, useToast, errText } from '../ui';
 import { AllowanceRates, VEHICLE } from '../features/expenses/AllowanceRates';
 
 type Tab = 'mine' | 'team' | 'finance' | 'categories' | 'rates';
@@ -43,7 +43,7 @@ function ClaimList({ scope }: { scope: 'mine' | 'team' }) {
     <div className="stack">
       {scope === 'mine' && <div className="row"><span className="spacer" /><button className="btn primary" onClick={() => setCreating(true)}>New claim</button></div>}
       <ErrorBox error={error} />
-      {loading ? <Loading /> : !data.items.length ? <Empty>No claims.</Empty> : (
+      {loading ? <Loading /> : !data ? null : !data.items.length ? <Empty>No claims.</Empty> : (
         <>
           <div className="table-wrap"><table className="t"><thead><tr><th>Claim</th>{scope === 'team' && <th>Employee</th>}<th>Items</th><th>Total</th><th>Status</th><th>Updated</th></tr></thead><tbody>
             {data.items.map((c: any) => <tr key={c.id} className="clickable" onClick={() => setOpen(c.id)}>
@@ -231,12 +231,12 @@ function Finance() {
 
 function Categories() {
   const toast = useToast();
-  const { data, loading, reload } = useLoad(() => api.get('/api/v1/expenses/categories'), []);
+  const { data, loading, reload, error } = useLoad(() => api.get('/api/v1/expenses/categories'), []);
   const [edit, setEdit] = useState<any>(null);
   return (
     <div className="stack">
       <div className="row"><span className="spacer" /><button className="btn primary sm" onClick={() => setEdit({ code: '', name: '', description: '', requiresReceipt: true, maxAmount: '', gstApplicable: false, status: 'active', calc: '' })}>New category</button></div>
-      {loading ? <Loading /> : !data.items.length ? <Empty>No categories yet (e.g. Local travel, Accommodation, Meals, Sample collection travel, PPE, Training).</Empty> : (
+      {loading ? <Loading /> : !data ? <LoadFailed error={error} onRetry={reload} /> : !data.items.length ? <Empty>No categories yet (e.g. Local travel, Accommodation, Meals, Sample collection travel, PPE, Training).</Empty> : (
         <div className="table-wrap"><table className="t"><thead><tr><th>Code</th><th>Name</th><th>Calculated as</th><th>Receipt</th><th>Limit per item</th><th>GST details</th><th>Status</th><th /></tr></thead><tbody>
           {data.items.map((c: any) => <tr key={c.id}><td className="mono">{c.code}</td><td>{c.name}</td><td>{c.calc === 'per_diem' ? 'Days × per-diem rate' : c.calc === 'mileage' ? 'Km × mileage rate' : 'Amount'}</td><td>{c.requires_receipt ? 'Required' : 'Optional'}</td><td>{c.max_amount ? money(c.max_amount) : '—'}</td>
             <td>{c.gst_applicable ? 'Captured' : '—'}</td><td>{c.status}</td><td><button className="btn sm" onClick={() => setEdit({ id: c.id, code: c.code, name: c.name, description: c.description ?? '',
