@@ -27,6 +27,7 @@ import { Performance } from './pages/Performance';
 import { Assets } from './pages/Assets';
 import { Overtime } from './pages/Overtime';
 import { FieldDuty } from './pages/FieldDuty';
+import { Travel } from './pages/Travel';
 import { Loans } from './pages/Loans';
 import { Reports } from './pages/Reports';
 import { MfaVerify, MfaEnroll, RecoveryCodes } from './Mfa';
@@ -227,6 +228,7 @@ function Shell({ cfg, children, unread }: { cfg: PublicConfig; children: ReactNo
       { to: '/leave', label: 'Leave', show: hasModule('leave') && canAny('leave.self', 'leave.team.read', 'leave.read', 'leave.manage') },
       { to: '/overtime', label: 'Overtime', show: hasModule('overtime') && ((can('overtime.self') && !!me.user.employeeId) || canAny('overtime.team.read', 'overtime.read', 'overtime.approve', 'overtime.manage')) },
       { to: '/field-duty', label: 'Field duty', show: hasModule('field_duty') && ((can('field_duty.self') && !!me.user.employeeId) || canAny('field_duty.team.read', 'field_duty.read', 'field_duty.approve', 'field_duty.manage')) },
+      { to: '/travel', label: 'Travel', show: hasModule('travel') && ((can('travel.self') && !!me.user.employeeId) || canAny('travel.team.read', 'travel.read', 'travel.approve', 'expenses.pay')) },
       { to: '/loans', label: 'Advances & loans', show: hasModule('advances_loans') && ((can('loans.self') && !!me.user.employeeId) || canAny('loans.team.read', 'loans.read', 'loans.approve', 'loans.manage')) },
       // Everyone can be on an interview panel, so the page is shown whenever the module is on.
       { to: '/recruitment', label: 'Recruitment', show: hasModule('recruitment') },
@@ -315,6 +317,7 @@ function App() {
         <Route path="/assets" element={<Assets />} />
         <Route path="/overtime" element={<Overtime />} />
         <Route path="/field-duty" element={<FieldDuty />} />
+        <Route path="/travel" element={<Travel />} />
         <Route path="/loans" element={<Loans />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/employees" element={<Employees />} />
