@@ -4,9 +4,8 @@ import { login, open } from './helpers';
 test.describe.configure({ mode: 'serial' });
 
 async function pickEmployee(scope: Locator, name: string) {
-  const option = scope.locator('option', { hasText: name }).first();
-  await expect(option).toBeAttached();
-  await scope.getByRole('combobox').selectOption((await option.getAttribute('value'))!);
+  await scope.getByPlaceholder('Search name or code').fill(name.split(' ').at(-1)!);
+  await scope.getByRole('option', { name }).click();
 }
 
 test('an instrument past calibration cannot be issued', async ({ page }) => {
@@ -18,7 +17,6 @@ test('an instrument past calibration cannot be issued', async ({ page }) => {
   await expect(row.getByText(/expired/)).toBeVisible();
   await row.getByRole('button', { name: 'Issue' }).click();
   const dlg = page.getByRole('dialog');
-  await dlg.getByPlaceholder('Search name or code').fill('Joshi');
   await pickEmployee(dlg, 'Aditya Joshi');
   await dlg.getByRole('button', { name: 'Issue' }).click();
   await expect(dlg.getByRole('alert')).toContainText('Calibration expired');
@@ -36,7 +34,6 @@ test('issue a pH meter, the analyst confirms receipt, IT receives it back', asyn
   }
   await row.getByRole('button', { name: 'Issue' }).click();
   const dlg = page.getByRole('dialog');
-  await dlg.getByPlaceholder('Search name or code').fill('Joshi');
   await pickEmployee(dlg, 'Aditya Joshi');
   await dlg.getByLabel('Condition at issue').fill('Good, with electrode and stand');
   await dlg.getByRole('button', { name: 'Issue' }).click();

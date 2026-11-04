@@ -1,0 +1,2 @@
+/* Tags are short codes: keep them on one line in a table, and break only one too long for the column. */
+.asset-tag { display: inline-block; min-width: 9ch; max-width: 22ch; }
