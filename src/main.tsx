@@ -10,6 +10,7 @@ import { MyAttendance } from './pages/MyAttendance';
 import { TeamAttendance } from './pages/TeamAttendance';
 import { Approvals } from './pages/Approvals';
 import { Employees, EmployeeProfile } from './pages/Employees';
+import { MyProfile } from './pages/PersonalDetails';
 import { AttendanceAdmin } from './pages/AttendanceAdmin';
 import { SettingsCenter } from './pages/Settings';
 import { Leave } from './pages/Leave';
@@ -234,6 +235,7 @@ function Shell({ cfg, children, unread }: { cfg: PublicConfig; children: ReactNo
     { title: 'Me', items: [
       { to: '/', label: 'Dashboard', show: true },
       { to: '/notifications', label: 'Notifications', show: true },
+      { to: '/profile', label: 'My profile', show: can('profile.self') && !!me.user.employeeId },
       { to: '/attendance/me', label: 'My attendance', show: hasModule('attendance') && can('attendance.self') && !!me.user.employeeId },
       { to: '/leave', label: 'Leave', show: hasModule('leave') && canAny('leave.self', 'leave.team.read', 'leave.read', 'leave.manage') },
       { to: '/overtime', label: 'Overtime', show: hasModule('overtime') && ((can('overtime.self') && !!me.user.employeeId) || canAny('overtime.team.read', 'overtime.read', 'overtime.approve', 'overtime.manage')) },
@@ -336,6 +338,7 @@ function App() {
         <Route path="/employees/:id" element={<EmployeeProfile />} />
         <Route path="/settings/*" element={<SettingsCenter />} />
         <Route path="/account" element={<Account />} />
+        <Route path="/profile" element={<MyProfile />} />
         <Route path="/notifications" element={<Notifications onChange={unread.refresh} />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

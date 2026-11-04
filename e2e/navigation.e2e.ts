@@ -3,7 +3,7 @@ import { login, noErrors, type Persona } from './helpers';
 
 // Every persona can open every page in their menu without an error, and sees only what their role allows.
 const CASES: { who: Persona; sees: string[]; hidden: string[] }[] = [
-  { who: 'analyst', sees: ['Dashboard', 'My attendance', 'Leave', 'Overtime', 'Field duty', 'Travel', 'Performance', 'Assets', 'Policies', 'Payslips'], hidden: ['Payroll', 'Settings', 'Attendance setup', 'Reports'] },
+  { who: 'analyst', sees: ['Dashboard', 'My profile', 'My attendance', 'Leave', 'Overtime', 'Field duty', 'Travel', 'Performance', 'Assets', 'Policies', 'Payslips'], hidden: ['Payroll', 'Settings', 'Attendance setup', 'Reports'] },
   { who: 'lab.manager', sees: ['Team attendance', 'Approvals', 'Overtime', 'Field duty', 'Performance', 'Reports'], hidden: ['Payroll', 'Attendance setup'] },
   { who: 'hr.head', sees: ['Employees', 'Recruitment', 'Onboarding & exit', 'Grievances & POSH', 'Performance', 'Settings', 'Reports'], hidden: [] },
   { who: 'payroll', sees: ['Payroll', 'Payslips', 'Attendance setup'], hidden: ['Recruitment setup'] }, // locks attendance before a run

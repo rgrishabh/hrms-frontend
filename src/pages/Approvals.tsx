@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { api } from '../api';
 import { fmtDateTime } from '../format';
 import { useLoad, Loading, ErrorBox, StatusBadge, Empty, Confirm, Tabs, Modal, useToast } from '../ui';
+import { ProfileChangeView } from './PersonalDetails';
 
-const ENTITY_LABEL: Record<string, string> = { attendance_regularization: 'Attendance correction', leave_request: 'Leave', expense_claim: 'Expense claim', lab_authorization: 'Technical authorization', job_requisition: 'Job requisition', job_offer: 'Job offer', separation: 'Separation', probation_review: 'Probation review', salary_change: 'Salary change', payroll_run: 'Payroll run', overtime_claim: 'Overtime', field_duty: 'Field duty', travel_request: 'Travel', employee_loan: 'Advance / loan' };
+const ENTITY_LABEL: Record<string, string> = { attendance_regularization: 'Attendance correction', leave_request: 'Leave', expense_claim: 'Expense claim', lab_authorization: 'Technical authorization', job_requisition: 'Job requisition', job_offer: 'Job offer', separation: 'Separation', probation_review: 'Probation review', salary_change: 'Salary change', payroll_run: 'Payroll run', overtime_claim: 'Overtime', field_duty: 'Field duty', travel_request: 'Travel', employee_loan: 'Advance / loan', employee_profile_change: 'Personal details' };
 
 function Detail({ id, onClose }: { id: string; onClose: () => void }) {
   const { data, loading, error } = useLoad(() => api.get(`/api/v1/approvals/${id}`), [id]);
@@ -12,9 +13,10 @@ function Detail({ id, onClose }: { id: string; onClose: () => void }) {
       {loading ? <Loading /> : error ? <ErrorBox error={error} /> : (
         <div className="stack">
           <div><strong>{data.summary}</strong> <StatusBadge status={data.status} /></div>
+          {data.entity_type === 'employee_profile_change' && <ProfileChangeView changeId={data.entity_id} />}
           {data.steps.map((s: any) => (
             <div key={s.step_index} className="card" style={{ padding: 12 }}>
-              <div className="row"><strong>Step {s.step_index + 1}</strong><span className="muted">{s.approver_name ?? (['attendance.approve', 'leave.approve'].includes(s.approver_permission) ? 'HR approvers' : s.approver_permission === 'expenses.approve' ? 'Finance approvers' : s.approver_permission === 'competency.authorize' ? 'Quality' : s.approver_permission === 'recruitment.approve' || s.approver_permission === 'lifecycle.manage' ? 'HR approvers' : s.approver_permission === 'payroll.approve' ? 'Payroll approvers' : s.approver_permission)}</span><span className="spacer" /><StatusBadge status={s.status} /></div>
+              <div className="row"><strong>Step {s.step_index + 1}</strong><span className="muted">{s.approver_name ?? (['attendance.approve', 'leave.approve'].includes(s.approver_permission) ? 'HR approvers' : s.approver_permission === 'expenses.approve' ? 'Finance approvers' : s.approver_permission === 'competency.authorize' ? 'Quality' : s.approver_permission === 'recruitment.approve' || s.approver_permission === 'lifecycle.manage' || s.approver_permission === 'profile.approve' ? 'HR approvers' : s.approver_permission === 'payroll.approve' ? 'Payroll approvers' : s.approver_permission)}</span><span className="spacer" /><StatusBadge status={s.status} /></div>
               {s.acted_by_name && <div className="muted">{s.acted_by_name} · {fmtDateTime(s.acted_at)}</div>}
               {s.comment && <div>“{s.comment}”</div>}
             </div>
