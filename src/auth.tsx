@@ -3,7 +3,7 @@ import { api, setCsrf, ApiError } from './api';
 import { setLocalePrefs } from './format';
 import { applyBrand } from './lib/brand';
 import { fetchPublicConfig, type PublicConfig } from './lib/config';
-import { anyFlagOn, moduleEnabled, type FeatureFlag } from './lib/features';
+import { anyFlagOn, type FeatureFlag } from './lib/features';
 import { queryClient } from './lib/query';
 
 export type { PublicConfig } from './lib/config';
@@ -31,7 +31,6 @@ interface AuthCtx {
   can: (...perms: string[]) => boolean;
   canAny: (...perms: string[]) => boolean;
   /** Module keys used inside unmigrated pages. */
-  hasModule: (key: string) => boolean;
   hasFeature: (...flags: FeatureFlag[]) => boolean;
 }
 
@@ -95,7 +94,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
       can: (...p) => !!me && p.every((x) => permissions.has(x)),
       canAny: (...p) => !!me && p.some((x) => permissions.has(x)),
-      hasModule: (k) => moduleEnabled(features, k),
       hasFeature: (...flags) => anyFlagOn(features, flags),
     };
   }, [config, configError, me, loading, refresh]);

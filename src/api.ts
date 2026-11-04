@@ -38,13 +38,6 @@ export class ApiError extends Error {
     return Object.fromEntries(this.errors.map((e) => [key(e), e.message]).filter(([k]) => k));
   }
 
-  /**
-   * Extra data an endpoint attaches, such as `duplicates`, read from RFC 7807 extension members.
-   * Field errors when there are any, otherwise the problem itself. Used by unmigrated pages only.
-   */
-  get details(): any {
-    return this.errors.length ? this.errors : this.problem;
-  }
 }
 
 const GENERIC_TITLE: Record<number, string> = {
@@ -132,15 +125,14 @@ async function blob(url: string): Promise<{ blob: Blob; fileName: string | null 
   }
 }
 
-/* The `any` defaults serve unmigrated pages until the generated client lands; migrated pages always pass T. */
 export const api = {
   blob,
-  upload: <T = any>(url: string, form: FormData) => upload<T>(url, form),
-  get: <T = any>(url: string) => request<T>('GET', url),
-  post: <T = any>(url: string, body: unknown = {}) => request<T>('POST', url, body),
-  put: <T = any>(url: string, body: unknown = {}) => request<T>('PUT', url, body),
-  patch: <T = any>(url: string, body: unknown = {}) => request<T>('PATCH', url, body),
-  del: <T = any>(url: string) => request<T>('DELETE', url),
+  upload: <T = unknown>(url: string, form: FormData) => upload<T>(url, form),
+  get: <T = unknown>(url: string) => request<T>('GET', url),
+  post: <T = unknown>(url: string, body: unknown = {}) => request<T>('POST', url, body),
+  put: <T = unknown>(url: string, body: unknown = {}) => request<T>('PUT', url, body),
+  patch: <T = unknown>(url: string, body: unknown = {}) => request<T>('PATCH', url, body),
+  del: <T = unknown>(url: string) => request<T>('DELETE', url),
 };
 
 export const qs = (o: Record<string, unknown>) => {

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { Features } from '../lib/features';
@@ -104,15 +104,28 @@ describe('module boundaries', () => {
     });
     expect(offenders).toEqual([]);
   });
-  it('migrated pages are fully migrated: no legacy UI layer, inline styles or any', () => {
-    const migrated = ['Dashboard', 'MyAttendance', 'Leave', 'Payslips', 'Approvals', 'Notifications', 'Employees', 'Documents', 'PersonalDetails', 'auth/Login', 'auth/Setup', 'auth/Account', 'auth/Mfa', 'auth/ChangePasswordForm', 'auth/CardPage'].map((n) => join(src, 'pages', `${n}.tsx`));
-    const features = ['attendance/AttendanceCalendar', 'attendance/PunchCard', 'approvals/Delegations', 'documents/DocumentTable', 'documents/EmployeeDocuments', 'profile/PersonalDetails', 'leave/ApplyForm', 'leave/LeaveAdmin', 'leave/TeamCalendar', 'dashboard/SummaryBlocks', 'payroll/PayLines'].map((n) => join(src, 'features', `${n}.tsx`));
-    for (const f of [...migrated, ...features]) {
+  it('every page and feature is on the design system: no legacy layer, inline styles, raw markup or any', () => {
+    const screens = [...files(join(src, 'pages')), ...files(join(src, 'features'))].filter((f) => f.endsWith('.tsx') && !/\.test\.|test-util|testkit/.test(f));
+    expect(screens.length).toBeGreaterThan(60);
+    for (const f of screens) {
       const text = readFileSync(f, 'utf8');
-      expect(text, `${f} uses the legacy UI layer`).not.toMatch(/from '(\.\.\/)+ui'/);
+      expect(text, `${f} uses a legacy layer`).not.toMatch(/from '(\.\.\/)+ui'|useLoad/);
       expect(text, `${f} has an inline style`).not.toMatch(/style=\{/);
-      expect(text, `${f} uses any`).not.toMatch(/: any\b|<any>|as any\b/);
+      expect(text, `${f} uses any`).not.toMatch(/: any\b(?!`)|<any>|as any\b/);
+      expect(text, `${f} clicks a table row`).not.toMatch(/<tr[^>]*onClick/);
+      expect(text, `${f} has a raw badge`).not.toMatch(/className="badge/);
+      expect(text, `${f} uses a browser dialog`).not.toMatch(/window\.(prompt|confirm|alert)\(/);
+      // Calendars and the payslip are data grids with their own phone layout; every list goes through Table.
+      if (!/TeamCalendar|PayLines/.test(f)) expect(text, `${f} has a raw table`).not.toMatch(/<table\b/);
     }
+  });
+  it('amounts have one path to the screen, so a later change touches one place', () => {
+    const offenders = files(src).filter((f) => !f.endsWith('/format.ts') && !f.endsWith('components/Money.tsx') && !f.includes('.test.') && /\bmoney\(/.test(readFileSync(f, 'utf8')));
+    expect(offenders).toEqual([]);
+  });
+  it('the legacy layer is gone', () => {
+    expect(existsSync(join(src, 'ui.tsx'))).toBe(false);
+    expect(existsSync(join(src, 'styles/legacy.css'))).toBe(false);
   });
   it('nothing writes to the console except the logger', () => {
     const offenders = files(src).filter((f) => !f.endsWith('logger.ts') && !f.includes('.test.') && /\bconsole\.\w+\(/.test(readFileSync(f, 'utf8')));

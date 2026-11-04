@@ -26,7 +26,7 @@ describe('api errors', () => {
     respond(409, JSON.stringify({ type: 'about:blank', title: 'Duplicate', status: 409, code: 'conflict', confirmable: true, duplicates: [{ id: '1' }] }));
     const err = await api.post('/x').catch((x: ApiError) => x) as ApiError;
     expect(err.problem['duplicates']).toEqual([{ id: '1' }]);
-    expect(err.details.confirmable).toBe(true);
+    expect(err.problem['confirmable']).toBe(true);
   });
 
   it('survives a proxy HTML error page', async () => {
