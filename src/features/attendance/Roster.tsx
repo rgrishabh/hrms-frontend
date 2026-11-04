@@ -279,7 +279,7 @@ export function RosterSetup() {
   const columns: Column<Pattern>[] = [
     { key: 'pattern', header: 'Pattern', card: 'title', cell: (p) => <><strong className="mono">{p.code}</strong><div className="table__cell-sub">{p.name}</div></> },
     { key: 'status', header: 'Status', card: 'status', cell: (p) => <StatusBadge status={p.status} /> },
-    { key: 'cycle', header: 'Cycle', cell: (p) => <><div className="roster-preview">{p.days.map((d, i) => <Badge key={i} tone={d ? toneFor(all, d) : 'neutral'}>{codeOf(d)}</Badge>)}</div><div className="table__cell-sub">{p.days.length} days</div></> },
+    { key: 'cycle', header: 'Cycle', cell: (p) => <><div className="roster-preview">{p.days.map((d, i) => <Badge key={i} tone={d ? toneFor(all, d) : 'neutral'}>{codeOf(d)}</Badge>)}</div><div className="table__cell-sub">{p.days.length} {p.days.length === 1 ? 'day' : 'days'}</div></> },
     { key: 'people', header: 'People', align: 'right', cell: (p) => p.employees },
     { key: 'actions', header: 'Actions', card: 'actions', cell: (p) => <div className="table__actions">{p.status === 'active' && <Button size="sm" variant="primary" onClick={() => setAssign(p)}>Assign</Button>}<Button size="sm" onClick={() => setForm(p)}>Edit</Button></div> },
   ];
