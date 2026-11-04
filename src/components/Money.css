@@ -1,1 +1,3 @@
 .money { white-space: nowrap; }
+/* A large figure in a narrow place wraps instead of running off the edge. */
+.tile__value .money, .table-card .money { white-space: normal; overflow-wrap: anywhere; }

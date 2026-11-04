@@ -13,17 +13,19 @@ export interface DownloadButtonProps {
   size?: ButtonSize;
   variant?: ButtonVariant;
   disabled?: boolean;
+  /** After the file is saved, for example to refresh a "last exported" column. */
+  onDone?: () => void;
   /** Screen-reader name, when the visible text alone does not say which record. */
   'aria-label'?: string;
 }
 
 /** A file from the API. A failure stays on the page as a toast, instead of opening raw JSON as a page or a file. */
-export function DownloadButton({ url, fileName, children, size = 'sm', variant = 'secondary', disabled, 'aria-label': ariaLabel }: DownloadButtonProps) {
+export function DownloadButton({ url, fileName, children, size = 'sm', variant = 'secondary', disabled, onDone, 'aria-label': ariaLabel }: DownloadButtonProps) {
   const toast = useToast();
   const [busy, setBusy] = useState(false);
   const go = async () => {
     setBusy(true);
-    try { await downloadFile(url, fileName); } catch (x) { toast(errorMessage(x), 'error'); } finally { setBusy(false); }
+    try { await downloadFile(url, fileName); onDone?.(); } catch (x) { toast(errorMessage(x), 'error'); } finally { setBusy(false); }
   };
   return <Button size={size} variant={variant} disabled={disabled} loading={busy} aria-label={ariaLabel} icon={<Download aria-hidden="true" />} onClick={() => void go()}>{children}</Button>;
 }
