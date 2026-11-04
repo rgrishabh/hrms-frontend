@@ -6,3 +6,8 @@ export interface DailyResult {
 }
 
 export interface Regularization { id: string; work_date: string; requested_in: string | null; requested_out: string | null; reason: string; status: string }
+
+export interface Shift {
+  id: string; code: string; name: string; start_time: string; end_time: string; break_minutes: number; grace_minutes: number; early_exit_grace_minutes: number;
+  half_day_min_minutes: number; full_day_min_minutes: number; overtime_after_minutes: number | null; overnight?: boolean; status: string;
+}
