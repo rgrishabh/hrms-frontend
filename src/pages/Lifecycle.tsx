@@ -4,6 +4,7 @@ import { api, qs } from '../api';
 import { useAuth } from '../auth';
 import { fmtDate, fmtDateTime, todayLocal, addDays } from '../format';
 import { useLoad, Loading, ErrorBox, Empty, Modal, Field, Tabs, Pager, StatusBadge, Confirm, useToast, errText } from '../ui';
+import { EmployeePicker } from '../features/employees/EmployeePicker';
 
 type Tab = 'tasks' | 'onboarding' | 'probation' | 'separations' | 'templates';
 const OWNER: Record<string, string> = { hr: 'HR', it: 'IT', admin: 'Admin', finance: 'Finance', manager: 'Manager', employee: 'New joiner / leaver' };
@@ -80,18 +81,6 @@ function ChecklistDetail({ id, onClose }: { id: string; onClose: () => void }) {
       {skip && <Confirm title="Skip task" requireComment confirmLabel="Skip" message={`Why is "${skip.title}" not needed?`} onClose={() => setSkip(null)}
         onConfirm={async (note) => run(`/api/v1/lifecycle/tasks/${skip.id}/skip`, { note }, 'Skipped')} />}
     </Modal>
-  );
-}
-
-export function EmployeePicker({ value, onChange }: { value: string; onChange: (id: string) => void }) {
-  const [search, setSearch] = useState('');
-  const { data } = useLoad(() => api.get(`/api/v1/employees${qs({ search: search || undefined, pageSize: 20 })}`), [search]);
-  return (
-    <div className="stack" style={{ gap: 4 }}>
-      <input placeholder="Search name or code" value={search} onChange={(e) => setSearch(e.target.value)} />
-      <select required value={value} onChange={(e) => onChange(e.target.value)}><option value="">Select employee…</option>
-        {(data?.items ?? []).map((e: any) => <option key={e.id} value={e.id}>{e.first_name} {e.last_name ?? ''} ({e.employee_code}) · {e.status}</option>)}</select>
-    </div>
   );
 }
 

@@ -42,7 +42,7 @@ export function Picker({ label, hint, error, required, placeholder, queryKey, se
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'ArrowDown') { e.preventDefault(); setOpen(true); setActive((a) => Math.min(a + 1, items.length - 1)); }
     else if (e.key === 'ArrowUp') { e.preventDefault(); setActive((a) => Math.max(a - 1, 0)); }
-    else if (e.key === 'Enter') { e.preventDefault(); const item = items[active]; if (open && item) pick(item); }
+    else if (e.key === 'Enter') { e.preventDefault(); const item = items[active]; if (open && item && debounced === text.trim() && !results.isFetching) pick(item); } // never a stale result
     else if (e.key === 'Escape' && open) { e.preventDefault(); setOpen(false); } // closes the list, not a surrounding dialog
   };
 

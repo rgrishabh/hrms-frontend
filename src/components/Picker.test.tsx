@@ -18,11 +18,11 @@ describe('Picker', () => {
     const search = vi.fn(async (q: string) => people.filter((p) => p.label.toLowerCase().includes(q.toLowerCase())));
     renderUi(<Harness search={search} />);
     await userEvent.type(screen.getByRole('combobox', { name: 'Employee' }), 'ben');
-    await screen.findByRole('option', { name: 'Ben Roy' });
+    await waitFor(() => expect(search).toHaveBeenCalledWith('ben'));
+    await waitFor(() => expect(screen.getAllByRole('option').map((o) => o.textContent)).toEqual(['Ben Roy']));
     await userEvent.keyboard('{Enter}');
     expect(screen.getByTestId('value').textContent).toBe('2');
     expect(screen.getByRole('group', { name: 'Employee' }).textContent).toContain('Ben Roy');
-    await waitFor(() => expect(search).toHaveBeenCalledWith('ben'));
   });
   it('clearing removes the selection, so no hidden id can be submitted', async () => {
     renderUi(<Harness search={async () => people} />);

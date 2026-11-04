@@ -31,7 +31,7 @@ export function Reports() {
   const { data, loading, error } = useLoad(() => api.get<{ items: ReportInfo[]; today: string; advanced: boolean }>('/api/v1/reports'), []);
   if (loading) return <Loading />;
   if (error) return <ErrorBox error={error} />;
-  const items = data!.items;
+  const items: ReportInfo[] = data!.items;
   const def = key ? items.find((i) => i.key === key) : undefined;
   return (
     <div className="stack">

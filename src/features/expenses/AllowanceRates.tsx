@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { api } from '../api';
-import { fmtDate, money, todayLocal } from '../format';
-import { useLoad, Loading, ErrorBox, Empty, Modal, Field, StatusBadge, Confirm, useToast, errText } from '../ui';
+import { api } from '../../api';
+import { fmtDate, money, todayLocal } from '../../format';
+import { useLoad, Loading, ErrorBox, Empty, Modal, Field, StatusBadge, Confirm, useToast, errText } from '../../ui';
 
 export const VEHICLE: Record<string, string> = { car: 'Car', two_wheeler: 'Two-wheeler' };
 const STATE: Record<string, string> = { current: 'active', scheduled: 'scheduled', superseded: 'superseded' };

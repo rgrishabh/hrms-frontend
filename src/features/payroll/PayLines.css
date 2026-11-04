@@ -1,0 +1,7 @@
+.pay-lines { display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); align-items: start; }
+.pay-lines__table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+.pay-lines__table caption { text-align: left; font-weight: var(--weight-semibold); padding-bottom: var(--space-1); }
+.pay-lines__table td, .pay-lines__table th { padding: var(--space-1) 0; border-top: 1px solid var(--border); text-align: left; font-weight: var(--weight-normal); vertical-align: top; }
+.pay-lines__amount { text-align: right !important; font-variant-numeric: tabular-nums; white-space: nowrap; padding-left: var(--space-3) !important; }
+.pay-lines__total th, .pay-lines__total td { font-weight: var(--weight-semibold); }
+.pay-lines__net { text-align: right; font-size: var(--text-lg); font-weight: var(--weight-semibold); }

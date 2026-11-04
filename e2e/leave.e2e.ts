@@ -20,7 +20,7 @@ async function freeWeekday(page: Page): Promise<string> {
   return out[Math.floor(Math.random() * out.length)]!;
 }
 
-const clAvailable = async (page: Page) => Number(await page.locator('.card.stat', { hasText: 'Casual Leave' }).locator('.v').innerText());
+const clAvailable = async (page: Page) => Number(await page.locator('[data-tile="balance_CL"] .v').innerText());
 
 test('an employee applies for leave, the manager approves it, and cancelling returns the day', async ({ page }) => {
   // 1. The analyst applies for one day of casual leave.

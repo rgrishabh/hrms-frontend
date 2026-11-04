@@ -4,7 +4,7 @@ import { api, qs } from '../api';
 import { useAuth } from '../auth';
 import { fmtDate, fmtDateTime, money, todayLocal } from '../format';
 import { useLoad, Loading, ErrorBox, Empty, Modal, Field, Tabs, Pager, Confirm, StatusBadge, useToast, errText } from '../ui';
-import { AllowanceRates, VEHICLE } from './AllowanceRates';
+import { AllowanceRates, VEHICLE } from '../features/expenses/AllowanceRates';
 
 type Tab = 'mine' | 'team' | 'finance' | 'categories' | 'rates';
 

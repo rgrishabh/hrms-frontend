@@ -4,6 +4,7 @@ import { api, qs } from '../api';
 import { useAuth } from '../auth';
 import { fmtDate, fmtDateTime, money } from '../format';
 import { useLoad, Loading, ErrorBox, Empty, Modal, Field, Tabs, StatusBadge, Confirm, useToast, errText } from '../ui';
+import { PayLines } from '../features/payroll/PayLines';
 
 type Tab = 'runs' | 'salaries' | 'components' | 'statutory';
 const RULE_LABEL: Record<string, string> = { pf: 'Provident fund', esi: 'ESI', pt: 'Professional tax', lwf: 'Labour welfare fund', tds: 'Income tax (TDS)' };
@@ -142,21 +143,6 @@ function RunDetail({ id, onClose }: { id: string; onClose: () => void }) {
       {paid && <Confirm title="Record payment" requireComment confirmLabel="Mark paid" message="Bank / NEFT batch reference" onClose={() => setPaid(false)}
         onConfirm={async (paymentReference) => run('paid', { paymentReference }, 'Marked paid')} />}
     </Modal>
-  );
-}
-
-export function PayLines({ lines, gross, deductions, net }: { lines: any[]; gross: number | string; deductions: number | string; net: number | string }) {
-  const group = (k: string) => lines.filter((l) => l.kind === k);
-  return (
-    <div className="stack">
-      <div className="form-grid">
-        {(['earning', 'deduction'] as const).map((k) => <div key={k}><strong>{k === 'earning' ? 'Earnings' : 'Deductions'}</strong>
-          <table className="t"><tbody>{group(k).map((l, i) => <tr key={i}><td>{l.name}{l.basis && <div className="muted" style={{ fontSize: 11 }}>{l.basis}</div>}</td><td style={{ textAlign: 'right' }}>{money(l.amount)}</td></tr>)}
-            <tr><td><strong>Total</strong></td><td style={{ textAlign: 'right' }}><strong>{money(k === 'earning' ? gross : deductions)}</strong></td></tr></tbody></table></div>)}
-      </div>
-      {group('employer').length > 0 && <div className="muted" style={{ fontSize: 12 }}>Employer contributions: {group('employer').map((l) => `${l.name} ${money(l.amount)}`).join(' · ')}</div>}
-      <div className="row"><span className="spacer" /><strong style={{ fontSize: 18 }}>Net pay {money(net)}</strong></div>
-    </div>
   );
 }
 

@@ -1,21 +1,12 @@
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { api, setCsrf, ApiError } from './api';
-
-/** Prefix of configError when the server is only temporarily unreachable (the page retries by itself). */
-export const TEMPORARY = 'The service is temporarily unavailable';
 import { setLocalePrefs } from './format';
+import { applyBrand } from './lib/brand';
+import { fetchPublicConfig, type PublicConfig } from './lib/config';
+import { anyFlagOn, moduleEnabled, type FeatureFlag } from './lib/features';
+import { queryClient } from './lib/query';
 
-/** Deployment-level public configuration (GET /api/v1/public/config). The only source of branding in the UI. */
-export interface PublicConfig {
-  product: { name: string };
-  brand: {
-    name: string; shortName: string; logoUrl: string | null; faviconUrl: string | null;
-    primaryColor: string; secondaryColor: string; accentColor: string; loginMessage: string | null;
-    supportEmail: string | null; supportPhone: string | null; helpUrl: string | null;
-  };
-  organization: { name: string; legalName: string; country: string; timezone: string; currency: string; dateFormat: string; fiscalYearStartMonth: number };
-  modules: string[];
-}
+export type { PublicConfig } from './lib/config';
 
 export interface Me {
   user: { id: string; email: string; displayName: string; employeeId: string | null };
@@ -25,37 +16,33 @@ export interface Me {
   permissions: string[];
   csrfToken: string;
   organization: { id: string; name: string };
-  preferences: { timezone: string; dateFormat: string; emailNotifications: boolean; smsNotifications?: boolean };
-  /** Central capability map from the server — the only source for module visibility. */
-  capabilities: Record<string, boolean>;
+  preferences: { timezone: string; dateFormat: string; emailNotifications: boolean };
 }
+
+export type ConfigFailure = { kind: 'not_configured'; message: string } | { kind: 'temporary'; status: number };
 
 interface AuthCtx {
   config: PublicConfig | null;
-  configError: string | null;
+  configError: ConfigFailure | null;
   me: Me | null;
   loading: boolean;
   refresh: () => Promise<void>;
   logout: () => Promise<void>;
   can: (...perms: string[]) => boolean;
   canAny: (...perms: string[]) => boolean;
+  /** Module keys used inside unmigrated pages. */
   hasModule: (key: string) => boolean;
+  hasFeature: (...flags: FeatureFlag[]) => boolean;
 }
 
 const Ctx = createContext<AuthCtx>(null as never);
 export const useAuth = () => useContext(Ctx);
 
-export function applyBrand(cfg: PublicConfig, page?: string) {
-  const root = document.documentElement.style;
-  root.setProperty('--brand', cfg.brand.primaryColor);
-  root.setProperty('--brand-2', cfg.brand.accentColor);
-  root.setProperty('--brand-dark', cfg.brand.secondaryColor);
-  document.title = `${page ? page + ' · ' : ''}${cfg.brand.shortName} · ${cfg.product.name}`;
-}
+const RETRY_MS = 5000;
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [config, setConfig] = useState<PublicConfig | null>(null);
-  const [configError, setConfigError] = useState<string | null>(null);
+  const [configError, setConfigError] = useState<ConfigFailure | null>(null);
   const [me, setMe] = useState<Me | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -69,27 +56,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    api.get<PublicConfig>('/api/v1/public/config').then((c) => {
-      setConfig(c);
-      applyBrand(c);
-      setLocalePrefs({ timezone: c.organization.timezone, dateFormat: c.organization.dateFormat, currency: c.organization.currency });
-      return refresh();
-    }).catch((e) => {
-      // Only a 404 means this address is not an installation; anything else (rate limit, restart, network) is temporary.
-      if (e instanceof ApiError && e.status === 404) { setConfigError(e.message); setLoading(false); return; }
-      setConfigError(`${TEMPORARY}${e instanceof ApiError ? ` (${e.status})` : ''}`); setLoading(false);
-      setTimeout(() => window.location.reload(), 5000);
-    });
+    let retry: ReturnType<typeof setTimeout> | undefined;
+    const load = () => {
+      fetchPublicConfig().then((c) => {
+        setConfig(c);
+        setConfigError(null);
+        applyBrand(c);
+        setLocalePrefs({ locale: c.brand.locale, timezone: c.brand.timezone, dateFormat: c.brand.dateFormat, currency: c.brand.currency });
+        return refresh();
+      }).catch((e: unknown) => {
+        setLoading(false);
+        // Only a 404 means this address is not an installation; anything else is temporary, so keep trying.
+        if (e instanceof ApiError && e.status === 404) { setConfigError({ kind: 'not_configured', message: e.message }); return; }
+        setConfigError({ kind: 'temporary', status: e instanceof ApiError ? e.status : 0 });
+        retry = setTimeout(load, RETRY_MS);
+      });
+    };
+    load();
+    return () => clearTimeout(retry);
   }, [refresh]);
+
   useEffect(() => {
-    const h = () => setMe(null);
-    window.addEventListener('hrms:unauthorized', h);
-    return () => window.removeEventListener('hrms:unauthorized', h);
+    const onUnauthorized = () => { setMe(null); queryClient.clear(); };
+    window.addEventListener('hrms:unauthorized', onUnauthorized);
+    return () => window.removeEventListener('hrms:unauthorized', onUnauthorized);
   }, []);
 
-  const logout = async () => { await api.post('/api/v1/auth/logout').catch(() => undefined); setCsrf(''); setMe(null); };
-  const can = (...p: string[]) => !!me && p.every((x) => me.permissions.includes(x));
-  const canAny = (...p: string[]) => !!me && p.some((x) => me.permissions.includes(x));
-  const hasModule = (k: string) => !!me?.capabilities?.[k];
-  return <Ctx.Provider value={{ config, configError, me, loading, refresh, logout, can, canAny, hasModule }}>{children}</Ctx.Provider>;
+  const value = useMemo<AuthCtx>(() => {
+    const permissions = new Set(me?.permissions ?? []);
+    const features = config?.features ?? {};
+    return {
+      config, configError, me, loading, refresh,
+      logout: async () => {
+        await api.post('/api/v1/auth/logout').catch(() => undefined);
+        setCsrf('');
+        setMe(null);
+        queryClient.clear();
+      },
+      can: (...p) => !!me && p.every((x) => permissions.has(x)),
+      canAny: (...p) => !!me && p.some((x) => permissions.has(x)),
+      hasModule: (k) => moduleEnabled(features, k),
+      hasFeature: (...flags) => anyFlagOn(features, flags),
+    };
+  }, [config, configError, me, loading, refresh]);
+
+  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

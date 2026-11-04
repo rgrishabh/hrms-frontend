@@ -1,0 +1,20 @@
+.att-month { min-width: 9.5ch; text-align: center; }
+.att-cal__head, .att-cal__grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: var(--space-1); }
+.att-cal__head { margin-bottom: var(--space-1); color: var(--text-3); font-size: var(--text-xs); text-align: center; }
+.att-day { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; min-height: 68px; padding: var(--space-1) var(--space-2); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); font-size: var(--text-xs); text-align: left; cursor: pointer; min-width: 0; overflow: hidden; }
+.att-day:hover { border-color: var(--border-strong); }
+.att-day[aria-pressed="true"] { outline: 2px solid var(--brand-ring); outline-offset: 0; }
+.att-day__n { font-weight: var(--weight-semibold); }
+.att-day__status { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.att-day__worked { color: var(--text-2); }
+.att-day--present, .att-day--on_duty { background: var(--ok-bg); }
+.att-day--absent, .att-day--missing_punch { background: var(--danger-bg); }
+.att-day--half_day { background: var(--warn-bg); }
+.att-day--on_leave { background: var(--info-bg); }
+.att-day--weekly_off, .att-day--holiday { background: var(--surface-2); }
+.att-day--on_duty { border-style: dashed; }
+/* Phones: 44px cells with the day number; the status has words in the detail below and in the label. */
+@media (max-width: 720px) {
+  .att-day { min-height: var(--touch-target); padding: var(--space-1); align-items: center; }
+  .att-day__status, .att-day__worked { display: none; }
+}

@@ -1,39 +1,45 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { api, qs } from '../api';
-import { fmtDateTime } from '../format';
-import { useLoad, Loading, ErrorBox, Empty, Pager, useToast, errText } from '../ui';
+import { BellOff } from 'lucide-react';
+import { errorMessage, qs } from '../api';
+import { NotificationRow } from '../app/shell/NotificationCentre';
+import { Button } from '../components/Button';
+import { EmptyState } from '../components/EmptyState';
+import { Checkbox } from '../components/Input';
+import { PageHeader } from '../components/PageHeader';
+import { Pagination } from '../components/Pagination';
+import { QueryState } from '../components/QueryState';
+import { useToast } from '../components/Toast';
+import { Card } from '../components/Card';
+import { markAllRead, markRead, type NotificationItem, type NotificationPage } from '../features/notifications';
+import { useApiQuery } from '../lib/query';
 
-export function Notifications({ onChange }: { onChange: () => void }) {
+export function Notifications() {
   const nav = useNavigate();
   const toast = useToast();
   const [unreadOnly, setUnreadOnly] = useState(false);
   const [page, setPage] = useState(1);
-  const url = `/api/v1/notifications${qs({ unread: unreadOnly || undefined, page, pageSize: 20 })}`;
-  const { data, loading, error, reload } = useLoad(() => api.get(url), [url]);
-  const open = async (n: any) => {
-    if (!n.read_at) { await api.post(`/api/v1/notifications/${n.id}/read`).catch(() => undefined); onChange(); }
-    if (n.link) nav(n.link); else reload();
+  const query = useApiQuery<NotificationPage>(`/api/v1/notifications${qs({ unread: unreadOnly || undefined, page, pageSize: 20 })}`, { placeholderData: (previous) => previous });
+  const open = async (n: NotificationItem) => {
+    if (!n.read_at) await markRead(n.id).catch(() => undefined);
+    if (n.link) nav(n.link);
   };
   return (
-    <div className="stack">
-      <div className="row"><div><h1>Notifications</h1><p className="sub" style={{ marginBottom: 0 }}>Approvals, decisions, reminders and security notices.</p></div><span className="spacer" />
-        <label className="row"><input type="checkbox" checked={unreadOnly} onChange={(e) => { setUnreadOnly(e.target.checked); setPage(1); }} /> Unread only</label>
-        <button className="btn" onClick={async () => { try { await api.post('/api/v1/notifications/read-all'); onChange(); reload(); } catch (e) { toast(errText(e), 'error'); } }}>Mark all read</button></div>
-      <ErrorBox error={error} />
-      {loading ? <Loading /> : !data.items.length ? <Empty>{unreadOnly ? 'No unread notifications.' : 'No notifications yet.'}</Empty> : (
-        <>
-          <div className="card" style={{ padding: 0 }}>
-            {data.items.map((n: any) => (
-              <button key={n.id} onClick={() => open(n)} className="notif" style={{ fontWeight: n.read_at ? 400 : 600 }}>
-                <span className={`dot ${n.read_at ? '' : 'on'}`} aria-label={n.read_at ? 'read' : 'unread'} />
-                <span style={{ flex: 1, textAlign: 'left' }}><div>{n.title}</div>{n.body && <div className="muted" style={{ fontWeight: 400, fontSize: 13 }}>{n.body}</div>}</span>
-                <span className="muted" style={{ fontWeight: 400, fontSize: 12, whiteSpace: 'nowrap' }}>{fmtDateTime(n.created_at)}</span>
-              </button>))}
+    <div className="stack-4">
+      <PageHeader
+        title="Notifications"
+        description="Approvals, decisions, reminders and security notices."
+        actions={<Button onClick={() => markAllRead().catch((e: unknown) => toast(errorMessage(e), 'error'))}>Mark all read</Button>}
+      />
+      <Checkbox label="Unread only" checked={unreadOnly} onChange={(e) => { setUnreadOnly(e.target.checked); setPage(1); }} />
+      <QueryState query={query} isEmpty={(d) => !d.items.length} empty={<EmptyState icon={<BellOff />} title={unreadOnly ? 'No unread notifications' : 'No notifications yet'} />}>
+        {(d) => (
+          <div className="stack-3">
+            <Card flush aria-label="Notifications"><div className="notice-list">{d.items.map((n) => <NotificationRow key={n.id} n={n} onOpen={open} />)}</div></Card>
+            <Pagination page={d.page} pageSize={d.pageSize} total={d.total} onPage={setPage} />
           </div>
-          <Pager page={data.page} pageSize={data.pageSize} total={data.total} onPage={setPage} />
-        </>
-      )}
+        )}
+      </QueryState>
     </div>
   );
 }

@@ -3,7 +3,7 @@ import { api, qs } from '../api';
 import { useAuth } from '../auth';
 import { fmtDate, todayLocal } from '../format';
 import { useLoad, Loading, ErrorBox, Empty, Modal, Field, Tabs, Pager, StatusBadge, Confirm, useToast, errText } from '../ui';
-import { EmployeePicker } from './Lifecycle';
+import { EmployeePicker } from '../features/employees/EmployeePicker';
 
 type Tab = 'mine' | 'team' | 'all';
 export const PURPOSE: Record<string, string> = {

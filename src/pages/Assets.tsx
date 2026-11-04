@@ -3,7 +3,7 @@ import { api, qs } from '../api';
 import { useAuth } from '../auth';
 import { fmtDate, fmtDateTime, todayLocal } from '../format';
 import { useLoad, Loading, ErrorBox, Empty, Modal, Field, Tabs, Pager, StatusBadge, useToast, errText } from '../ui';
-import { EmployeePicker } from './Lifecycle';
+import { EmployeePicker } from '../features/employees/EmployeePicker';
 
 export const ASSET_CATEGORY: Record<string, string> = { lab_instrument: 'Lab instrument', it: 'IT equipment', ppe: 'PPE', vehicle: 'Vehicle', furniture: 'Furniture', tool: 'Tool', other: 'Other' };
 const STATUS: Record<string, string> = { available: 'Available', assigned: 'Issued', in_repair: 'In repair', retired: 'Retired', lost: 'Lost' };

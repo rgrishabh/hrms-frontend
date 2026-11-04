@@ -3,7 +3,7 @@ import { api, qs } from '../api';
 import { useAuth } from '../auth';
 import { fmtDate, fmtDateTime, fmtMinutes, todayLocal } from '../format';
 import { useLoad, Loading, ErrorBox, StatusBadge, Empty, Modal, Field, Tabs, Confirm, useToast, errText } from '../ui';
-import { RosterSetup } from './Rosters';
+import { RosterSetup } from '../features/attendance/Roster';
 
 type Tab = 'shifts' | 'rosters' | 'holidays' | 'devices' | 'locks';
 

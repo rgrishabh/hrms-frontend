@@ -61,11 +61,8 @@ test('a manager hands over their approvals and ends the handover; HR sees it', a
   const mine = page.locator('[aria-label="My handover"]');
   await mine.getByRole('button', { name: 'Hand over my approvals' }).click();
   const dlg = page.getByRole('dialog', { name: 'Hand over my approvals' });
-  await dlg.getByLabel('Search for approves instead').fill('Ananya');
-  const pick = dlg.getByLabel('Approves instead', { exact: true });
-  const ananya = pick.locator('option', { hasText: 'Ananya Iyer' });
-  await expect(ananya).toHaveCount(1);
-  await pick.selectOption((await ananya.getAttribute('value'))!);
+  await dlg.getByRole('combobox', { name: 'Approves instead' }).fill('Ananya');
+  await dlg.getByRole('option', { name: /Ananya/ }).first().click();
   await dlg.getByLabel('Note for them (optional)').fill('Audit week (E2E)');
   await dlg.getByRole('button', { name: 'Hand over' }).click();
   await expect(page.getByText('Approvals handed to Ananya Iyer')).toBeVisible();
