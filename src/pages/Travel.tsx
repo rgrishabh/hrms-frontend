@@ -75,6 +75,25 @@ function Mine() {
   );
 }
 
+/** Fills the meals estimate from the organization's per-diem rate for the trip's days (when rates are set). */
+function PerDiemHelper({ from, to, onUse }: { from: string; to: string; onUse: (amount: string) => void }) {
+  const rates = useLoad(() => api.get('/api/v1/expenses/allowance-rates').catch(() => null), []);
+  const tiers: string[] = rates.data?.tiers ?? [];
+  const [tier, setTier] = useState('');
+  const t = tier || tiers[0] || '';
+  const quote = useLoad(() => (t && from && to >= from ? api.get(`/api/v1/expenses/allowance-quote${qs({ kind: 'per_diem', tier: t, date: from, to })}`) : Promise.resolve(null)), [t, from, to]);
+  if (!tiers.length) return null;
+  return (
+    <div className="row" style={{ flexWrap: 'wrap', alignItems: 'end' }} aria-label="Per diem">
+      <Field label="Per-diem class"><select value={t} onChange={(e) => setTier(e.target.value)}>{tiers.map((x) => <option key={x} value={x}>{x}</option>)}</select></Field>
+      {quote.data?.rate ? <>
+        <span className="muted">{quote.data.quantity} day(s) × {money(quote.data.rate)} = <strong>{money(quote.data.amount)}</strong></span>
+        <button type="button" className="btn sm" onClick={() => onUse(quote.data.amount)}>Use for meals</button></>
+        : quote.data && <span className="muted">No per-diem rate for {t} on these dates</span>}
+    </div>
+  );
+}
+
 function RequestForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
   const today = todayLocal();
   const [f, setF] = useState({ purpose: '', tripType: 'domestic', origin: '', destination: '', startDate: today, endDate: today, travelMode: 'rail', accommodation: false, project: '', markOnDuty: true });
@@ -109,6 +128,7 @@ function RequestForm({ onClose, onSaved }: { onClose: () => void; onSaved: () =>
           <div className="row" style={{ flexWrap: 'wrap' }}>
             {EST.map(([k, label]) => <Field key={k} label={label}><input type="number" min={0} step="0.01" value={est[k]} onChange={(e) => setEst({ ...est, [k]: e.target.value })} style={{ width: 120 }} /></Field>)}
           </div>
+          <PerDiemHelper from={f.startDate} to={f.endDate} onUse={(amount) => setEst({ ...est, meals: amount })} />
           <div className="muted">Total {money(total)}</div>
         </fieldset>
         <div className="row" style={{ flexWrap: 'wrap', alignItems: 'end' }}>
