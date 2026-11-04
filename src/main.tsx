@@ -25,6 +25,7 @@ import { Payslips } from './pages/Payslips';
 import { Cases } from './pages/Cases';
 import { Performance } from './pages/Performance';
 import { Assets } from './pages/Assets';
+import { Reports } from './pages/Reports';
 import { MfaVerify, MfaEnroll, RecoveryCodes } from './Mfa';
 import { runtimeEnv, environmentLabel } from './runtime/env';
 
@@ -238,6 +239,8 @@ function Shell({ cfg, children, unread }: { cfg: PublicConfig; children: ReactNo
       { to: '/employees', label: 'Employees', show: canAny('employees.read', 'employees.directory') },
       { to: '/documents', label: 'Documents', show: hasModule('core.documents') },
       { to: '/attendance/team', label: 'Team attendance', show: hasModule('attendance') && canAny('attendance.read', 'attendance.team.read') },
+      // The page itself lists only the reports whose module is on and that the role may run.
+      { to: '/reports', label: 'Reports', show: canAny('employees.read', 'attendance.read', 'attendance.team.read', 'leave.read', 'leave.team.read', 'payroll.read', 'expenses.read', 'competency.read', 'training.manage') },
     ] },
     { title: 'Administration', items: [
       { to: '/attendance/admin', label: 'Attendance setup', show: hasModule('attendance') && canAny('attendance.configure', 'attendance.devices.manage', 'attendance.lock', 'attendance.recalculate') },
@@ -304,6 +307,7 @@ function App() {
         <Route path="/cases" element={<Cases />} />
         <Route path="/performance" element={<Performance />} />
         <Route path="/assets" element={<Assets />} />
+        <Route path="/reports" element={<Reports />} />
         <Route path="/employees" element={<Employees />} />
         <Route path="/employees/:id" element={<EmployeeProfile />} />
         <Route path="/settings/*" element={<SettingsCenter />} />
