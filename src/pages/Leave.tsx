@@ -15,6 +15,7 @@ import { TabPanel, Tabs, useTabParam, type TabItem } from '../components/Tabs';
 import { useToast } from '../components/Toast';
 import { ApplyForm } from '../features/leave/ApplyForm';
 import { LeaveAdmin } from '../features/leave/LeaveAdmin';
+import { LedgerDrawer } from '../features/leave/LedgerDrawer';
 import { TeamCalendar } from '../features/leave/TeamCalendar';
 import type { LeaveBalance, LeaveRequest } from '../features/leave/types';
 import { fmtDate, fmtNumber, todayLocal } from '../format';
@@ -46,10 +47,12 @@ export function Leave() {
 
 function MyLeave() {
   const toast = useToast();
+  const { me } = useAuth();
   const [applying, setApplying] = useState(false);
+  const [ledger, setLedger] = useState(false);
   const [cancel, setCancel] = useState<LeaveRequest | null>(null);
   const [page, setPage] = useState(1);
-  const bal = useApiQuery<{ items: LeaveBalance[]; period: { start: string; end: string } }>('/api/v1/leave/balances');
+  const bal = useApiQuery<{ items: LeaveBalance[]; leaveYear: number; period: { start: string; end: string } }>('/api/v1/leave/balances');
   const reqs = useApiQuery<Paged<LeaveRequest>>(`/api/v1/leave/requests${qs({ scope: 'mine', page, pageSize: 10 })}`, { placeholderData: (p) => p });
   const today = todayLocal();
   const reload = () => invalidateApi('/api/v1/leave', '/api/v1/dashboard');
@@ -65,7 +68,7 @@ function MyLeave() {
     <div className="stack-6">
       <div className="cluster-between">
         <span className="text-2 text-sm tnum">{bal.data && `Leave year ${fmtDate(bal.data.period.start)} – ${fmtDate(bal.data.period.end)}`}</span>
-        <Button variant="primary" disabled={!bal.data?.items.length} onClick={() => setApplying(true)}>Apply for leave</Button>
+        <span className="cluster"><Button disabled={!bal.data?.items.length} onClick={() => setLedger(true)}>Balance history</Button><Button variant="primary" disabled={!bal.data?.items.length} onClick={() => setApplying(true)}>Apply for leave</Button></span>
       </div>
       <QueryState
         query={bal}
@@ -94,6 +97,7 @@ function MyLeave() {
           {(d) => <Table label="My leave requests" columns={columns} rows={d.items} rowKey={(r) => r.id} refreshing={reqs.isPlaceholderData} pagination={{ page: d.page, pageSize: d.pageSize, total: d.total, onPage: setPage }} />}
         </QueryState>
       </div>
+      {ledger && bal.data && me?.user.employeeId && <LedgerDrawer employeeId={me.user.employeeId} types={bal.data.items} leaveYear={bal.data.leaveYear} onClose={() => setLedger(false)} />}
       {applying && bal.data && <ApplyForm types={bal.data.items} onClose={() => setApplying(false)} onDone={() => void reload()} />}
       {cancel && (
         <ConfirmDialog
