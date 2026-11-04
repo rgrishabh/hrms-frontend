@@ -13,7 +13,7 @@ import { Recruitment } from '../pages/Recruitment';
 import { SettingsCenter } from '../pages/Settings';
 import type { ReactNode } from 'react';
 
-const flags = ['FEATURE_SHIFTS', 'FEATURE_PAYROLL', 'FEATURE_RECRUITMENT', 'FEATURE_OFFBOARDING', 'FEATURE_ONBOARDING', 'FEATURE_ATTENDANCE', 'FEATURE_ATTENDANCE_BIOMETRIC'];
+const flags = ['FEATURE_SHIFTS', 'FEATURE_PAYROLL', 'FEATURE_PAYROLL_STATUTORY', 'FEATURE_RECRUITMENT', 'FEATURE_OFFBOARDING', 'FEATURE_ONBOARDING', 'FEATURE_ATTENDANCE', 'FEATURE_ATTENDANCE_BIOMETRIC'];
 const CONFIG = { brand: { name: 'Acme', productName: 'Acme HR', primaryColor: '#14532d' }, features: Object.fromEntries(flags.map((f) => [f, true])), mode: 'multi', mfa: { available: true } };
 
 type Handler = (url: string, init: RequestInit) => unknown;
@@ -121,11 +121,12 @@ describe('QA-004 salary tab', () => {
       return { items: [] };
     });
     show(<Payroll />, '/payroll?tab=salaries');
-    const select = await screen.findByRole('combobox', { name: /employee/i });
-    await screen.findByRole('option', { name: /Asha/ });
-    await userEvent.selectOptions(select, 'a');
+    await userEvent.click(await screen.findByRole('combobox', { name: /employee/i }));
+    await userEvent.click(await screen.findByRole('option', { name: /Asha/ }));
     await screen.findByText(/UAN-OF-ASHA/);
-    await userEvent.selectOptions(select, 'b');
+    await userEvent.click(screen.getByRole('button', { name: /Clear Employee/ }));
+    await userEvent.click(await screen.findByRole('combobox', { name: /employee/i }));
+    await userEvent.click(await screen.findByRole('option', { name: /Ben/ }));
     await waitFor(() => expect(screen.queryByText(/UAN-OF-ASHA/)).toBeNull());
     await act(async () => { finishB(problem(500, 'Statutory failed')); });
     expect(screen.queryByText(/UAN-OF-ASHA/)).toBeNull();
