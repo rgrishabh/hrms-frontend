@@ -22,8 +22,8 @@ test('travel with an advance: manager and finance approve, finance pays the adva
   await form.getByLabel('Purpose').fill('Groundwater sampling for the Kolhapur MIDC baseline study');
   await form.getByLabel('From (city)').fill('Navi Mumbai');
   await form.getByLabel('Destination').fill('Kolhapur — Shiroli MIDC');
-  await form.getByLabel('Start', { exact: true }).fill(start);
-  await form.getByLabel('Return', { exact: true }).fill(plus(start, 1));
+  await form.getByLabel(/^Start/).fill(start);
+  await form.getByLabel(/^Return/).fill(plus(start, 1));
   await form.getByLabel('Mode').selectOption('bus');
   await form.getByLabel('Tickets / fuel').fill('1800');
   await form.getByLabel('Stay').fill('2400');
@@ -66,7 +66,7 @@ test('the claim for a completed trip opens in Expenses, linked to the trip and i
   const trip = page.getByRole('table', { name: 'My trips' }).getByRole('row').filter({ hasText: 'NABL regional office' }).first();
   await trip.getByRole('button', { name: 'Details' }).click();
   const detail = page.getByRole('dialog', { name: /^Trip — Pune → Mumbai/ });
-  await expect(detail.locator('.stat').filter({ hasText: 'Advance outstanding' })).toContainText('₹1,500.00');
+  await expect(detail.locator('.tile').filter({ hasText: 'Advance outstanding' })).toContainText('₹1,500.00');
   await detail.getByRole('button', { name: 'Close' }).click();
   await trip.getByRole('button', { name: 'Claim expenses' }).click();
   await expect(page).toHaveURL(/\/expenses\?tab=mine&claim=/);
