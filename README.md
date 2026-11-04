@@ -15,9 +15,12 @@ npm run lint && npm test && npm run build
 
 Playwright tests in `e2e/` drive the real app as the backend's demo personas (analyst, lab manager,
 HR head, payroll, IT): every menu page per role, the performance review from self-review to
-acknowledgement, issuing / returning a calibrated instrument, and reports (HR grouping and CSV
-download, a manager limited to their own team), and the dashboard (tiles per role that agree with
-the reports they open). They need an installation loaded
+acknowledgement, issuing / returning a calibrated instrument, reports (HR grouping and CSV
+download, a manager limited to their own team), the dashboard (tiles per role that agree with
+the reports they open), leave from application through manager approval to cancellation, a
+returned request with a required reason, and an expense claim from receipt upload through manager
+and finance approval, a maker–checker payment batch and payment. The flows clean up after
+themselves (or use unique names and free dates), so the suite can be re-run on the same data. They need an installation loaded
 with the backend's **synthetic** demo data (`npm run demo` in hrms-backend) and `MFA_ENFORCEMENT=off`.
 
 ```bash
