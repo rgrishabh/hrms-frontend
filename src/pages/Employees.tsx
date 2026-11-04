@@ -133,8 +133,11 @@ function EmployeeForm({ org, existing, onClose, onSaved }: { org: Org; existing?
   const [error, setError] = useState<unknown>(null);
   const [dups, setDups] = useState<Duplicate[] | null>(null);
   const [busy, setBusy] = useState(false);
+  const [exitDate, setExitDate] = useState('');
   const v = (k: string) => f[k] ?? '';
   const set = (k: string) => (e: { target: { value: string } }) => setF({ ...f, [k]: e.target.value });
+  /** Moving someone to exited is the one change that needs a date of its own. */
+  const exiting = !!existing && v('status') === 'exited' && existing.status !== 'exited';
   const payload = (): Record<string, string | null> => {
     const out: Record<string, string | null> = {};
     for (const [k, val] of Object.entries({ ...f, reportingManagerId: manager?.id ?? '' })) {
@@ -152,7 +155,7 @@ function EmployeeForm({ org, existing, onClose, onSaved }: { org: Org; existing?
         const p = payload();
         const changes: Record<string, string | null> = {};
         for (const [k, col] of Object.entries(FIELD_COLUMNS)) if ((p[k] ?? null) !== (existing[col] ?? null)) changes[k] = p[k] ?? null;
-        await api.patch(`/api/v1/employees/${existing.id}`, { changes, expectedVersion: existing.version });
+        await api.patch(`/api/v1/employees/${existing.id}`, { changes, expectedVersion: existing.version, ...(exiting ? { exitDate } : {}) });
         toast('Employee updated');
         await invalidateApi('/api/v1/employees');
         onSaved(existing.id);
@@ -187,6 +190,7 @@ function EmployeeForm({ org, existing, onClose, onSaved }: { org: Org; existing?
           <Input label="Grade" value={v('grade')} onChange={set('grade')} />
           <Select label="Employment type" value={v('employmentType')} options={asOptions(EMPLOYMENT_TYPES)} onChange={set('employmentType')} />
           <Select label="Status" value={v('status')} options={asOptions(STATUSES)} onChange={set('status')} />
+          {exiting && <DatePicker label="Exit date" required min={v('dateOfJoining') || undefined} error={errors['exitDate']} value={exitDate} onChange={(e) => setExitDate(e.target.value)} />}
           <DatePicker label="Date of joining" required error={errors['dateOfJoining']} value={v('dateOfJoining')} onChange={set('dateOfJoining')} />
           <DatePicker label="Probation end" error={errors['probationEndDate']} value={v('probationEndDate')} onChange={set('probationEndDate')} />
           <DatePicker label="Confirmation date" error={errors['confirmationDate']} value={v('confirmationDate')} onChange={set('confirmationDate')} />
@@ -309,22 +313,43 @@ function ImportDialog({ onClose }: { onClose: () => void }) {
 
 const BLANK_BANK = { accountHolder: '', accountNumber: '', ifsc: '', bankName: '' };
 
+interface BankAccount { accountHolder: string; accountNumberMasked: string; ifsc: string; bankName: string | null }
+interface PendingBankChange extends BankAccount { id: string; requestedAt: string; requestedBy: string }
+
 function BankPanel({ employeeId }: { employeeId: string }) {
-  const { can } = useAuth();
+  const { can, canAny, me } = useAuth();
   const [show, setShow] = useState(false);
   const [edit, setEdit] = useState(false);
-  const bank = useApiQuery<{ accountHolder: string; accountNumberMasked: string; ifsc: string; bankName: string | null } | null>(show ? `/api/v1/employees/${employeeId}/bank-account` : null, { gcTime: 0, staleTime: 0 });
+  const url = `/api/v1/employees/${employeeId}/bank-account`;
+  const canRead = can('employees.bank.read') || me?.user.employeeId === employeeId;
+  const bank = useApiQuery<BankAccount | null>(show && canRead ? url : null, { gcTime: 0, staleTime: 0 });
+  // Reading either one is recorded in the audit log, so neither loads until asked for.
+  const pending = useApiQuery<{ pending: PendingBankChange | null }>(show && canAny('employees.bank.read', 'employees.bank.approve') ? `${url}/pending` : null, { gcTime: 0, staleTime: 0 });
+  const canChange = can('employees.bank.manage') && me?.user.employeeId !== employeeId;
   return (
-    <Card title={<span className="cluster">Bank details<Badge tone="info">Restricted</Badge></span>} actions={can('employees.bank.manage') && <Button size="sm" onClick={() => setEdit(true)}>Update</Button>}>
+    <Card title={<span className="cluster">Bank details<Badge tone="info">Restricted</Badge></span>} actions={canChange && <Button size="sm" onClick={() => setEdit(true)}>Update</Button>}>
       {!show
         ? <div className="cluster"><Button size="sm" onClick={() => setShow(true)}>Show masked details</Button><span className="text-sm text-2">Viewing is recorded in the audit log.</span></div>
         : (
-          <QueryState query={bank} loading={<SkeletonRows rows={2} />} isEmpty={(d) => !d} empty={<EmptyState compact title="No bank account on file." />}>
-            {(d) => d && <KeyValue items={[{ label: 'Account holder', value: d.accountHolder }, { label: 'Account number', value: <span className="mono">{d.accountNumberMasked}</span> }, { label: 'IFSC', value: <span className="mono">{d.ifsc}</span> }, { label: 'Bank', value: d.bankName }]} />}
-          </QueryState>
+          <div className="stack-3">
+            {pending.data?.pending && (
+              <Alert tone="warn">
+                <div className="stack-2">
+                  <strong>A change is waiting for approval</strong>
+                  <span>Requested by {pending.data.pending.requestedBy} on {fmtDateTime(pending.data.pending.requestedAt)}. Salary keeps going to the current account until someone approves it.</span>
+                  <KeyValue items={[{ label: 'Account holder', value: pending.data.pending.accountHolder }, { label: 'Account number', value: <span className="mono">{pending.data.pending.accountNumberMasked}</span> }, { label: 'IFSC', value: <span className="mono">{pending.data.pending.ifsc}</span> }]} />
+                </div>
+              </Alert>
+            )}
+            {canRead && (
+              <QueryState query={bank} loading={<SkeletonRows rows={2} />} isEmpty={(d) => !d} empty={<EmptyState compact title="No bank account on file." />}>
+                {(d) => d && <KeyValue items={[{ label: 'Account holder', value: d.accountHolder }, { label: 'Account number', value: <span className="mono">{d.accountNumberMasked}</span> }, { label: 'IFSC', value: <span className="mono">{d.ifsc}</span> }, { label: 'Bank', value: d.bankName }]} />}
+              </QueryState>
+            )}
+          </div>
         )}
       {/* Mounted only while open, so the typed account number leaves memory when the dialog closes. */}
-      {edit && <BankForm employeeId={employeeId} onClose={() => setEdit(false)} onSaved={() => { setShow(true); void invalidateApi(`/api/v1/employees/${employeeId}/bank-account`); }} />}
+      {edit && <BankForm employeeId={employeeId} onClose={() => setEdit(false)} onSaved={() => { setShow(true); void invalidateApi(url); }} />}
     </Card>
   );
 }
@@ -339,8 +364,8 @@ function BankForm({ employeeId, onClose, onSaved }: { employeeId: string; onClos
     setError(null);
     setBusy(true);
     try {
-      await api.put(`/api/v1/employees/${employeeId}/bank-account`, { ...f, bankName: f.bankName || null });
-      toast('Bank details updated');
+      await api.put<{ pending: boolean; id: string; approvalRequestId: string }>(`/api/v1/employees/${employeeId}/bank-account`, { ...f, bankName: f.bankName || null });
+      toast('Bank change sent for approval');
       onSaved();
       onClose();
     } catch (err) { setError(err); } finally { setBusy(false); }
@@ -348,13 +373,13 @@ function BankForm({ employeeId, onClose, onSaved }: { employeeId: string; onClos
   return (
     <Modal title="Update bank details" onClose={onClose}>
       <form className="stack-3" autoComplete="off" onSubmit={submit}>
-        <Alert>The full account number is encrypted and can never be displayed again after saving, only the last 4 digits.</Alert>
+        <Alert>This change goes to someone else for approval, and the employee is told. Afterwards only the last 4 digits of the account number are ever shown.</Alert>
         <Input label="Account holder" required value={f.accountHolder} onChange={(e) => setF({ ...f, accountHolder: e.target.value })} />
-        <Input label="Account number" hint="9 to 18 digits" required inputMode="numeric" value={f.accountNumber} onChange={(e) => setF({ ...f, accountNumber: e.target.value.replace(/\D/g, '') })} />
+        <Input label="Account number" hint="9 to 18 digits" required inputMode="numeric" minLength={9} maxLength={18} value={f.accountNumber} onChange={(e) => setF({ ...f, accountNumber: e.target.value.replace(/\D/g, '') })} />
         <Input label="IFSC" required placeholder="SBIN0001234" value={f.ifsc} onChange={(e) => setF({ ...f, ifsc: e.target.value.toUpperCase() })} />
         <Input label="Bank name" value={f.bankName} onChange={(e) => setF({ ...f, bankName: e.target.value })} />
         <InlineError error={error} />
-        <div className="cluster-between"><span /><div className="cluster"><Button onClick={onClose}>Cancel</Button><Button type="submit" variant="primary" loading={busy}>Save</Button></div></div>
+        <div className="cluster-between"><span /><div className="cluster"><Button onClick={onClose}>Cancel</Button><Button type="submit" variant="primary" loading={busy}>Send for approval</Button></div></div>
       </form>
     </Modal>
   );
@@ -427,7 +452,7 @@ function ProfileBody({ employee: e, id }: { employee: Employee; id: string }) {
                 ] : []),
               ]} />
             </Card>
-            {full && (self || can('employees.bank.read')) && <BankPanel employeeId={id} />}
+            {full && (self || canAny('employees.bank.read', 'employees.bank.approve')) && <BankPanel employeeId={id} />}
           </div>
         )}
         {tab === 'personal' && <PersonalDetails employeeId={id} />}
