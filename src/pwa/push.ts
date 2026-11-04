@@ -1,8 +1,9 @@
 import { api } from '../api';
 
-/** Endpoints a later batch connects; shown only when FEATURE_PUSH_NOTIFICATIONS is on. */
-const KEY_URL = '/api/v1/notifications/push/key';
-const SUBSCRIPTIONS_URL = '/api/v1/notifications/push/subscriptions';
+/** Shown only when FEATURE_PUSH_NOTIFICATIONS is on. Without VAPID keys the server answers 409 feature_not_configured. */
+const KEY_URL = '/api/v1/notifications/push/public-key';
+const SUBSCRIBE_URL = '/api/v1/notifications/push/subscribe';
+const UNSUBSCRIBE_URL = '/api/v1/notifications/push/unsubscribe';
 
 export const pushSupported = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
 
@@ -24,12 +25,13 @@ export async function enablePush(): Promise<void> {
   const reg = await navigator.serviceWorker.ready;
   const { publicKey } = await api.get<{ publicKey: string }>(KEY_URL);
   const subscription = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(publicKey) });
-  await api.post(SUBSCRIPTIONS_URL, subscription.toJSON());
+  const { endpoint, keys } = subscription.toJSON();
+  await api.post(SUBSCRIBE_URL, { endpoint, keys });
 }
 
 export async function disablePush(): Promise<void> {
   const subscription = await currentSubscription();
   if (!subscription) return;
-  await api.post(`${SUBSCRIPTIONS_URL}/remove`, { endpoint: subscription.endpoint });
+  await api.post(UNSUBSCRIBE_URL, { endpoint: subscription.endpoint });
   await subscription.unsubscribe();
 }
