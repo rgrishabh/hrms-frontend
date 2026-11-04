@@ -12,6 +12,7 @@ import { Approvals } from './pages/Approvals';
 import { Employees, EmployeeProfile } from './pages/Employees';
 import { MyProfile } from './pages/PersonalDetails';
 import { AttendanceAdmin } from './pages/AttendanceAdmin';
+import { RosterPage } from './pages/Rosters';
 import { SettingsCenter } from './pages/Settings';
 import { Leave } from './pages/Leave';
 import { Notifications } from './pages/Notifications';
@@ -258,6 +259,7 @@ function Shell({ cfg, children, unread }: { cfg: PublicConfig; children: ReactNo
     { title: 'People', items: [
       { to: '/employees', label: 'Employees', show: canAny('employees.read', 'employees.directory') },
       { to: '/documents', label: 'Documents', show: hasModule('core.documents') },
+      { to: '/attendance/roster', label: 'Roster', show: hasModule('shifts') && canAny('attendance.self', 'attendance.team.read', 'attendance.read') && (!!me.user.employeeId || canAny('attendance.read', 'attendance.team.read')) },
       { to: '/attendance/team', label: 'Team attendance', show: hasModule('attendance') && canAny('attendance.read', 'attendance.team.read') },
       // The page itself lists only the reports whose module is on and that the role may run.
       { to: '/reports', label: 'Reports', show: canAny('employees.read', 'attendance.read', 'attendance.team.read', 'leave.read', 'leave.team.read', 'payroll.read', 'expenses.read', 'competency.read', 'training.manage') },
@@ -313,6 +315,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/attendance/me" element={<MyAttendance />} />
+        <Route path="/attendance/roster" element={<RosterPage />} />
         <Route path="/attendance/team" element={<TeamAttendance />} />
         <Route path="/attendance/admin" element={<AttendanceAdmin />} />
         <Route path="/approvals" element={<Approvals />} />
