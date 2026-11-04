@@ -145,6 +145,7 @@ table.t tr.clickable:hover td { background: var(--surface-2); }
 .cal .day.half_day { background: var(--warn-bg); }
 .cal .day.weekly_off, .cal .day.holiday { background: var(--surface-2); }
 .cal .day.on_leave { background: var(--info-bg); }
+.cal .day.on_duty { background: var(--ok-bg); border-style: dashed; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
 .notif { display: flex; gap: 12px; align-items: flex-start; width: 100%; padding: 12px 16px; border: none; border-bottom: 1px solid var(--border); background: none; color: var(--text); font: inherit; cursor: pointer; }
 .notif:last-child { border-bottom: none; }
