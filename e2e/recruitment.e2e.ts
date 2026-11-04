@@ -48,7 +48,7 @@ test('a requisition becomes a hire: request, approval, candidate, interview, off
   // 3. The HR executive adds a candidate (with consent) and moves them to interview.
   await login(page, 'hr.exec');
   await page.goto('/recruitment?tab=requisitions');
-  await page.getByRole('row').filter({ hasText: title }).click();
+  await page.getByRole('row').filter({ hasText: title }).getByRole('button', { name: title }).click();
   await page.getByRole('button', { name: 'Add candidate' }).click();
   await page.getByRole('dialog', { name: 'Add candidate' }).getByRole('button', { name: 'New candidate' }).click();
   const cand = page.getByRole('dialog', { name: 'New candidate' });
@@ -60,7 +60,7 @@ test('a requisition becomes a hire: request, approval, candidate, interview, off
   await cand.getByLabel('How consent was obtained').fill('Applied on the careers page; consent checkbox');
   await cand.getByRole('button', { name: 'Save' }).click();
   await expect(page.getByText('Added to the pipeline')).toBeVisible();
-  await page.getByRole('row').filter({ hasText: candidate }).click();
+  await page.getByRole('row').filter({ hasText: candidate }).getByRole('button', { name: candidate }).click();
   const appDlg = page.getByRole('dialog', { name: new RegExp(`^${candidate} — REQ-`) });
   for (const stage of ['Screening', 'Interview']) {
     await appDlg.getByRole('button', { name: `→ ${stage}` }).click();
@@ -79,7 +79,7 @@ test('a requisition becomes a hire: request, approval, candidate, interview, off
   // 4. The panel member gives feedback from "My interviews".
   await login(page, 'lab.manager');
   await page.goto('/recruitment?tab=interviews');
-  await page.getByRole('row').filter({ hasText: candidate }).click();
+  await page.getByRole('row').filter({ hasText: candidate }).getByRole('button', { name: candidate }).click();
   await page.getByRole('button', { name: 'Give feedback' }).click();
   const fb = page.getByRole('dialog', { name: 'Feedback — round 1' });
   await fb.getByRole('button', { name: '4 of 5' }).click();
@@ -91,8 +91,8 @@ test('a requisition becomes a hire: request, approval, candidate, interview, off
   // 5. HR moves to offer and drafts it; an HR administrator can't approve their own offer.
   await login(page, 'hr.head');
   await page.goto('/recruitment?tab=requisitions');
-  await page.getByRole('row').filter({ hasText: title }).click();
-  await page.getByRole('row').filter({ hasText: candidate }).click();
+  await page.getByRole('row').filter({ hasText: title }).getByRole('button', { name: title }).click();
+  await page.getByRole('row').filter({ hasText: candidate }).getByRole('button', { name: candidate }).click();
   await appDlg.getByRole('button', { name: '→ Offer' }).click();
   await page.getByRole('dialog', { name: 'Move to Offer' }).getByRole('button', { name: 'Move' }).click();
   await appDlg.getByRole('button', { name: 'Draft offer' }).click();
@@ -100,7 +100,7 @@ test('a requisition becomes a hire: request, approval, candidate, interview, off
   await offer.getByLabel('Designation').fill('Analytical Chemist');
   await firstOption(page, 'Legal entity');
   await firstOption(page, 'Branch');
-  await offer.getByLabel('Annual CTC (₹)').fill('540000');
+  await offer.getByLabel(/Annual CTC/).fill('540000');
   await offer.getByRole('button', { name: 'Save draft' }).click();
   await expect(page.getByText(/^Draft saved/)).toBeVisible();
   await appDlg.getByRole('button', { name: 'Submit for approval' }).click();
@@ -119,8 +119,8 @@ test('a requisition becomes a hire: request, approval, candidate, interview, off
   // 7. HR records the sent and accepted offer and hires: a pre-joining employee, requisition filled.
   await login(page, 'hr.head');
   await page.goto('/recruitment?tab=requisitions');
-  await page.getByRole('row').filter({ hasText: title }).click();
-  await page.getByRole('row').filter({ hasText: candidate }).click();
+  await page.getByRole('row').filter({ hasText: title }).getByRole('button', { name: title }).click();
+  await page.getByRole('row').filter({ hasText: candidate }).getByRole('button', { name: candidate }).click();
   await appDlg.getByRole('button', { name: 'Mark sent' }).click();
   await expect(page.getByText('Marked as sent')).toBeVisible();
   await appDlg.getByRole('button', { name: 'Accepted' }).click();
