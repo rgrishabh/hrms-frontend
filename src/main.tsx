@@ -27,6 +27,7 @@ import { Performance } from './pages/Performance';
 import { Assets } from './pages/Assets';
 import { Overtime } from './pages/Overtime';
 import { FieldDuty } from './pages/FieldDuty';
+import { Accounting } from './pages/Accounting';
 import { Reports } from './pages/Reports';
 import { MfaVerify, MfaEnroll, RecoveryCodes } from './Mfa';
 import { runtimeEnv, environmentLabel } from './runtime/env';
@@ -248,6 +249,7 @@ function Shell({ cfg, children, unread }: { cfg: PublicConfig; children: ReactNo
     ] },
     { title: 'Administration', items: [
       { to: '/attendance/admin', label: 'Attendance setup', show: hasModule('attendance') && canAny('attendance.configure', 'attendance.devices.manage', 'attendance.lock', 'attendance.recalculate') },
+      { to: '/accounting', label: 'Accounting', show: hasModule('accounting_exports') && canAny('accounting.export', 'accounting.configure') },
       { to: '/settings', label: 'Settings', show: canAny('settings.read', 'users.manage', 'audit.read', 'org.read') },
     ] },
   ];
@@ -313,6 +315,7 @@ function App() {
         <Route path="/assets" element={<Assets />} />
         <Route path="/overtime" element={<Overtime />} />
         <Route path="/field-duty" element={<FieldDuty />} />
+        <Route path="/accounting" element={<Accounting />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/employees" element={<Employees />} />
         <Route path="/employees/:id" element={<EmployeeProfile />} />
