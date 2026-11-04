@@ -36,8 +36,8 @@ test('field duty: report on a site visit, request a trip, the manager approves, 
   const start = plus(istToday(), 20 + 2 * (Math.floor(Date.now() / 60_000) % 30));
   await page.getByRole('button', { name: 'Request field duty' }).click();
   const form = page.getByRole('dialog', { name: 'Request field duty' });
-  await form.getByLabel('From', { exact: true }).fill(start);
-  await form.getByLabel('To', { exact: true }).fill(plus(start, 1));
+  await form.getByLabel(/^From/).fill(start);
+  await form.getByLabel(/^To/).fill(plus(start, 1));
   await expect(form.getByLabel(/^Day/)).toBeDisabled();             // half days are for a single date
   await form.getByLabel('Purpose').selectOption('field_sampling');
   await form.getByLabel(/^Place/).fill('Lote Parshuram MIDC — CETP inlet');
@@ -63,7 +63,7 @@ test('field duty: report on a site visit, request a trip, the manager approves, 
   if (!(await days.count())) { await page.getByRole('button', { name: 'Previous month' }).click(); days = page.getByRole('button', { name: /On field duty$/ }); }
   await expect(days.first()).toBeVisible();
   await days.first().click();
-  await expect(page.locator('.stat').filter({ hasText: /^Field duty/ })).toContainText(/full day|half day/);
+  await expect(page.getByText(/^(full day|half day)$/).first()).toBeVisible();
   await noErrors(page);
 });
 

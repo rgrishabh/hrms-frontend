@@ -13,7 +13,7 @@ test('HR builds a rotation, sees the instrument-room crews next week, and change
   await patterns.getByRole('button', { name: 'New pattern' }).click();
   const dlg = page.getByRole('dialog', { name: 'New roster pattern' });
   await dlg.getByLabel('Code').fill(code);
-  await dlg.getByLabel('Name', { exact: true }).fill('Weekend lab cover (E2E)');
+  await dlg.getByLabel(/^Name/).fill('Weekend lab cover (E2E)');
   await dlg.getByLabel('Days in the cycle').fill('4');
   await dlg.getByLabel('Day 2', { exact: true }).selectOption({ label: 'MORN' });
   await dlg.getByLabel('Day 3', { exact: true }).selectOption({ label: 'Off' });
