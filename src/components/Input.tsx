@@ -32,7 +32,7 @@ export function Field({ label, hideLabel, hint, error: serverError, required, cl
     if (target.form?.querySelector(':invalid') === target) target.focus();
   };
   return (
-    <div className={['field', className].filter(Boolean).join(' ')} onInvalidCapture={onInvalid} onInputCapture={() => setNativeError('')} onChangeCapture={() => setNativeError('')}>
+    <div className={['field', className].filter(Boolean).join(' ')} onInvalidCapture={onInvalid} onChange={() => setNativeError('')}>
       <label htmlFor={id} className={hideLabel ? 'visually-hidden' : 'field__label'}>
         {label}{required && <span className="field__required" aria-hidden="true"> *</span>}
       </label>
