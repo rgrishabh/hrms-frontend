@@ -2,7 +2,7 @@ import { StrictMode, useEffect, useState, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, NavLink, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import './styles.css';
-import { AuthProvider, useAuth, type PublicConfig } from './auth';
+import { AuthProvider, useAuth, TEMPORARY, type PublicConfig } from './auth';
 import { ToastProvider, Loading, ErrorBox, Field, errText, useToast } from './ui';
 import { api, setCsrf } from './api';
 import { Dashboard } from './pages/Dashboard';
@@ -10,7 +10,9 @@ import { MyAttendance } from './pages/MyAttendance';
 import { TeamAttendance } from './pages/TeamAttendance';
 import { Approvals } from './pages/Approvals';
 import { Employees, EmployeeProfile } from './pages/Employees';
+import { MyProfile } from './pages/PersonalDetails';
 import { AttendanceAdmin } from './pages/AttendanceAdmin';
+import { RosterPage } from './pages/Rosters';
 import { SettingsCenter } from './pages/Settings';
 import { Leave } from './pages/Leave';
 import { Notifications } from './pages/Notifications';
@@ -18,6 +20,19 @@ import { Documents } from './pages/Documents';
 import { Expenses } from './pages/Expenses';
 import { Competency } from './pages/Competency';
 import { Policies } from './pages/Policies';
+import { Recruitment } from './pages/Recruitment';
+import { Lifecycle } from './pages/Lifecycle';
+import { Payroll } from './pages/Payroll';
+import { Payslips } from './pages/Payslips';
+import { Cases } from './pages/Cases';
+import { Performance } from './pages/Performance';
+import { Assets } from './pages/Assets';
+import { Overtime } from './pages/Overtime';
+import { FieldDuty } from './pages/FieldDuty';
+import { Travel } from './pages/Travel';
+import { Loans } from './pages/Loans';
+import { Accounting } from './pages/Accounting';
+import { Reports } from './pages/Reports';
 import { MfaVerify, MfaEnroll, RecoveryCodes } from './Mfa';
 import { runtimeEnv, environmentLabel } from './runtime/env';
 
@@ -134,6 +149,7 @@ export function ChangePasswordForm({ forced, onDone }: { forced?: boolean; onDon
 function Account() {
   const { me, logout, refresh, hasModule } = useAuth();
   const toast = useToast();
+  const [sms, setSms] = useState<boolean>(me!.preferences.smsNotifications ?? true);
   return (
     <div className="stack" style={{ maxWidth: 520 }}>
       <div><h1>My account</h1><p className="sub">{me!.user.email}</p></div>
@@ -144,6 +160,14 @@ function Account() {
             catch (x) { toast(errText(x), 'error'); }
           }} /> Email me about approvals, decisions, reminders and security notices</label>
           <span className="muted" style={{ fontSize: 12 }}>You always see notifications in the app.</span></div>)}
+      {hasModule('notifications.sms') && (
+        <div className="card stack"><h2>SMS</h2>
+          <label className="row"><input type="checkbox" checked={sms} onChange={async (e) => {
+            const on = e.target.checked; setSms(on);   // reflect the click at once; undo if saving fails
+            try { await api.put('/api/v1/auth/preferences', { smsNotifications: on }); await refresh(); toast(on ? 'SMS on' : 'SMS off'); }
+            catch (x) { setSms(!on); toast(errText(x), 'error'); }
+          }} /> Text me important notifications (approvals waiting, payslips, payments)</label>
+          <span className="muted" style={{ fontSize: 12 }}>Sent to the mobile number on your employee record.</span></div>)}
       <div className="card"><h2>Change password</h2><ChangePasswordForm onDone={() => toast('Password changed')} /></div>
       <MfaCard />
       <div className="card stack"><h2>Sessions</h2><p className="muted" style={{ margin: 0 }}>Sign out of every browser and device, including this one.</p>
@@ -212,8 +236,21 @@ function Shell({ cfg, children, unread }: { cfg: PublicConfig; children: ReactNo
     { title: 'Me', items: [
       { to: '/', label: 'Dashboard', show: true },
       { to: '/notifications', label: 'Notifications', show: true },
+      { to: '/profile', label: 'My profile', show: can('profile.self') && !!me.user.employeeId },
       { to: '/attendance/me', label: 'My attendance', show: hasModule('attendance') && can('attendance.self') && !!me.user.employeeId },
       { to: '/leave', label: 'Leave', show: hasModule('leave') && canAny('leave.self', 'leave.team.read', 'leave.read', 'leave.manage') },
+      { to: '/overtime', label: 'Overtime', show: hasModule('overtime') && ((can('overtime.self') && !!me.user.employeeId) || canAny('overtime.team.read', 'overtime.read', 'overtime.approve', 'overtime.manage')) },
+      { to: '/field-duty', label: 'Field duty', show: hasModule('field_duty') && ((can('field_duty.self') && !!me.user.employeeId) || canAny('field_duty.team.read', 'field_duty.read', 'field_duty.approve', 'field_duty.manage')) },
+      { to: '/travel', label: 'Travel', show: hasModule('travel') && ((can('travel.self') && !!me.user.employeeId) || canAny('travel.team.read', 'travel.read', 'travel.approve', 'expenses.pay')) },
+      { to: '/loans', label: 'Advances & loans', show: hasModule('advances_loans') && ((can('loans.self') && !!me.user.employeeId) || canAny('loans.team.read', 'loans.read', 'loans.approve', 'loans.manage')) },
+      // Everyone can be on an interview panel, so the page is shown whenever the module is on.
+      { to: '/recruitment', label: 'Recruitment', show: hasModule('recruitment') },
+      { to: '/payslips', label: 'Payslips', show: hasModule('payroll.payslips') && can('payslips.self') && !!me?.user.employeeId },
+      { to: '/payroll', label: 'Payroll', show: hasModule('payroll') && canAny('payroll.read', 'payroll.manage', 'payroll.approve', 'payroll.statutory') },
+      { to: '/cases', label: 'Grievances & POSH', show: (hasModule('posh') || hasModule('grievance')) },
+      { to: '/performance', label: 'Performance', show: hasModule('performance') && canAny('performance.self', 'performance.manage') },
+      { to: '/assets', label: 'Assets', show: hasModule('assets') && ((can('assets.self') && !!me.user.employeeId) || can('assets.manage')) },
+      { to: '/lifecycle', label: 'Onboarding & exit', show: hasModule('core.onboarding') || hasModule('core.offboarding') },
       { to: '/policies', label: 'Policies', show: hasModule('core.policies') && canAny('policies.self', 'policies.read', 'policies.manage') },
       { to: '/competency', label: hasModule('lab.competency') ? 'Competency' : 'Training', show: hasModule('training') && canAny('competency.self', 'training.manage', 'competency.read', 'competency.manage', 'competency.assess', 'competency.authorize') },
       { to: '/expenses', label: 'Expenses', show: hasModule('expenses') && canAny('expenses.self', 'expenses.team.read', 'expenses.read', 'expenses.pay', 'expenses.manage') },
@@ -222,10 +259,14 @@ function Shell({ cfg, children, unread }: { cfg: PublicConfig; children: ReactNo
     { title: 'People', items: [
       { to: '/employees', label: 'Employees', show: canAny('employees.read', 'employees.directory') },
       { to: '/documents', label: 'Documents', show: hasModule('core.documents') },
+      { to: '/attendance/roster', label: 'Roster', show: hasModule('shifts') && canAny('attendance.self', 'attendance.team.read', 'attendance.read') && (!!me.user.employeeId || canAny('attendance.read', 'attendance.team.read')) },
       { to: '/attendance/team', label: 'Team attendance', show: hasModule('attendance') && canAny('attendance.read', 'attendance.team.read') },
+      // The page itself lists only the reports whose module is on and that the role may run.
+      { to: '/reports', label: 'Reports', show: canAny('employees.read', 'attendance.read', 'attendance.team.read', 'leave.read', 'leave.team.read', 'payroll.read', 'expenses.read', 'competency.read', 'training.manage') },
     ] },
     { title: 'Administration', items: [
       { to: '/attendance/admin', label: 'Attendance setup', show: hasModule('attendance') && canAny('attendance.configure', 'attendance.devices.manage', 'attendance.lock', 'attendance.recalculate') },
+      { to: '/accounting', label: 'Accounting', show: hasModule('accounting_exports') && canAny('accounting.export', 'accounting.configure') },
       { to: '/settings', label: 'Settings', show: canAny('settings.read', 'users.manage', 'audit.read', 'org.read') },
     ] },
   ];
@@ -259,7 +300,9 @@ function App() {
   const { config, configError, me, loading, refresh } = useAuth();
   const loc = useLocation();
   const unread = useUnread(!!me && !me.passwordChangeRequired && !me.mfa.pending && !me.mfa.enrollmentRequired);
-  if (configError) return <div className="login-wrap"><div className="card login-card"><h2>This address is not configured</h2><p className="muted">{configError}</p></div></div>;
+  if (configError) return <div className="login-wrap"><div className="card login-card">{configError.startsWith(TEMPORARY)
+    ? <><h2>Please wait a moment</h2><p className="muted">{configError}. Retrying in a few seconds…</p><button className="btn" onClick={() => window.location.reload()}>Retry now</button></>
+    : <><h2>This address is not configured</h2><p className="muted">{configError}</p></>}</div></div>;
   if (!config || loading) return <Loading />;
   if (loc.pathname === '/setup') return <Setup cfg={config} />;
   if (!me) return <Login cfg={config} />;
@@ -272,6 +315,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/attendance/me" element={<MyAttendance />} />
+        <Route path="/attendance/roster" element={<RosterPage />} />
         <Route path="/attendance/team" element={<TeamAttendance />} />
         <Route path="/attendance/admin" element={<AttendanceAdmin />} />
         <Route path="/approvals" element={<Approvals />} />
@@ -280,10 +324,24 @@ function App() {
         <Route path="/expenses" element={<Expenses />} />
         <Route path="/competency" element={<Competency />} />
         <Route path="/policies" element={<Policies />} />
+        <Route path="/recruitment" element={<Recruitment />} />
+        <Route path="/lifecycle" element={<Lifecycle />} />
+        <Route path="/payroll" element={<Payroll />} />
+        <Route path="/payslips" element={<Payslips />} />
+        <Route path="/cases" element={<Cases />} />
+        <Route path="/performance" element={<Performance />} />
+        <Route path="/assets" element={<Assets />} />
+        <Route path="/overtime" element={<Overtime />} />
+        <Route path="/field-duty" element={<FieldDuty />} />
+        <Route path="/travel" element={<Travel />} />
+        <Route path="/loans" element={<Loans />} />
+        <Route path="/accounting" element={<Accounting />} />
+        <Route path="/reports" element={<Reports />} />
         <Route path="/employees" element={<Employees />} />
         <Route path="/employees/:id" element={<EmployeeProfile />} />
         <Route path="/settings/*" element={<SettingsCenter />} />
         <Route path="/account" element={<Account />} />
+        <Route path="/profile" element={<MyProfile />} />
         <Route path="/notifications" element={<Notifications onChange={unread.refresh} />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

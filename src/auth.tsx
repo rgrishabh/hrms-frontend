@@ -1,5 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
-import { api, setCsrf } from './api';
+import { api, setCsrf, ApiError } from './api';
+
+/** Prefix of configError when the server is only temporarily unreachable (the page retries by itself). */
+export const TEMPORARY = 'The service is temporarily unavailable';
 import { setLocalePrefs } from './format';
 
 /** Deployment-level public configuration (GET /api/v1/public/config). The only source of branding in the UI. */
@@ -22,7 +25,7 @@ export interface Me {
   permissions: string[];
   csrfToken: string;
   organization: { id: string; name: string };
-  preferences: { timezone: string; dateFormat: string; emailNotifications: boolean };
+  preferences: { timezone: string; dateFormat: string; emailNotifications: boolean; smsNotifications?: boolean };
   /** Central capability map from the server — the only source for module visibility. */
   capabilities: Record<string, boolean>;
 }
@@ -71,7 +74,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       applyBrand(c);
       setLocalePrefs({ timezone: c.organization.timezone, dateFormat: c.organization.dateFormat, currency: c.organization.currency });
       return refresh();
-    }).catch((e) => { setConfigError(e.message); setLoading(false); });
+    }).catch((e) => {
+      // Only a 404 means this address is not an installation; anything else (rate limit, restart, network) is temporary.
+      if (e instanceof ApiError && e.status === 404) { setConfigError(e.message); setLoading(false); return; }
+      setConfigError(`${TEMPORARY}${e instanceof ApiError ? ` (${e.status})` : ''}`); setLoading(false);
+      setTimeout(() => window.location.reload(), 5000);
+    });
   }, [refresh]);
   useEffect(() => {
     const h = () => setMe(null);

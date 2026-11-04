@@ -3,22 +3,25 @@ import { api, qs } from '../api';
 import { useAuth } from '../auth';
 import { fmtDate, fmtDateTime, fmtMinutes, todayLocal } from '../format';
 import { useLoad, Loading, ErrorBox, StatusBadge, Empty, Modal, Field, Tabs, Confirm, useToast, errText } from '../ui';
+import { RosterSetup } from './Rosters';
 
-type Tab = 'shifts' | 'holidays' | 'devices' | 'locks';
+type Tab = 'shifts' | 'rosters' | 'holidays' | 'devices' | 'locks';
 
 export function AttendanceAdmin() {
   const { can, canAny, hasModule } = useAuth();
   const tabs: { key: Tab; label: string }[] = [];
-  if (canAny('attendance.configure')) tabs.push({ key: 'shifts', label: 'Shifts' }, { key: 'holidays', label: 'Holidays' });
+  if (canAny('attendance.configure') && hasModule('shifts')) tabs.push({ key: 'shifts', label: 'Shifts' }, { key: 'rosters', label: 'Rosters' });
+  if (canAny('attendance.configure') && hasModule('holidays')) tabs.push({ key: 'holidays', label: 'Holidays' });
   if (canAny('attendance.devices.manage') && hasModule('attendance')) tabs.push({ key: 'devices', label: 'Biometric devices' });
   if (canAny('attendance.lock', 'attendance.read')) tabs.push({ key: 'locks', label: 'Payroll locks' });
   const [tab, setTab] = useState<Tab>(tabs[0]?.key ?? 'shifts');
-  if (!tabs.length) return <Empty>You do not have attendance administration permissions.</Empty>;
+  if (!tabs.length) return <Empty>There is nothing to set up here with your permissions and the modules that are on.</Empty>;
   return (
     <div className="stack">
-      <div><h1>Attendance setup</h1><p className="sub">Shift policies, holiday calendars, devices and payroll period locks.</p></div>
+      <div><h1>Attendance setup</h1><p className="sub">Shift policies, rotating rosters, holiday calendars, devices and payroll period locks.</p></div>
       <Tabs tabs={tabs} value={tab} onChange={setTab} />
       {tab === 'shifts' && <Shifts />}
+      {tab === 'rosters' && <RosterSetup />}
       {tab === 'holidays' && <Holidays />}
       {tab === 'devices' && <Devices />}
       {tab === 'locks' && <Locks canLock={can('attendance.lock')} />}
@@ -239,8 +242,8 @@ function MapDialog({ initial, onClose, onDone }: { initial: string; onClose: () 
         catch (err) { toast(errText(err), 'error'); }
       }}>
         <Field label="Device user ID"><input required value={deviceUserId} onChange={(e) => setDeviceUserId(e.target.value)} /></Field>
-        <Field label="Employee"><input placeholder="Search" value={search} onChange={(e) => setSearch(e.target.value)} />
-          <select required value={employeeId} onChange={(e) => setEmployeeId(e.target.value)}><option value="">Select…</option>{emps.data?.items.map((x: any) => <option key={x.id} value={x.id}>{x.first_name} {x.last_name} ({x.employee_code})</option>)}</select></Field>
+        <Field label="Employee"><input placeholder="Search" aria-label="Search employees" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <select required aria-label="Employee" value={employeeId} onChange={(e) => setEmployeeId(e.target.value)}><option value="">Select…</option>{emps.data?.items.map((x: any) => <option key={x.id} value={x.id}>{x.first_name} {x.last_name} ({x.employee_code})</option>)}</select></Field>
         <div className="row"><span className="spacer" /><button type="button" className="btn" onClick={onClose}>Cancel</button><button className="btn primary">Save mapping</button></div>
       </form>
     </Modal>

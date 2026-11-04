@@ -4,6 +4,7 @@ import { api, qs, ApiError } from '../api';
 import { useAuth } from '../auth';
 import { fmtDate, fmtDateTime } from '../format';
 import { useLoad, Loading, ErrorBox, StatusBadge, Pager, Empty, Modal, Field, useToast, errText, Tabs } from '../ui';
+import { PersonalDetails } from './PersonalDetails';
 import { AttendanceCalendar } from './MyAttendance';
 import { EmployeeDocuments } from './Documents';
 
@@ -262,6 +263,7 @@ export function EmployeeProfile() {
   if (error) return <ErrorBox error={error} />;
   const self = me!.user.employeeId === id;
   const tabs = [{ key: 'overview', label: 'Overview' }];
+  if (e.view === 'full' && (self || can('employees.read'))) tabs.push({ key: 'personal', label: 'Personal details' });
   if (hasModule('attendance') && (self || canAny('attendance.read', 'attendance.team.read'))) tabs.push({ key: 'attendance', label: 'Attendance' });
   if (hasModule('core.documents') && (self || canAny('documents.read', 'documents.manage'))) tabs.push({ key: 'documents', label: 'Documents' });
   if (can('employees.read')) tabs.push({ key: 'history', label: 'Change history' });
@@ -282,6 +284,7 @@ export function EmployeeProfile() {
           {e.view === 'full' && (self || can('employees.bank.read')) && <BankPanel employeeId={id!} />}
         </>
       )}
+      {tab === 'personal' && <PersonalDetails employeeId={id!} />}
       {tab === 'attendance' && <div className="card"><AttendanceCalendar employeeId={id!} self={false} /></div>}
       {tab === 'documents' && <EmployeeDocuments employeeId={id!} />}
       {tab === 'history' && (history.loading ? <Loading /> : (

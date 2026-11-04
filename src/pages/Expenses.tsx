@@ -1,10 +1,12 @@
+import { useSearchParams } from 'react-router-dom';
 import { useState } from 'react';
 import { api, qs } from '../api';
 import { useAuth } from '../auth';
 import { fmtDate, fmtDateTime, money, todayLocal } from '../format';
 import { useLoad, Loading, ErrorBox, Empty, Modal, Field, Tabs, Pager, Confirm, StatusBadge, useToast, errText } from '../ui';
+import { AllowanceRates, VEHICLE } from './AllowanceRates';
 
-type Tab = 'mine' | 'team' | 'finance' | 'categories';
+type Tab = 'mine' | 'team' | 'finance' | 'categories' | 'rates';
 
 export function Expenses() {
   const { can, canAny, me } = useAuth();
@@ -12,8 +14,10 @@ export function Expenses() {
   if (me!.user.employeeId && can('expenses.self')) tabs.push({ key: 'mine', label: 'My claims' });
   if (can('expenses.team.read')) tabs.push({ key: 'team', label: 'Team claims' });
   if (canAny('expenses.pay', 'expenses.read')) tabs.push({ key: 'finance', label: 'Finance' });
-  if (can('expenses.manage')) tabs.push({ key: 'categories', label: 'Categories' });
-  const [tab, setTab] = useState<Tab>(tabs[0]?.key ?? 'mine');
+  if (can('expenses.manage')) tabs.push({ key: 'categories', label: 'Categories' }, { key: 'rates', label: 'Allowance rates' });
+  const [params, setParams] = useSearchParams();
+  const tab = (tabs.find((t) => t.key === params.get('tab'))?.key ?? tabs[0]?.key ?? 'mine') as Tab;
+  const setTab = (t: Tab) => setParams({ tab: t }, { replace: true });
   if (!tabs.length) return <Empty>You do not have access to expenses.</Empty>;
   return (
     <div className="stack">
@@ -22,14 +26,17 @@ export function Expenses() {
       {(tab === 'mine' || tab === 'team') && <ClaimList scope={tab} />}
       {tab === 'finance' && <Finance />}
       {tab === 'categories' && <Categories />}
+      {tab === 'rates' && <AllowanceRates />}
     </div>
   );
 }
 
 function ClaimList({ scope }: { scope: 'mine' | 'team' }) {
   const toast = useToast();
+  const [params] = useSearchParams();
   const [page, setPage] = useState(1);
-  const [open, setOpen] = useState<string | null>(null);
+  // ?claim=<id> opens a claim directly (e.g. a trip's claim started from Travel).
+  const [open, setOpen] = useState<string | null>(scope === 'mine' ? params.get('claim') : null);
   const [creating, setCreating] = useState(false);
   const { data, loading, error, reload } = useLoad(() => api.get(`/api/v1/expenses/claims${qs({ scope, page, pageSize: 20 })}`), [scope, page]);
   return (
@@ -88,10 +95,13 @@ function ClaimDetail({ id, onClose, onChanged }: { id: string; onClose: () => vo
         <div className="stack">
           <div className="row"><StatusBadge status={c.status} /><span className="muted">{c.employee_name}</span><span className="spacer" /><strong>{money(c.total)}</strong></div>
           <div className="muted" style={{ fontSize: 13 }}>{c.purpose}{c.project ? ` · ${c.project}` : ''}{c.payment_reference ? ` · paid, ref ${c.payment_reference}` : ''}</div>
+          {c.travel_request_id && <div className="alert info" style={{ margin: 0 }}>Claim for a trip{Number(c.advance_adjusted) > 0
+            ? <>: {money(c.advance_adjusted)} set off against the travel advance, {money(Number(c.total) - Number(c.advance_adjusted))} to reimburse.</>
+            : '. When it is approved, any travel advance still outstanding is set off first; only the rest is reimbursed.'}</div>}
           {!c.items.length ? <div className="muted">No items yet.</div> : (
             <div className="table-wrap"><table className="t"><thead><tr><th>Date</th><th>Category</th><th>Description</th><th>Amount</th><th>Receipt</th>{c.editable && <th />}</tr></thead><tbody>
               {c.items.map((i: any) => <tr key={i.id}><td>{fmtDate(i.expense_date)}</td><td>{i.category_name}</td>
-                <td>{i.description}{i.merchant && <div className="muted" style={{ fontSize: 12 }}>{i.merchant}{i.invoice_number ? ` · ${i.invoice_number}` : ''}{i.gstin ? ` · GSTIN ${i.gstin}` : ''}</div>}
+                <td>{i.description}{i.calc && i.quantity && <div className="muted" style={{ fontSize: 12 }}>{i.calc === 'per_diem' ? `${Number(i.quantity)} day(s) × ${money(i.rate)} · ${i.tier}` : `${Number(i.quantity)} km × ${money(i.rate)} · ${VEHICLE[i.vehicle] ?? i.vehicle}`}</div>}{i.merchant && <div className="muted" style={{ fontSize: 12 }}>{i.merchant}{i.invoice_number ? ` · ${i.invoice_number}` : ''}{i.gstin ? ` · GSTIN ${i.gstin}` : ''}</div>}
                   {i.duplicate_of && <span className="badge warn">Possible duplicate</span>}</td>
                 <td>{money(i.amount)}</td><td>{i.has_receipt ? <a href={`/api/v1/expenses/items/${i.id}/receipt`}>Download</a> : '—'}</td>
                 {c.editable && <td><button className="btn sm" onClick={async () => { try { await api.del(`/api/v1/expenses/claims/${id}/items/${i.id}`); reload(); } catch (x) { toast(errText(x), 'error'); } }}>Remove</button></td>}</tr>)}
@@ -114,27 +124,47 @@ function ClaimDetail({ id, onClose, onChanged }: { id: string; onClose: () => vo
 
 function ItemForm({ claimId, categories, onClose, onDone }: { claimId: string; categories: any[]; onClose: () => void; onDone: () => void }) {
   const toast = useToast();
-  const [f, setF] = useState({ categoryId: categories[0]?.id ?? '', expenseDate: todayLocal(), amount: '', description: '', merchant: '', invoiceNumber: '', gstin: '' });
+  const [f, setF] = useState({ categoryId: categories[0]?.id ?? '', expenseDate: todayLocal(), amount: '', description: '', merchant: '', invoiceNumber: '', gstin: '', quantity: '', tier: '', vehicle: 'car' });
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const cat = categories.find((c) => c.id === f.categoryId);
+  const calc: 'per_diem' | 'mileage' | null = cat?.calc ?? null;
+  const rates = useLoad(() => (calc ? api.get('/api/v1/expenses/allowance-rates') : Promise.resolve(null)), [calc]);
+  const tier = f.tier || rates.data?.tiers?.[0] || '';
+  // The rate in force on the date for my grade (the server prices the item; this only shows it).
+  const quote = useLoad(() => (calc && (calc === 'mileage' || tier) ? api.get(`/api/v1/expenses/allowance-quote${qs({ kind: calc, date: f.expenseDate, tier: calc === 'per_diem' ? tier : undefined, vehicle: calc === 'mileage' ? f.vehicle : undefined })}`) : Promise.resolve(null)),
+    [calc, f.expenseDate, tier, f.vehicle]);
+  const allowance = quote.data?.rate && Number(f.quantity) > 0 ? Math.round(Number(quote.data.rate) * Number(f.quantity) * 100) / 100 : null;
   return (
     <Modal title="Add expense" onClose={onClose}>
       <form className="stack" onSubmit={async (e) => {
         e.preventDefault(); setError(null);
         const form = new FormData();
-        for (const [k, v] of Object.entries(f)) if (v) form.append(k, v);
+        const { quantity, tier: _t, vehicle, ...rest } = f;
+        for (const [k, v] of Object.entries(rest)) if (v) form.append(k, v);
+        if (calc) { form.append('quantity', quantity); if (calc === 'per_diem') form.append('tier', tier); else form.append('vehicle', vehicle); }
         if (file) form.append('receipt', file);
         try { const r = await api.upload(`/api/v1/expenses/claims/${claimId}/items`, form); if (r.possibleDuplicate) toast('Added — note: it looks similar to another claimed expense', 'error'); onDone(); onClose(); }
         catch (x) { setError(errText(x)); }
       }}>
         <div className="form-grid">
-          <Field label="Category"><select value={f.categoryId} onChange={(e) => setF({ ...f, categoryId: e.target.value })}>{categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></Field>
+          <Field label="Category"><select value={f.categoryId} onChange={(e) => setF({ ...f, categoryId: e.target.value, amount: '' })}>{categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></Field>
           <Field label="Date"><input type="date" required max={todayLocal()} value={f.expenseDate} onChange={(e) => setF({ ...f, expenseDate: e.target.value })} /></Field>
-          <Field label="Amount (₹)" hint={cat?.max_amount ? `Up to ${money(cat.max_amount)}` : undefined}><input required inputMode="decimal" pattern="\d+(\.\d{1,2})?" value={f.amount} onChange={(e) => setF({ ...f, amount: e.target.value })} /></Field>
-          <Field label="Merchant (optional)"><input value={f.merchant} onChange={(e) => setF({ ...f, merchant: e.target.value })} /></Field>
+          {calc === 'per_diem' && <>
+            <Field label="Days" hint="In half days, e.g. 1.5"><input required inputMode="decimal" pattern="\d+(\.5|\.0)?" value={f.quantity} onChange={(e) => setF({ ...f, quantity: e.target.value })} /></Field>
+            <Field label="Destination class"><select value={tier} onChange={(e) => setF({ ...f, tier: e.target.value })}>{(rates.data?.tiers ?? []).map((t: string) => <option key={t} value={t}>{t}</option>)}</select></Field>
+          </>}
+          {calc === 'mileage' && <>
+            <Field label="Distance (km)"><input required inputMode="decimal" pattern="\d+(\.\d)?" value={f.quantity} onChange={(e) => setF({ ...f, quantity: e.target.value })} /></Field>
+            <Field label="Vehicle"><select value={f.vehicle} onChange={(e) => setF({ ...f, vehicle: e.target.value })}>{Object.entries(VEHICLE).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></Field>
+          </>}
+          {calc
+            ? <Field label="Claim less (optional, ₹)" hint={allowance !== null ? `Allowance ${money(allowance)} (${f.quantity} × ${money(quote.data.rate)})` : quote.data && !quote.data.rate ? 'No rate is set for this; ask finance' : undefined}>
+                <input inputMode="decimal" pattern="\d+(\.\d{1,2})?" value={f.amount} onChange={(e) => setF({ ...f, amount: e.target.value })} placeholder={allowance !== null ? String(allowance) : ''} /></Field>
+            : <Field label="Amount (₹)" hint={cat?.max_amount ? `Up to ${money(cat.max_amount)}` : undefined}><input required inputMode="decimal" pattern="\d+(\.\d{1,2})?" value={f.amount} onChange={(e) => setF({ ...f, amount: e.target.value })} /></Field>}
+          {!calc && <Field label="Merchant (optional)"><input value={f.merchant} onChange={(e) => setF({ ...f, merchant: e.target.value })} /></Field>}
         </div>
-        <Field label="Description"><input required minLength={2} value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} /></Field>
+        <Field label="Description" hint={calc === 'mileage' ? 'From and to, e.g. Lab to Taloja MIDC and back' : calc === 'per_diem' ? 'Where, e.g. Mumbai — client audit' : undefined}><input required minLength={2} value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} /></Field>
         {cat?.gst_applicable && <div className="form-grid">
           <Field label="Supplier GSTIN"><input value={f.gstin} onChange={(e) => setF({ ...f, gstin: e.target.value.toUpperCase() })} /></Field>
           <Field label="Invoice number"><input value={f.invoiceNumber} onChange={(e) => setF({ ...f, invoiceNumber: e.target.value })} /></Field></div>}
@@ -171,7 +201,8 @@ function Finance() {
         {!payables.data?.items.length ? <div className="muted">Nothing to pay.</div> : (
           <div className="table-wrap"><table className="t"><thead><tr><th /><th>Employee</th><th>Claim</th><th>Amount</th><th>Approved</th></tr></thead><tbody>
             {payables.data.items.map((p: any) => <tr key={p.id}><td><input type="checkbox" checked={!!selected[p.id]} onChange={(e) => setSelected({ ...selected, [p.id]: e.target.checked })} aria-label={`Select ${p.title}`} /></td>
-              <td>{p.employee_name} <span className="muted mono">{p.employee_code}</span></td><td>{p.title}</td><td>{money(p.total)}</td><td>{fmtDate(p.approved_at.slice(0, 10))} · {p.age_days}d</td></tr>)}
+              <td>{p.employee_name} <span className="muted mono">{p.employee_code}</span></td><td>{p.title}</td>
+              <td>{money(p.payable)}{Number(p.advance_adjusted) > 0 && <div className="muted" style={{ fontSize: 12 }}>{money(p.total)} less {money(p.advance_adjusted)} advance</div>}</td><td>{fmtDate(p.approved_at.slice(0, 10))} · {p.age_days}d</td></tr>)}
           </tbody></table></div>)}
       </div>}
       <div className="card stack">
@@ -204,18 +235,18 @@ function Categories() {
   const [edit, setEdit] = useState<any>(null);
   return (
     <div className="stack">
-      <div className="row"><span className="spacer" /><button className="btn primary sm" onClick={() => setEdit({ code: '', name: '', description: '', requiresReceipt: true, maxAmount: '', gstApplicable: false, status: 'active' })}>New category</button></div>
+      <div className="row"><span className="spacer" /><button className="btn primary sm" onClick={() => setEdit({ code: '', name: '', description: '', requiresReceipt: true, maxAmount: '', gstApplicable: false, status: 'active', calc: '' })}>New category</button></div>
       {loading ? <Loading /> : !data.items.length ? <Empty>No categories yet (e.g. Local travel, Accommodation, Meals, Sample collection travel, PPE, Training).</Empty> : (
-        <div className="table-wrap"><table className="t"><thead><tr><th>Code</th><th>Name</th><th>Receipt</th><th>Limit per item</th><th>GST details</th><th>Status</th><th /></tr></thead><tbody>
-          {data.items.map((c: any) => <tr key={c.id}><td className="mono">{c.code}</td><td>{c.name}</td><td>{c.requires_receipt ? 'Required' : 'Optional'}</td><td>{c.max_amount ? money(c.max_amount) : '—'}</td>
+        <div className="table-wrap"><table className="t"><thead><tr><th>Code</th><th>Name</th><th>Calculated as</th><th>Receipt</th><th>Limit per item</th><th>GST details</th><th>Status</th><th /></tr></thead><tbody>
+          {data.items.map((c: any) => <tr key={c.id}><td className="mono">{c.code}</td><td>{c.name}</td><td>{c.calc === 'per_diem' ? 'Days × per-diem rate' : c.calc === 'mileage' ? 'Km × mileage rate' : 'Amount'}</td><td>{c.requires_receipt ? 'Required' : 'Optional'}</td><td>{c.max_amount ? money(c.max_amount) : '—'}</td>
             <td>{c.gst_applicable ? 'Captured' : '—'}</td><td>{c.status}</td><td><button className="btn sm" onClick={() => setEdit({ id: c.id, code: c.code, name: c.name, description: c.description ?? '',
-              requiresReceipt: c.requires_receipt, maxAmount: c.max_amount ?? '', gstApplicable: c.gst_applicable, status: c.status })}>Edit</button></td></tr>)}
+              requiresReceipt: c.requires_receipt, maxAmount: c.max_amount ?? '', gstApplicable: c.gst_applicable, status: c.status, calc: c.calc ?? '' })}>Edit</button></td></tr>)}
         </tbody></table></div>)}
       {edit && <Modal title={edit.id ? `Edit ${edit.code}` : 'New expense category'} onClose={() => setEdit(null)}>
         <form className="stack" onSubmit={async (e) => {
           e.preventDefault();
           const { id, ...b } = edit;
-          const body = { ...b, description: b.description || null, maxAmount: b.maxAmount === '' ? null : Number(b.maxAmount) };
+          const body = { ...b, description: b.description || null, maxAmount: b.maxAmount === '' ? null : Number(b.maxAmount), calc: b.calc || null };
           try { if (id) await api.put(`/api/v1/expenses/categories/${id}`, body); else await api.post('/api/v1/expenses/categories', body); toast('Saved'); setEdit(null); reload(); } catch (x) { toast(errText(x), 'error'); }
         }}>
           <div className="form-grid">
@@ -223,6 +254,8 @@ function Categories() {
             <Field label="Name"><input required value={edit.name} onChange={(e) => setEdit({ ...edit, name: e.target.value })} /></Field>
             <Field label="Limit per item (₹)" hint="Blank = no limit"><input type="number" min={1} step="0.01" value={edit.maxAmount} onChange={(e) => setEdit({ ...edit, maxAmount: e.target.value })} /></Field>
             <Field label="Status"><select value={edit.status} onChange={(e) => setEdit({ ...edit, status: e.target.value })}><option value="active">Active</option><option value="inactive">Inactive</option></select></Field>
+            <Field label="Calculated as" hint="Allowances are priced from the rates under Allowance rates"><select value={edit.calc} onChange={(e) => setEdit({ ...edit, calc: e.target.value, ...(e.target.value ? { requiresReceipt: false } : {}) })}>
+              <option value="">Amount entered by the employee</option><option value="per_diem">Per diem: days × rate</option><option value="mileage">Mileage: km × rate</option></select></Field>
           </div>
           <Field label="Description"><input value={edit.description} onChange={(e) => setEdit({ ...edit, description: e.target.value })} /></Field>
           <label className="row"><input type="checkbox" checked={edit.requiresReceipt} onChange={(e) => setEdit({ ...edit, requiresReceipt: e.target.checked })} /> Receipt required</label>

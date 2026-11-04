@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { api } from '../api';
 import { useAuth } from '../auth';
 import { fmtTime, fmtMinutes, fmtDate, EXCEPTION_LABEL } from '../format';
-import { useLoad, useToast, errText, StatusBadge, Loading } from '../ui';
+import { useLoad, useToast, errText, StatusBadge, Loading, ErrorBox } from '../ui';
 
 /** Clock-in card. Server decides time; client sends an idempotency key so double clicks/retries are safe. */
 export function PunchCard() {
@@ -48,6 +48,62 @@ export function PunchCard() {
   );
 }
 
+type Tone = 'neutral' | 'good' | 'warn' | 'bad';
+interface Tile { key: string; label: string; value: number | string; detail?: string; href?: string; tone?: Tone }
+interface Section { key: string; title: string; tiles: Tile[] }
+interface ListBlock { key: string; title: string; items: { primary: string; secondary?: string; date?: string }[]; href?: string; more?: number }
+interface Summary { today: string; sections: Section[]; lists: ListBlock[] }
+
+const nf = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 2 });
+
+/** One number with its label; the whole card links to the screen (or report) behind it. */
+export function TileCard({ t }: { t: Tile }) {
+  const body = (
+    <>
+      <div className="v">{typeof t.value === 'number' ? nf.format(t.value) : t.value}</div>
+      <div className="l">{t.label}</div>
+      {t.detail && <div className="d">{t.detail}</div>}
+    </>
+  );
+  const cls = `tile${t.tone && t.tone !== 'neutral' ? ` ${t.tone}` : ''}`;
+  return t.href ? <Link to={t.href} className={cls} data-tile={t.key}>{body}</Link> : <div className={cls} data-tile={t.key}>{body}</div>;
+}
+
+function SummaryBlocks() {
+  const { data, loading, error } = useLoad(() => api.get<Summary>('/api/v1/dashboard'), []);
+  if (loading) return <Loading />;
+  if (error) return <ErrorBox error={error} />;
+  const { sections, lists } = data!;
+  return (
+    <>
+      {sections.map((s) => (
+        <section key={s.key} aria-label={s.title} className="stack" style={{ gap: 8 }}>
+          <h2 className="section-title">{s.title}</h2>
+          <div className="tiles">{s.tiles.map((t) => <TileCard key={t.key} t={t} />)}</div>
+        </section>
+      ))}
+      {lists.length > 0 && (
+        <div className="grid grid-2">
+          {lists.map((l) => (
+            <section key={l.key} className="card stack" aria-label={l.title} style={{ gap: 8 }}>
+              <div className="row"><h3 style={{ margin: 0 }}>{l.title}</h3><span className="spacer" />{l.href && l.items.length > 0 && <Link to={l.href} style={{ fontSize: 13 }}>View all</Link>}</div>
+              {!l.items.length ? <div className="muted">{l.key === 'on_leave_today' ? 'Nobody is on leave today.' : 'Nothing to show.'}</div> : (
+                <ul className="plain-list">
+                  {l.items.map((i, n) => (
+                    <li key={n}><span>{i.primary}</span>{i.secondary && <span className="muted"> · {i.secondary}</span>}
+                      {i.date && <span className="muted" style={{ float: 'right' }}>{l.key === 'on_leave_today' ? `until ${fmtDate(i.date)}` : fmtDate(i.date)}</span>}</li>
+                  ))}
+                  {(l.more ?? 0) > 0 && <li className="muted">and {l.more} more</li>}
+                </ul>
+              )}
+            </section>
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+
 export function Dashboard() {
   const { me, hasModule, can } = useAuth();
   const inbox = useLoad(() => api.get('/api/v1/approvals/inbox'), []);
@@ -55,8 +111,9 @@ export function Dashboard() {
   const pendingMine = (mine.data?.items ?? []).filter((x: any) => x.status === 'pending').length;
   const showPolicies = hasModule('core.policies') && can('policies.self') && !!me!.user.employeeId;
   const policies = useLoad(() => (showPolicies ? api.get('/api/v1/policies/mine') : Promise.resolve(null)), [showPolicies]);
+  const awaiting = inbox.data?.items.length ?? 0;
   return (
-    <div className="stack">
+    <div className="stack" style={{ gap: 18 }}>
       <div><h1>Welcome, {me!.user.displayName}</h1><p className="sub">{me!.organization.name}</p></div>
       {policies.data?.pending > 0 && <Link to="/policies" className={`alert ${policies.data.overdue ? 'error' : 'warn'}`} style={{ textDecoration: 'none' }}>
         {policies.data.pending} polic{policies.data.pending === 1 ? 'y needs' : 'ies need'} your acknowledgement{policies.data.overdue ? ` — ${policies.data.overdue} overdue` : ''}. Open policies →</Link>}
@@ -64,16 +121,18 @@ export function Dashboard() {
         {hasModule('attendance') && can('attendance.self') ? <PunchCard /> : <div className="card"><h3>Attendance</h3><p className="muted">Attendance is not enabled for your account.</p></div>}
         <div className="card stack">
           <h3>Requests</h3>
-          <div className="grid grid-4">
-            <Link to="/approvals" className="stat" style={{ textDecoration: 'none', color: 'inherit' }}><div className="v">{inbox.data?.items.length ?? '—'}</div><div className="l">Awaiting your approval</div></Link>
-            <Link to="/approvals" className="stat" style={{ textDecoration: 'none', color: 'inherit' }}><div className="v">{mine.data ? pendingMine : '—'}</div><div className="l">Your pending requests</div></Link>
+          <div className="tiles">
+            <TileCard t={{ key: 'awaiting', label: 'Awaiting your approval', value: inbox.data ? awaiting : '—', href: '/approvals', tone: awaiting ? 'warn' : 'neutral' }} />
+            <TileCard t={{ key: 'mine', label: 'Your pending requests', value: mine.data ? pendingMine : '—', href: '/approvals' }} />
           </div>
           <div className="row">
             {hasModule('leave') && me!.user.employeeId && <Link to="/leave" className="btn" style={{ textDecoration: 'none' }}>Apply for leave</Link>}
             {hasModule('attendance.regularization') && me!.user.employeeId && <Link to="/attendance/me" className="btn" style={{ textDecoration: 'none' }}>Request attendance correction</Link>}
+            {hasModule('expenses') && can('expenses.self') && me!.user.employeeId && <Link to="/expenses" className="btn" style={{ textDecoration: 'none' }}>New expense claim</Link>}
           </div>
         </div>
       </div>
+      <SummaryBlocks />
     </div>
   );
 }

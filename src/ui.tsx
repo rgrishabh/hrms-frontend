@@ -52,10 +52,16 @@ export const Loading = () => <div className="empty" aria-busy="true">Loading…<
 export const Empty = ({ children }: { children: ReactNode }) => <div className="empty">{children}</div>;
 export const ErrorBox = ({ error }: { error: string | null }) => (error ? <div className="alert error" role="alert">{error}</div> : null);
 
+/** Human label for a status code: an explicit label, else the code in sentence case ("in_progress" → "In progress"). */
+export function statusLabel(status: string): string {
+  const s = STATUS_LABEL[status] ?? status.replace(/_/g, ' ');
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
 export function StatusBadge({ status }: { status: string }) {
-  const kind = ({ present: 'ok', published: 'ok', retired: '', authorized: 'ok', expired: 'danger', withdrawn: '', superseded: '', approved: 'ok', succeeded: 'ok', paid: 'ok', prepared: 'info', submitted: 'warn', draft: '', running: 'info', active: 'ok', verified: 'ok', issued: 'ok', healthy: 'ok', half_day: 'warn', on_leave: 'info', cancelled: '', pending: 'warn', missing_punch: 'danger',
+  const kind = ({ present: 'ok', available: 'ok', in_repair: 'warn', lost: 'danger', not_started: '', self_submitted: 'info', manager_submitted: 'info', acknowledged: 'ok', reopened: 'warn', resolved: 'ok', in_progress: 'info', report_submitted: 'info', conciliation: 'info', inquiry: 'info', received: 'warn', computed: 'info', finalized: 'ok', open: 'info', skipped: '', done: 'ok', published: 'ok', hired: 'ok', accepted: 'ok', completed: 'ok', sent: 'info', scheduled: 'info', offer: 'info', interview: 'info', screening: 'info', applied: '', on_hold: 'warn', declined: 'danger', closed: '', retired: '', authorized: 'ok', expired: 'danger', withdrawn: '', superseded: '', approved: 'ok', succeeded: 'ok', paid: 'ok', prepared: 'info', submitted: 'warn', draft: '', running: 'info', active: 'ok', verified: 'ok', issued: 'ok', healthy: 'ok', half_day: 'warn', on_leave: 'info', on_duty: 'ok', disbursed: 'info', partly_completed: 'warn', not_done: 'danger', cancelled: '', pending: 'warn', missing_punch: 'danger',
     absent: 'danger', rejected: 'danger', failed: 'danger', disabled: 'danger', suspended: 'danger', returned: 'warn', degraded: 'warn' } as Record<string, string>)[status] ?? '';
-  return <span className={`badge ${kind}`}>{STATUS_LABEL[status] ?? status.replace(/_/g, ' ')}</span>;
+  return <span className={`badge ${kind}`}>{statusLabel(status)}</span>;
 }
 
 export function Field({ label, hint, error, children }: { label: string; hint?: string; error?: string; children: ReactNode }) {

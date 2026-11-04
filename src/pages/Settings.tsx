@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { SmsSettings } from './SmsSettings';
+import { Roles } from './Roles';
 import { NavLink, Navigate, Route, Routes } from 'react-router-dom';
 import { api, qs } from '../api';
 import { useAuth } from '../auth';
@@ -10,7 +12,7 @@ const TIMEZONES = ['Asia/Kolkata', 'Asia/Dubai', 'Asia/Singapore', 'Europe/Londo
 const SOURCE_LABEL: Record<string, string> = { default: 'Default', deployment: 'Installation default', platform: 'Installation default', tenant: 'Organization setting', branch: 'Branch override', deployment_ceiling: 'Capped by installation limit' };
 
 export function SettingsCenter() {
-  const { can, canAny } = useAuth();
+  const { can, canAny, hasModule } = useAuth();
   const sections = [
     { to: 'general', label: 'General', show: can('settings.read') },
     { to: 'attendance', label: 'Attendance policy', show: can('settings.read') },
@@ -18,6 +20,8 @@ export function SettingsCenter() {
     { to: 'installation', label: 'Installation', show: can('settings.read') },
     { to: 'organization', label: 'Legal entities & branches', show: canAny('org.read') },
     { to: 'users', label: 'Users & permissions', show: can('users.manage') },
+    { to: 'roles', label: 'Roles', show: canAny('users.manage', 'settings.read') },
+    { to: 'sms', label: 'SMS', show: hasModule('notifications.sms') && can('settings.manage') },
     { to: 'jobs', label: 'Scheduled jobs', show: can('settings.read') },
     { to: 'audit', label: 'Audit history', show: can('audit.read') },
   ].filter((s) => s.show);
@@ -32,6 +36,8 @@ export function SettingsCenter() {
         <Route path="installation" element={<Installation />} />
         <Route path="organization" element={<Organization />} />
         <Route path="users" element={<Users />} />
+        <Route path="roles" element={<Roles />} />
+        <Route path="sms" element={<SmsSettings />} />
         <Route path="jobs" element={<Jobs />} />
         <Route path="audit" element={<Audit />} />
         {/* Absolute targets: relative links inside a splat route resolve against the full URL in React Router v7. */}
@@ -54,7 +60,9 @@ function ValueEditor({ s, value, onChange }: { s: any; value: any; onChange: (v:
   return <input value={value ?? ''} onChange={(e) => onChange(e.target.value)} />;
 }
 
-const show = (v: any, s: any) => (s.control === 'weekdays' ? (v as number[]).map((i) => WEEKDAYS[i]).join(', ') || 'None' : s.control === 'boolean' ? (v ? 'Enabled' : 'Disabled') : String(v));
+const show = (v: any, s: any) => (v === null || v === '' ? (s.options?.find((o: any) => o.value === '')?.label ?? 'Not set')
+  : s.control === 'weekdays' ? (v as number[]).map((i) => WEEKDAYS[i]).join(', ') || 'None' : s.control === 'boolean' ? (v ? 'Enabled' : 'Disabled')
+  : s.control === 'select' ? (s.options?.find((o: any) => o.value === v)?.label ?? String(v)) : String(v));
 
 function SettingRow({ s, branchId, onSaved }: { s: any; branchId: string; onSaved: () => void }) {
   const toast = useToast();
@@ -247,6 +255,8 @@ function Users() {
   const [edit, setEdit] = useState<any>(null);
   const allRoles = [...(roles.data?.system ?? []), ...(roles.data?.custom ?? [])];
   const roleName = (k: string) => allRoles.find((r: any) => r.key === k)?.name ?? k;
+  // The server refuses changes to an account holding roles this user may not grant; say so instead of offering a form that fails.
+  const manageable = (u: any) => u.id === me!.user.id || u.roles.every((k: string) => allRoles.find((r: any) => r.key === k)?.grantable !== false);
   return (
     <div className="stack">
       <div className="row"><input placeholder="Search users" aria-label="Search users" value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} style={{ flex: '1 1 240px' }} /><button className="btn primary" onClick={() => setEdit({})}>Add user</button></div>
@@ -256,7 +266,7 @@ function Users() {
           <div className="table-wrap"><table className="t"><thead><tr><th>User</th><th>Roles</th><th>Employee</th><th>Status</th><th>Last sign-in</th><th /></tr></thead><tbody>
             {data.items.map((u: any) => <tr key={u.id}><td><div>{u.display_name}</div><div className="muted">{u.email}</div>{u.mfa_enabled && <span className="badge ok">2FA</span>}</td><td>{u.roles.map(roleName).join(', ')}</td>
               <td className="mono">{u.employee_code ?? '—'}</td><td><StatusBadge status={u.status} />{u.locked && <span className="badge warn" style={{ marginLeft: 4 }}>Locked</span>}</td>
-              <td>{u.last_login_at ? fmtDateTime(u.last_login_at) : '—'}</td><td><button className="btn sm" onClick={() => setEdit(u)}>Manage</button></td></tr>)}
+              <td>{u.last_login_at ? fmtDateTime(u.last_login_at) : '—'}</td><td>{manageable(u) ? <button className="btn sm" onClick={() => setEdit(u)}>Manage</button> : <span className="muted" style={{ fontSize: 12 }}>Administrator only</span>}</td></tr>)}
           </tbody></table></div>
           <Pager page={data.page} pageSize={data.pageSize} total={data.total} onPage={setPage} />
         </>
@@ -288,17 +298,18 @@ function UserForm({ user, self, roles, onClose, onSaved }: any) {
           <Field label="Email"><input type="email" required value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} /></Field>
           <Field label="Display name"><input required value={f.displayName} onChange={(e) => setF({ ...f, displayName: e.target.value })} /></Field>
           <Field label="Initial password" hint="Share securely; the user should change it after first sign-in"><input type="password" autoComplete="new-password" required value={f.initialPassword} onChange={(e) => setF({ ...f, initialPassword: e.target.value })} /></Field>
-          <Field label="Link to employee record (optional)"><input placeholder="Search employees" value={empSearch} onChange={(e) => setEmpSearch(e.target.value)} />
-            <select value={f.employeeId} onChange={(e) => setF({ ...f, employeeId: e.target.value })}><option value="">Not linked</option>{emps.data?.items.filter((x: any) => !x.user_id).map((x: any) => <option key={x.id} value={x.id}>{x.first_name} {x.last_name} ({x.employee_code})</option>)}</select></Field>
+          <Field label="Link to employee record (optional)"><input placeholder="Search employees" aria-label="Search employees to link" value={empSearch} onChange={(e) => setEmpSearch(e.target.value)} />
+            <select aria-label="Link to employee record" value={f.employeeId} onChange={(e) => setF({ ...f, employeeId: e.target.value })}><option value="">Not linked</option>{emps.data?.items.filter((x: any) => !x.user_id).map((x: any) => <option key={x.id} value={x.id}>{x.first_name} {x.last_name} ({x.employee_code})</option>)}</select></Field>
         </>}
         <fieldset style={{ border: '1px solid var(--border)', borderRadius: 6 }}><legend>Roles</legend>
-          <div className="grid grid-2" style={{ gap: 6 }}>{roles.map((r: any) => (
-            <label key={r.key} className="row"><input type="checkbox" checked={selected.includes(r.key)} disabled={self && r.key === 'tenant_admin'}
+          <div className="grid grid-2" style={{ gap: 6 }}>{roles.filter((r: any) => r.grantable !== false || selected.includes(r.key)).map((r: any) => (
+            <label key={r.key} className="row"><input type="checkbox" checked={selected.includes(r.key)} disabled={(self && r.key === 'tenant_admin') || r.grantable === false}
               onChange={(e) => setSelected(e.target.checked ? [...selected, r.key] : selected.filter((x) => x !== r.key))} />{r.name}</label>))}</div>
         </fieldset>
         {!isNew && !self && <Field label="Account status"><select value={status} onChange={(e) => setStatus(e.target.value)}><option value="active">Active</option><option value="disabled">Disabled (signs out immediately)</option></select></Field>}
         {!isNew && user.locked && <button type="button" className="btn" onClick={async () => { await api.patch(`/api/v1/tenant/users/${user.id}`, { unlock: true }); onSaved(); onClose(); }}>Unlock account</button>}
         {!isNew && !self && user.mfa_enabled && <button type="button" className="btn" onClick={async () => { try { await api.patch(`/api/v1/tenant/users/${user.id}`, { resetMfa: true }); onSaved(); onClose(); } catch (x) { setError(errText(x)); } }}>Reset two-factor authentication (signs the user out)</button>}
+        {roles.some((r: any) => r.grantable === false) && <div className="muted" style={{ fontSize: 12 }}>Roles with permissions you do not hold yourself can only be granted by an administrator.</div>}
         {!isNew && <div className="muted" style={{ fontSize: 12 }}>Changing roles signs the user out so new permissions apply immediately.</div>}
         <ErrorBox error={error} />
         <div className="row"><span className="spacer" /><button type="button" className="btn" onClick={onClose}>Cancel</button><button className="btn primary" disabled={!selected.length}>Save</button></div>

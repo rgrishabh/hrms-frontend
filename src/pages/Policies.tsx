@@ -204,7 +204,8 @@ function AckReport({ version, onClose }: { version: any; onClose: () => void }) 
     <Modal title={`Acknowledgements — v${version.version_no}`} onClose={onClose}>
       <div className="stack">
         <div className="row"><select value={status} onChange={(e) => { setStatus(e.target.value as typeof status); setPage(1); }}><option value="pending">Not yet acknowledged</option><option value="acknowledged">Acknowledged</option><option value="">Everyone in audience</option></select>
-          <span className="spacer" /><a className="btn sm" href={`/api/v1/policies/versions/${version.id}/acknowledgements.csv`} style={{ textDecoration: 'none' }}>Export CSV</a></div>
+          <span className="spacer" /><a className="btn sm" href={`/api/v1/policies/versions/${version.id}/acknowledgements.xlsx`} style={{ textDecoration: 'none' }}>Export Excel</a>
+            <a className="btn sm" href={`/api/v1/policies/versions/${version.id}/acknowledgements.csv`} style={{ textDecoration: 'none' }}>Export CSV</a></div>
         <ErrorBox error={error} />
         {loading ? <Loading /> : !data.items.length ? <Empty>Nobody here.</Empty> : (
           <>

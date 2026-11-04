@@ -5,3 +5,8 @@ dist/
 !.env.example
 *.log
 .DS_Store
+test-results/
+playwright-report/
+
+# TypeScript incremental build cache
+*.tsbuildinfo

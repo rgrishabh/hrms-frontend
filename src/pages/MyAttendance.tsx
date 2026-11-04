@@ -70,6 +70,7 @@ export function AttendanceCalendar({ employeeId, self }: { employeeId: string; s
               <div className="stat"><div className="l">Early exit</div><div>{sel.early_exit_minutes ? `${sel.early_exit_minutes} min` : '—'}</div></div>
               <div className="stat"><div className="l">Overtime</div><div>{sel.overtime_minutes ? fmtMinutes(sel.overtime_minutes) : '—'}</div></div>
               {Number(sel.leave_fraction) > 0 && <div className="stat"><div className="l">Leave</div><div>{sel.leave_type_code} · {Number(sel.leave_fraction) === 1 ? 'full day' : 'half day'}</div></div>}
+              {Number(sel.duty_fraction) > 0 && <div className="stat"><div className="l">Field duty</div><div>{Number(sel.duty_fraction) === 1 ? 'full day' : 'half day'}</div></div>}
             </div>
           ) : <div className="muted">No calculated result for this day yet.</div>}
           {sel?.exceptions?.length > 0 && <div className="row">{sel.exceptions.map((x: string) => <span key={x} className="badge warn">{EXCEPTION_LABEL[x] ?? x}</span>)}</div>}
