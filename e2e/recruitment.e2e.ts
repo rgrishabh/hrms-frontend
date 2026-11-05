@@ -72,7 +72,7 @@ test('a requisition becomes a hire: request, approval, candidate, interview, off
   const sch = page.getByRole('dialog', { name: 'Schedule interview' });
   await sch.getByLabel('Date and time').fill(localInput(new Date(Date.now() - 3_600_000)));
   await sch.getByPlaceholder('Search people').fill('Meera');
-  await sch.getByRole('button', { name: /^\+ Meera Nair/ }).click();
+  await sch.getByRole('option', { name: /Meera Nair/ }).click();
   await sch.getByRole('button', { name: 'Schedule' }).click();
   await expect(page.getByText('Interview scheduled; the panel was notified')).toBeVisible();
 
