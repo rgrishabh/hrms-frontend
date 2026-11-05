@@ -27,6 +27,7 @@ export function Dashboard() {
   return (
     <div className="stack-6">
       <PageHeader title={`Welcome, ${me?.user.displayName}`} description={me?.organization.name} />
+      {me?.mfa.suggested && !me.mfa.enabled && <Alert tone="info"><Link to="/account">You can read pay or bank details. Consider turning on two-factor authentication.</Link></Alert>}
       {pendingPolicies > 0 && (
         <Alert tone="warn">
           <Link to="/policies">

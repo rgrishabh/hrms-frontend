@@ -16,10 +16,12 @@ export interface PublicConfig {
   features: Features;
   mode: ManagementMode;
   mfa: { available: boolean; enforced: boolean; methods: string[] };
+  /** Whether a forgotten password can be reset by email: false without SMTP. */
+  auth: { resetByEmail: boolean };
 }
 
 type RawBrand = Partial<PublicConfig['brand']>;
-interface RawConfig { product?: { name?: string }; brand?: RawBrand; features?: Features; mode?: string; mfa?: Partial<PublicConfig['mfa']> }
+interface RawConfig { product?: { name?: string }; brand?: RawBrand; features?: Features; mode?: string; mfa?: Partial<PublicConfig['mfa']>; auth?: Partial<PublicConfig['auth']> }
 
 const str = (v: unknown): string | null => (typeof v === 'string' && v.trim() ? v : null);
 
@@ -54,6 +56,7 @@ export function normalizeConfig(raw: RawConfig): PublicConfig {
     features: raw.features ?? {},
     mode,
     mfa: { available: raw.mfa?.available === true, enforced: raw.mfa?.enforced === true, methods: raw.mfa?.methods ?? [] },
+    auth: { resetByEmail: raw.auth?.resetByEmail === true },
   };
 }
 

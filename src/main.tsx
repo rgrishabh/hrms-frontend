@@ -16,6 +16,7 @@ import { queryClient } from './lib/query';
 import { watchSystemTheme } from './lib/theme';
 import { CardPage } from './pages/auth/CardPage';
 import { ChangePasswordForm } from './pages/auth/ChangePasswordForm';
+import { ForgotPassword, ResetPassword } from './pages/auth/PasswordReset';
 import { Login } from './pages/auth/Login';
 import { Setup } from './pages/auth/Setup';
 import { captureInstallPrompt } from './pwa/install';
@@ -30,7 +31,7 @@ function Boot() {
 }
 
 function App() {
-  const { config, configError, me, loading, refresh } = useAuth();
+  const { config, configError, me, loading, refresh, challenge } = useAuth();
   const { pathname } = useLocation();
   if (configError) {
     return (
@@ -49,8 +50,9 @@ function App() {
   }
   if (!config || loading) return <Boot />;
   if (pathname === '/setup') return <Setup cfg={config} />;
-  if (!me) return <Login cfg={config} />;
-  if (me.mfa.pending) return <CardPage cfg={config}><Suspense fallback={<SkeletonPage />}><MfaVerify onDone={refresh} /></Suspense></CardPage>;
+  if (pathname === '/reset-password') return <ResetPassword cfg={config} />;
+  if (!me) return pathname === '/forgot-password' ? <ForgotPassword cfg={config} /> : <Login cfg={config} />;
+  if (me.mfa.pending) return <CardPage cfg={config}><Suspense fallback={<SkeletonPage />}><MfaVerify method={challenge?.method ?? me.mfa.method} delivery={challenge?.delivery ?? null} onDone={refresh} /></Suspense></CardPage>;
   if (me.mfa.enrollmentRequired) {
     return (
       <CardPage cfg={config}>

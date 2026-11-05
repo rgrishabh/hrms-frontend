@@ -3,21 +3,17 @@ import { api, setCsrf, ApiError } from './api';
 import { setLocalePrefs } from './format';
 import { applyBrand } from './lib/brand';
 import { fetchPublicConfig, type PublicConfig } from './lib/config';
+import type { ApiResponse } from './lib/api-types';
 import { anyFlagOn, type FeatureFlag } from './lib/features';
 import { queryClient } from './lib/query';
 
 export type { PublicConfig } from './lib/config';
 
-export interface Me {
-  user: { id: string; email: string; displayName: string; employeeId: string | null };
-  passwordChangeRequired: boolean;
-  mfa: { enabled: boolean; pending: boolean; enrollmentRequired: boolean };
-  roles: { key: string; name: string }[];
-  permissions: string[];
-  csrfToken: string;
-  organization: { id: string; name: string };
-  preferences: { timezone: string; dateFormat: string; emailNotifications: boolean };
-}
+/** GET /auth/me, from the generated schema, minus `capabilities`, which features from the public config replaced. */
+export type Me = Omit<ApiResponse<'/api/v1/auth/me'>, 'capabilities'>;
+
+/** From the sign-in answer, kept while the code is being entered: how the second step works. Lost on reload, when `me.mfa.method` still says which method. */
+export interface MfaChallenge { method: string | null; delivery: string | null }
 
 export type ConfigFailure = { kind: 'not_configured'; message: string } | { kind: 'temporary'; status: number };
 
@@ -28,9 +24,13 @@ interface AuthCtx {
   loading: boolean;
   refresh: () => Promise<void>;
   logout: () => Promise<void>;
+  challenge: MfaChallenge | null;
+  setChallenge: (c: MfaChallenge | null) => void;
+  /** The server ended this session, usually the idle limit. Shown once, on the sign-in page. */
+  sessionEnded: boolean;
+  clearSessionEnded: () => void;
   can: (...perms: string[]) => boolean;
   canAny: (...perms: string[]) => boolean;
-  /** Module keys used inside unmigrated pages. */
   hasFeature: (...flags: FeatureFlag[]) => boolean;
 }
 
@@ -44,11 +44,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [configError, setConfigError] = useState<ConfigFailure | null>(null);
   const [me, setMe] = useState<Me | null>(null);
   const [loading, setLoading] = useState(true);
+  const [challenge, setChallenge] = useState<MfaChallenge | null>(null);
+  const [sessionEnded, setSessionEnded] = useState(false);
 
   const refresh = useCallback(async () => {
     try {
       const m = await api.get<Me>('/api/v1/auth/me');
-      setCsrf(m.csrfToken);
       if (m.preferences) setLocalePrefs({ timezone: m.preferences.timezone, dateFormat: m.preferences.dateFormat });
       setMe(m);
     } catch { setMe(null); } finally { setLoading(false); }
@@ -76,7 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [refresh]);
 
   useEffect(() => {
-    const onUnauthorized = () => { setMe(null); queryClient.clear(); };
+    const onUnauthorized = () => { setMe((was) => { if (was) setSessionEnded(true); return null; }); setCsrf(''); queryClient.clear(); };
     window.addEventListener('hrms:unauthorized', onUnauthorized);
     return () => window.removeEventListener('hrms:unauthorized', onUnauthorized);
   }, []);
@@ -85,18 +86,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const permissions = new Set(me?.permissions ?? []);
     const features = config?.features ?? {};
     return {
-      config, configError, me, loading, refresh,
+      config, configError, me, loading, refresh, challenge, setChallenge, sessionEnded,
+      clearSessionEnded: () => setSessionEnded(false),
       logout: async () => {
         await api.post('/api/v1/auth/logout').catch(() => undefined);
         setCsrf('');
         setMe(null);
+        setChallenge(null);
         queryClient.clear();
       },
       can: (...p) => !!me && p.every((x) => permissions.has(x)),
       canAny: (...p) => !!me && p.some((x) => permissions.has(x)),
       hasFeature: (...flags) => anyFlagOn(features, flags),
     };
-  }, [config, configError, me, loading, refresh]);
+  }, [config, configError, me, loading, refresh, challenge, sessionEnded]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
