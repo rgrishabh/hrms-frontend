@@ -23,6 +23,7 @@
 * `ASSET_CATEGORY` and the `fmtCell` export from Reports.
 * The "attendance setup" banner and its `tenant/installation` call: the Biometric tab now needs `FEATURE_ATTENDANCE_BIOMETRIC`.
 * `initialPassword` on Add user: people choose their own from an invitation.
+* Branch matching by name on offer edit, and the "check the department and contract end date" line: the API now sends them.
 * "Print or save as PDF" on payslips: the server's PDF replaces the browser's print.
 * "Show masked details" on bank details: a masked answer writes no audit row, so it loads at once and only showing the details is asked for.
 * "Request again" on a returned trip: Correct and resubmit replaces it, on the same request.

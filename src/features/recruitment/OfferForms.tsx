@@ -19,15 +19,13 @@ interface OfferValues extends OrgValues { designation: string; annualCtc: number
 const blank = (): OfferValues => ({ designation: '', legalEntityId: '', branchId: '', departmentId: null, employmentType: 'permanent', annualCtc: '', joiningDate: addDays(todayLocal(), 30), probationMonths: 6, contractEndDate: '', notes: '' });
 
 const fromOffer = (o: Offer): OfferValues => ({
-  designation: o.designation, legalEntityId: '', branchId: '', departmentId: null, employmentType: o.employment_type, annualCtc: o.annual_ctc ?? '',
-  joiningDate: o.joining_date, probationMonths: o.probation_months ?? '', contractEndDate: '', notes: o.notes ?? '',
+  designation: o.designation, legalEntityId: o.legal_entity_id, branchId: o.branch_id, departmentId: o.department_id, employmentType: o.employment_type, annualCtc: o.annual_ctc ?? '',
+  joiningDate: o.joining_date, probationMonths: o.probation_months ?? '', contractEndDate: o.contract_end_date ?? '', notes: o.notes ?? '',
 });
 
 /**
- * Drafts or edits an offer. PUT replaces the whole offer, but the application's offer rows carry only the branch name, not the
- * ids, and no contract end date. So the branch is matched by name and the legal entity follows it; the department starts from
- * the requisition, and the contract end date is asked for again.
- * A new offer also starts from the requisition, because it nearly always repeats it.
+ * Drafts or edits an offer. PUT replaces the whole offer, so an edit starts from everything the saved offer holds.
+ * A new offer starts from the requisition, because it nearly always repeats it.
  */
 export function OfferForm({ applicationId, requisitionId, offer, onClose }: { applicationId: string; requisitionId: string; offer?: Offer; onClose: () => void }) {
   const toast = useToast();
@@ -37,13 +35,10 @@ export function OfferForm({ applicationId, requisitionId, offer, onClose }: { ap
   const req = useApiQuery<Requisition>(`/api/v1/recruitment/requisitions/${requisitionId}`);
   const filled = useRef(false);
   useEffect(() => {
-    if (filled.current || !org.data || req.isPending) return;
+    if (offer || filled.current || !org.data || req.isPending) return;
     filled.current = true;
     const r = req.data;
-    if (offer) {
-      const branch = org.data.branches.find((b) => b.name === offer.branch_name);
-      setF((c) => ({ ...c, branchId: c.branchId || branch?.id || '', legalEntityId: c.legalEntityId || branch?.legal_entity_id || '', departmentId: r?.department_id ?? null }));
-    } else if (r) {
+    if (r) {
       setF((c) => ({ ...c, designation: c.designation || (r.designation ?? ''), legalEntityId: c.legalEntityId || r.legal_entity_id, branchId: c.branchId || r.branch_id, departmentId: c.departmentId ?? r.department_id, employmentType: r.employment_type }));
     }
   }, [org.data, req.data, req.isPending, offer]);
@@ -67,7 +62,6 @@ export function OfferForm({ applicationId, requisitionId, offer, onClose }: { ap
         </div>
         <Textarea label="Notes" error={form.errors['notes']} value={f.notes} onChange={(e) => set({ notes: e.target.value })} />
         {offer?.status === 'rejected' && <Alert tone="warn">This offer was rejected. Saving returns it to draft, and it needs approval again.</Alert>}
-        {offer && <p className="text-xs text-3">Check the department and contract end date. They start from the requisition, not from the saved offer.</p>}
         <p className="text-xs text-3">The approval request shows candidate and designation only. Compensation stays visible only to people with compensation access.</p>
         <FormActions error={form.error} busy={form.busy} submitLabel={offer ? 'Save changes' : 'Save draft'} onCancel={onClose} />
       </form>

@@ -16747,11 +16747,9 @@ export interface operations {
                         };
                         employee_id: string;
                         exit_interview?: {
-                            _at: string;
-                            _recorded_by: string;
-                            reason: string;
-                            wouldReturn: string;
+                            [key: string]: string;
                         } | null;
+                        exit_interview_recorded?: boolean;
                         fnf_note: string | null;
                         fnf_status: string;
                         id: string;
@@ -23057,13 +23055,17 @@ export interface operations {
                             above_budget: boolean;
                             annual_ctc: string | null;
                             approved_at: string | null;
+                            branch_id: string;
                             branch_name: string;
+                            contract_end_date: string | null;
                             created_at: string;
+                            department_id: string | null;
                             designation: string;
                             employee_id: string | null;
                             employment_type: string;
                             id: string;
                             joining_date: string;
+                            legal_entity_id: string;
                             masked?: boolean;
                             maskedFields?: string[];
                             notes: string | null;

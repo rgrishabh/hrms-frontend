@@ -109,6 +109,9 @@ function SeparationForm({ kind, onClose, onSaved }: { kind: 'resign' | 'hr'; onC
 /** Answers already on file, without the server's bookkeeping fields. The backend replaces all answers, so the form must start from these. */
 const recordedAnswers = (saved: Record<string, unknown> | null | undefined) => Object.fromEntries(Object.entries(saved ?? {}).filter(([k]) => !k.startsWith('_')).map(([k, v]) => [k, String(v ?? '')]));
 
+/** The API withholds the answers from some readers and says only that they exist. */
+const answersHidden = (d: Separation) => !!d.exit_interview_recorded && !d.exit_interview;
+
 const EXIT_QUESTIONS = [['reasonForLeaving', 'Main reason for leaving'], ['whatWentWell', 'What worked well'], ['whatToImprove', 'What should we improve'], ['wouldRecommend', 'Would you recommend us as an employer? Why?']] as const;
 const questionLabel = (key: string) => EXIT_QUESTIONS.find(([k]) => k === key)?.[1] ?? key;
 
@@ -136,12 +139,14 @@ function SeparationDetail({ id, onClose }: { id: string; onClose: () => void }) 
             <div className="cluster">
               {d.status === 'pending' && d.initiated_by === me?.user.id && <Button size="sm" onClick={() => setPanel('withdraw')}>Withdraw request</Button>}
               {d.status === 'pending' && manage && <Button size="sm" onClick={() => setPanel('lwd')}>Set last working day</Button>}
-              {['approved', 'completed'].includes(d.status) && (d.employee.id === me?.user.employeeId || manage) && <Button size="sm" onClick={() => setPanel('exit')}>Exit interview</Button>}
+              {/* Saving replaces every answer, so one who cannot see what is on file cannot save over it. */}
+              {['approved', 'completed'].includes(d.status) && (d.employee.id === me?.user.employeeId || manage) && <Button size="sm" disabled={answersHidden(d)} title={answersHidden(d) ? 'Only HR above this person can change this' : undefined} onClick={() => setPanel('exit')}>Exit interview</Button>}
               {/* The form saves status and note together, so one built without a hidden note would erase it. */}
               {['approved', 'completed'].includes(d.status) && manage && <Button size="sm" disabled={isMaskedField(d, 'fnf_note')} title={isMaskedField(d, 'fnf_note') ? 'Only HR above this person can change this' : undefined} onClick={() => setPanel('fnf')}>Update F&amp;F</Button>}
               {d.status === 'approved' && manage && <Button size="sm" variant="danger-ghost" onClick={() => setPanel('cancel')}>Cancel separation</Button>}
               {d.status === 'approved' && manage && <Button size="sm" variant="primary" onClick={() => setPanel('complete')}>Complete exit</Button>}
             </div>
+            {['approved', 'completed'].includes(d.status) && (d.employee.id === me?.user.employeeId || manage) && answersHidden(d) && <p className="text-sm text-2">The exit interview is already recorded. Only HR above this person can change it.</p>}
             {d.checklist && (
               <Card headingLevel={3} title={<span className="cluster">Exit clearance<StatusBadge status={d.checklist.status} /></span>} actions={<Button size="sm" onClick={() => setChecklistOpen(d.checklist!.id)}>Open checklist</Button>}>
                 <p className="text-sm text-2">{d.checklist.tasks.filter((t) => t.status !== 'pending').length}/{d.checklist.tasks.length} cleared</p>

@@ -372,6 +372,31 @@ describe('separations', () => {
     expect(bodyOf(writes(f, '/separations/s1/exit-interview')[0]!)).toEqual({ answers: { reasonForLeaving: 'Family', whatToImprove: 'Tools' } });
     expect(await screen.findByText('Exit interview recorded')).toBeTruthy();
   });
+  it('answers hidden from the reader cannot be saved over: Exit interview is disabled and says why', async () => {
+    const leaver = { ...SEP, exit_interview: undefined, exit_interview_recorded: true };
+    const f = await openSeparation(leaver, ['lifecycle.self'], 'e2');
+    const dlg = screen.getByRole('dialog', { name: /Bo Das/ });
+    const button = await within(dlg).findByRole<HTMLButtonElement>('button', { name: 'Exit interview' });
+    expect(button.disabled).toBe(true);
+    expect(within(dlg).getByText(/already recorded\. Only HR above this person can change it/)).toBeTruthy();
+    await userEvent.click(button);
+    expect(screen.queryByRole('dialog', { name: 'Exit interview' })).toBeNull();
+    expect(writes(f, '/separations/s1/exit-interview')).toHaveLength(0);
+  });
+  it('nothing on file: the leaver, who sees no answers, can still fill the form in', async () => {
+    const f = await openSeparation({ ...SEP, exit_interview: undefined, exit_interview_recorded: false }, ['lifecycle.self'], 'e2');
+    await userEvent.click(await screen.findByRole('button', { name: 'Exit interview' }));
+    const form = await screen.findByRole('dialog', { name: 'Exit interview' });
+    await userEvent.type(within(form).getByLabelText('Main reason for leaving'), 'Family');
+    await userEvent.click(within(form).getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(writes(f, '/separations/s1/exit-interview')).toHaveLength(1));
+    expect(bodyOf(writes(f, '/separations/s1/exit-interview')[0]!)).toEqual({ answers: { reasonForLeaving: 'Family' } });
+  });
+  it('a reader shown the answers can still correct them', async () => {
+    await openSeparation({ ...SEP, exit_interview: { reasonForLeaving: 'Family' }, exit_interview_recorded: true });
+    const button = await screen.findByRole<HTMLButtonElement>('button', { name: 'Exit interview' });
+    expect(button.disabled).toBe(false);
+  });
   it('the leaver gets the exit interview, but none of the HR actions', async () => {
     await openSeparation(SEP, ['lifecycle.self'], 'e2');
     expect(await screen.findByRole('button', { name: 'Exit interview' })).toBeTruthy();

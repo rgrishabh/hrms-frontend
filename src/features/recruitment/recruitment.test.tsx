@@ -7,7 +7,7 @@ import { mockApi, problem, showPage, writes } from './harness.test-util';
 const PERMS = ['recruitment.manage', 'recruitment.read', 'recruitment.requisition', 'recruitment.compensation'];
 const REQ = { id: 'r1', code: 'REQ-1', version: 1, title: 'Analyst', status: 'approved', filled: 0, positions: 1, employment_type: 'permanent', legal_entity_id: 'l1', branch_id: 'b1', department_id: 'd1', designation: 'Analyst', justification: 'Needed badly', budget_ctc_max: null, hiring_manager_id: null, target_date: null, created_by: 'u1', branch_name: 'HQ', applications: [] };
 const ORG = { legalEntities: [{ id: 'l1', name: 'Co' }], branches: [{ id: 'b1', name: 'HQ', legal_entity_id: 'l1' }, { id: 'b2', name: 'Annexe', legal_entity_id: 'l1' }], departments: [{ id: 'd1', name: 'QC' }] };
-const OFFER = { id: 'o1', designation: 'Chemist', employment_type: 'permanent', annual_ctc: 500000, joining_date: '2027-01-15', probation_months: 6, status: 'draft', above_budget: false, notes: 'Keep this', employee_id: null, branch_name: 'Annexe' };
+const OFFER = { id: 'o1', designation: 'Chemist', employment_type: 'permanent', annual_ctc: 500000, joining_date: '2027-01-15', probation_months: 6, status: 'draft', above_budget: false, notes: 'Keep this', employee_id: null, branch_name: 'Annexe', legal_entity_id: 'l1', branch_id: 'b2', department_id: 'd1', contract_end_date: null };
 const APP = { id: 'a1', stage: 'offer', version: 3, access: 'full', requisition: { id: 'r1', code: 'REQ-1', title: 'Analyst', status: 'approved' }, candidate: { id: 'c1', first_name: 'Kavya', last_name: 'D', current_designation: null, current_company: null, experience_months: 24, qualification: null, has_resume: false }, events: [], interviews: [], offers: [OFFER], allowedMoves: [] };
 
 const base = (url: string) => {
@@ -34,7 +34,7 @@ describe('requisition confirmations', () => {
 });
 
 describe('offer edit', () => {
-  it('sends the whole offer with PUT, matching the branch by name and keeping what was typed', async () => {
+  it('sends the whole offer with PUT, keeping what was typed', async () => {
     const f = mockApi(PERMS, (url, method) => (method === 'PUT' ? { ok: true, aboveBudget: true } : base(url)));
     showPage(<Recruitment />, '/recruitment?tab=requisitions&application=a1');
     await userEvent.click(await screen.findByRole('button', { name: 'Edit offer' }));
@@ -49,6 +49,24 @@ describe('offer edit', () => {
     expect((init as RequestInit).method).toBe('PUT');
     expect(JSON.parse(String((init as RequestInit).body))).toMatchObject({ designation: 'Chemist', legalEntityId: 'l1', branchId: 'b2', departmentId: 'd1', annualCtc: 650000, notes: 'Keep this', probationMonths: 6 });
     await screen.findByText('Draft saved — above the requisition budget');
+  });
+  it('editing keeps the saved legal entity, branch, department and contract end, not the requisition\'s', async () => {
+    const saved = { ...OFFER, employment_type: 'contract', legal_entity_id: 'l2', branch_id: 'b3', branch_name: 'Same name', department_id: 'd2', contract_end_date: '2027-12-31' };
+    const org = { legalEntities: [{ id: 'l1', name: 'Co' }, { id: 'l2', name: 'Other' }], branches: [{ id: 'b1', name: 'Same name', legal_entity_id: 'l1' }, { id: 'b3', name: 'Same name', legal_entity_id: 'l2' }], departments: [{ id: 'd1', name: 'QC' }, { id: 'd2', name: 'Ops' }] };
+    const f = mockApi(PERMS, (url, method) => {
+      if (method === 'PUT') return { ok: true, aboveBudget: false };
+      if (url.endsWith('/org')) return org;
+      if (url.includes('/applications/a1')) return { ...APP, offers: [saved] };
+      return base(url);
+    });
+    showPage(<Recruitment />, '/recruitment?tab=requisitions&application=a1');
+    await userEvent.click(await screen.findByRole('button', { name: 'Edit offer' }));
+    const form = await screen.findByRole('dialog', { name: 'Edit offer' });
+    await waitFor(() => expect(within(form).getByLabelText<HTMLSelectElement>(/Branch/).value).toBe('b3'));
+    expect(within(form).queryByText(/Check the department/)).toBeNull();
+    await userEvent.click(within(form).getByRole('button', { name: 'Save changes' }));
+    await waitFor(() => expect(writes(f, '/offers/o1')).toHaveLength(1));
+    expect(JSON.parse(String((writes(f, '/offers/o1')[0]![1] as RequestInit).body))).toMatchObject({ legalEntityId: 'l2', branchId: 'b3', departmentId: 'd2', contractEndDate: '2027-12-31', employmentType: 'contract' });
   });
   it('an offer past draft has no Edit, since the server refuses it', async () => {
     mockApi(PERMS, (url) => (url.includes('/applications/a1') ? { ...APP, offers: [{ ...OFFER, status: 'sent' }] } : base(url)));

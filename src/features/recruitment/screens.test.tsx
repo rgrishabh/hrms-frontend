@@ -11,7 +11,7 @@ const ROW = { id: 'r1', code: 'REQ-1', title: 'Analyst', designation: 'Sr Analys
 const REQ = { ...ROW, version: 4, legal_entity_id: 'l1', legal_entity_name: 'Acme Labs', branch_id: 'b1', department_id: 'd1', justification: 'New scope in Pune', budget_ctc_max: 900000, hiring_manager_id: 'e7', target_date: '2027-02-01', created_by: 'u1', created_by_name: 'A', applications: [{ id: 'a1', first_name: 'Kavya', last_name: 'Das', current_company: 'Zen', experience_months: 30, source: 'referral', avg_rating: 4.5, stage: 'interview' }, { id: 'a2', first_name: 'Ravi', last_name: null, current_company: null, experience_months: null, source: 'carrier_pigeon', avg_rating: null, stage: 'applied' }] };
 const CAND_ROW = { id: 'c1', first_name: 'Kavya', last_name: 'Das', email: 'kavya@x.test', phone: '98765', current_designation: 'Chemist', current_company: 'Zen', experience_months: 24, source: 'agency', applications: 2, retain_until: '2028-01-01', employee_id: 'e5' };
 const CAND = { ...CAND_ROW, location: 'Pune', notice_days: 30, qualification: 'M.Sc.', referred_by_name: 'Meera Rao', expected_ctc: null, masked: true, maskedFields: ['expected_ctc'], consent_at: '2026-01-01T10:00:00Z', consent_note: 'Careers page', has_resume: true, status: 'active', applications: [{ id: 'a1', requisition_code: 'REQ-1', title: 'Analyst', stage: 'offer', updated_at: '2026-03-01T10:00:00Z' }] };
-const OFFER = { id: 'o1', designation: 'Chemist', employment_type: 'permanent', annual_ctc: 500000, joining_date: '2027-01-15', probation_months: 6, status: 'draft', above_budget: false, notes: null, employee_id: null, branch_name: 'Pune' };
+const OFFER = { id: 'o1', designation: 'Chemist', employment_type: 'permanent', annual_ctc: 500000, joining_date: '2027-01-15', probation_months: 6, status: 'draft', above_budget: false, notes: null, employee_id: null, branch_name: 'Pune', legal_entity_id: 'l1', branch_id: 'b1', department_id: 'd1', contract_end_date: null };
 const IV = { id: 'i1', round: 1, kind: 'technical', status: 'scheduled', scheduled_at: '2027-01-10T05:00:00Z', location: 'Room 4', panel: [{ user_id: 'u1', name: 'A', submitted_at: null, rating: null, recommendation: null, notes: null }, { user_id: 'u2', name: 'Meera Rao', submitted_at: '2027-01-10T06:00:00Z', hidden: true, rating: null, recommendation: null, notes: null }, { user_id: 'u3', name: 'Anil Shah', submitted_at: '2027-01-10T06:00:00Z', rating: 4, recommendation: 'yes', notes: 'Solid on chromatography' }] };
 const APP = { id: 'a1', stage: 'interview', version: 3, access: 'full', requisition: { id: 'r1', code: 'REQ-1', title: 'Analyst', status: 'approved' }, candidate: { id: 'c1', first_name: 'Kavya', last_name: 'Das', current_designation: 'Chemist', current_company: 'Zen', experience_months: 24, qualification: 'M.Sc.', has_resume: true }, events: [{ at: '2026-03-01T10:00:00Z', from_stage: null, to_stage: 'applied', actor_name: null, note: null }, { at: '2026-03-02T10:00:00Z', from_stage: 'applied', to_stage: 'interview', actor_name: 'Meera Rao', note: 'Strong CV' }], interviews: [IV], offers: [], allowedMoves: ['offer', 'rejected'] };
 
@@ -616,13 +616,12 @@ describe('offers', () => {
     await screen.findByRole('button', { name: 'Edit offer' });
     expect(screen.queryByRole('button', { name: 'Draft offer' })).toBeNull();
   });
-  it('editing a rejected offer warns that it goes back to draft and flags what starts from the requisition', async () => {
+  it('editing a rejected offer warns that it goes back to draft', async () => {
     mockPageApi(MANAGE, [], offerApp({ status: 'rejected' }));
     showPage(<Recruitment />, APP_ROUTE);
     await userEvent.click(await screen.findByRole('button', { name: 'Edit offer' }));
     const dlg = await dialog('Edit offer');
     expect(within(dlg).getByText(/Saving returns it to draft/)).toBeTruthy();
-    expect(within(dlg).getByText(/They start from the requisition/)).toBeTruthy();
   });
   it('hides a masked CTC until revealed, and reveal asks with ?reveal=1', async () => {
     const f = mockPageApi(MANAGE, [], (url, init) => (url.includes('/applications/a1?reveal=1')
