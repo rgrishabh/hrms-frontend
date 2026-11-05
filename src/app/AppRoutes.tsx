@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from '../auth';
 import { Forbidden, NotFound } from './NotFound';
 import { canEnter, LAZY_COMPONENTS, ROUTES, routeExists, type RouteDef } from './registry';
@@ -22,6 +22,7 @@ export function AppRoutes() {
   return (
     <Routes>
       {routes.map((r) => <Route key={r.id} path={r.splat ? `${r.path}/*` : r.path} element={<Guarded route={r} />} />)}
+      <Route path="/login" element={<Navigate to="/" replace />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

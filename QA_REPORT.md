@@ -69,6 +69,7 @@ Bugs found and fixed during the revamp. Each has a test that was run and seen to
 | QA-063 | Policies | Low | Have an overdue policy | A reminder used the error surface, so it read as a failure | Warning notice | `e2e/full/walk.full.ts` |
 | QA-064 | Recruitment (found by running end to end) | Med | Draft an offer and type a designation before the requisition has loaded | The fill from the requisition overwrote what was typed, so the form then refused to submit | Only empty fields are filled | `OfferForms.test.tsx` |
 | QA-065 | Reports (found by axe on the real stack) | Low | Open Reports on a phone | The tile link's own box was 21px high, under the 24px minimum | Minimum height | `e2e/full/walk.full.ts` |
+| QA-066 | Sign-in | Medium | Open `/login`, sign in | The sign-in form shows at any address and the app then renders that address; `/login` was not a route, so it fell through to Page not found | `/login` redirects to the dashboard | `e2e/mock/flows.mock.ts` |
 
 ## Audit claims that needed correcting
 

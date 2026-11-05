@@ -86,3 +86,10 @@ test('a failed load shows the reason and retry works', async ({ page }) => {
   await page.getByRole('button', { name: 'Try again' }).click();
   await expect(page.getByText('No payslips yet')).toBeVisible();
 });
+
+test('the /login address leads to the dashboard once signed in, not to a missing page', async ({ page }) => {
+  await mockApi(page);
+  await page.goto('/login');
+  await expect(page.getByRole('heading', { level: 1, name: 'Page not found' })).toHaveCount(0);
+  await expect(page).toHaveURL(/\/$/);
+});
