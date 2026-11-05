@@ -4,7 +4,7 @@
 
 ### Removed
 
-* The permanent 232px sidebar on desktop. Above 860px a 56px icon rail takes its place, and its menu button expands it in place to the labelled menu, remembered per browser. Phones keep the drawer and bottom bar.
+* The permanent 232px sidebar on desktop. Above 860px a 56px icon rail takes its place, and its menu button expands it in place to the labelled menu, remembered per browser. Phones keep the drawer and bottom bar. The person's name, Account, Sign out, Install app and the support details moved from the foot of the menu to an account menu at the top right, on every screen size.
 * Hand-written API response types: screens name their data from the generated schema (`ApiResponse`, `ApiItem`, `Refine`). The remainder is listed in `docs/DESIGN.md`, D24.
 * The read of `newLast4` in employee history, which the API never sends.
 * SMS: settings page, account preference, e2e spec and the CI variables.

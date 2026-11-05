@@ -18,6 +18,19 @@
 .topbar__search:hover { background: var(--surface-2); }
 .topbar__bell { position: relative; display: inline-flex; }
 .topbar__count { position: absolute; top: 2px; right: 0; min-width: 16px; padding: 0 3px; border-radius: var(--radius-full); background: var(--danger-solid); color: var(--on-danger); font-size: 0.625rem; font-weight: var(--weight-semibold); line-height: 16px; text-align: center; pointer-events: none; }
+.user-menu { position: relative; display: inline-flex; flex: none; }
+.user-menu__button { display: inline-flex; align-items: center; gap: var(--space-1); min-height: 32px; padding: 2px var(--space-1) 2px 2px; background: none; border: 0; border-radius: var(--radius-full); color: var(--text-3); cursor: pointer; }
+.user-menu__button:hover, .user-menu__button[aria-expanded='true'] { background: var(--surface-2); }
+.user-menu__button > svg { width: 14px; height: 14px; }
+.user-menu__panel { position: absolute; top: 100%; right: 0; z-index: var(--z-sticky); display: flex; flex-direction: column; gap: var(--space-2); width: 280px; max-width: calc(100vw - 2 * var(--space-2)); margin-top: var(--space-1); padding: var(--space-3); background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--radius); box-shadow: var(--shadow-md); }
+.user-menu__who { display: flex; align-items: center; gap: var(--space-2); min-width: 0; padding-bottom: var(--space-2); border-bottom: 1px solid var(--border); }
+.user-menu__who .grow { min-width: 0; }
+.user-menu__name { font-size: var(--text-sm); font-weight: var(--weight-medium); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.user-menu__role { font-size: var(--text-xs); color: var(--text-3); overflow-wrap: anywhere; }
+.user-menu__actions { display: flex; flex-direction: column; }
+.user-menu__item { display: flex; align-items: center; gap: var(--space-2); width: 100%; min-height: 32px; padding: var(--space-1) var(--space-2); background: none; border: 0; border-radius: var(--radius); color: var(--text-2); font: inherit; font-size: var(--text-sm); text-align: left; text-decoration: none; cursor: pointer; }
+.user-menu__item svg { width: 16px; height: 16px; flex: none; color: var(--text-3); }
+.user-menu__item:hover { background: var(--surface-2); color: var(--text); }
 
 .crumbs__list { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1); font-size: var(--text-sm); color: var(--text-2); }
 .crumbs__list li + li::before { content: "/"; margin-right: var(--space-1); color: var(--text-3); }
@@ -39,18 +52,13 @@
 .side__link:hover { background: var(--surface-2); color: var(--text); }
 .side__link.active { background: var(--brand-subtle); color: var(--brand-subtle-text); font-weight: var(--weight-medium); }
 .side__link.active svg { color: inherit; }
-.side__foot { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-3); border-top: 1px solid var(--border); }
-.side__user { display: flex; align-items: center; gap: var(--space-2); min-width: 0; }
-.side__user-name { font-size: var(--text-sm); font-weight: var(--weight-medium); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.side__user-role { font-size: var(--text-xs); color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .side--collapsed .side__brand { justify-content: center; padding-inline: 0; }
 .side--collapsed .side__nav { overflow-x: hidden; }
 .side--collapsed .side__group + .side__group { padding-top: var(--space-2); border-top: 1px solid var(--border); }
-.side--collapsed .side__link { position: relative; justify-content: center; min-height: 36px; padding-inline: 0; width: 100%; background: none; border: 0; cursor: pointer; }
+.side--collapsed .side__link { position: relative; justify-content: center; min-height: 36px; padding-inline: 0; }
 .side--collapsed .side__link.active { background: var(--brand-subtle); }
 .side--collapsed .side__link > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-.side--collapsed .side__foot { padding: var(--space-2); gap: var(--space-1); }
 
 .shell__drawer .dialog__header { display: none; }
 .shell__drawer .dialog__body { padding: 0; height: 100%; }
@@ -66,5 +74,6 @@
   .shell__main { padding: var(--space-4) var(--space-4) var(--space-6); }
   .offline-banner { padding-inline: var(--space-4); }
   .side__link { min-height: var(--touch-target); }
-  .side__foot .btn { flex: 1 1 auto; }
+  .user-menu__button { min-height: var(--touch-target); }
+  .user-menu__item { min-height: var(--touch-target); }
 }

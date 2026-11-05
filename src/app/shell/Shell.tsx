@@ -20,6 +20,7 @@ import { Breadcrumbs, matchRoute } from './Breadcrumbs';
 import { CommandPalette } from './CommandPalette';
 import { NotificationCentre } from './NotificationCentre';
 import { SidebarContent } from './SidebarContent';
+import { UserMenu } from './UserMenu';
 import './Shell.css';
 
 const RAIL_KEY = 'hrms.nav.expanded';
@@ -97,6 +98,7 @@ export function Shell({ children }: { children: ReactNode }) {
             <Button variant="ghost" iconOnly aria-label={unreadLabel} icon={<Bell aria-hidden="true" />} onClick={() => setNotifications(true)} />
             {unread > 0 && <span className="topbar__count" aria-hidden="true">{unread > 99 ? '99+' : unread}</span>}
           </span>
+          <UserMenu />
         </header>
         {!online && <div className="offline-banner" role="status"><WifiOff aria-hidden="true" />You are offline. Showing what is already on this screen; changes cannot be saved until you reconnect.</div>}
         <main id="main" ref={main} tabIndex={-1} className="shell__main" data-testid={MAIN_TEST_ID} {...{ [INFLIGHT_ATTR]: String(inflight) }}>

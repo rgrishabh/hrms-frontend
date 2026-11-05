@@ -1,10 +1,9 @@
 import { act, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import { captureInstallPrompt } from '../../pwa/install';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { normalizeConfig } from '../../lib/config';
 import { renderUi } from '../../test/render';
-import { mockPageApi, renderPage, writes } from '../../test/page';
+import { mockPageApi, renderPage } from '../../test/page';
 import { BrandMark } from './BrandMark';
 import { Breadcrumbs, matchRoute } from './Breadcrumbs';
 import { SidebarContent } from './SidebarContent';
@@ -15,17 +14,16 @@ const HR = [...SELF, 'employees.manage', 'employees.read', 'settings.read', 'lea
 const FLAGS = ['FEATURE_LEAVE', 'FEATURE_ATTENDANCE', 'FEATURE_PAYROLL'];
 const nav = () => screen.findByRole('navigation', { name: 'Main navigation' });
 
-beforeAll(() => { captureInstallPrompt(); });
 afterEach(() => { vi.restoreAllMocks(); });
 
 describe('sidebar', () => {
-  it('names the person with their roles and hides the switcher for one view', async () => {
-    mockPageApi(SELF, FLAGS, () => ({}), 'e1', { roles: [{ key: 'employee', name: 'Employee', group: 'staff' }, { key: 'lead', name: 'Team lead', group: 'staff' }] });
+  it('hides the switcher for one view, and leaves the person\'s own controls to the top-right menu', async () => {
+    mockPageApi(SELF, FLAGS, () => ({}));
     renderPage(<SidebarContent />);
     await nav();
-    expect(screen.getByText('Employee, Team lead')).toBeTruthy();
     expect(screen.queryByLabelText('Switch view')).toBeNull();
-    expect(screen.getByRole('link', { name: 'Account' }).getAttribute('href')).toBe('/account');
+    expect(screen.queryByRole('link', { name: 'Account' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Sign out' })).toBeNull();
   });
   it('switching view remembers the choice and changes the navigation', async () => {
     mockPageApi(HR, FLAGS, () => ({}));
@@ -48,27 +46,7 @@ describe('sidebar', () => {
     mockPageApi(SELF, FLAGS, () => ({}));
     renderPage(<SidebarContent onNavigate={onNavigate} />);
     await userEvent.click(within(await nav()).getByRole('link', { name: 'Leave' }));
-    await userEvent.click(screen.getByRole('link', { name: 'Account' }));
-    expect(onNavigate).toHaveBeenCalledTimes(2);
-  });
-  it('Sign out posts to the logout route', async () => {
-    const f = mockPageApi(SELF, FLAGS, () => ({}));
-    renderPage(<SidebarContent />);
-    await nav();
-    await userEvent.click(screen.getByRole('button', { name: 'Sign out' }));
-    await waitFor(() => expect(writes(f, '/api/v1/auth/logout')).toHaveLength(1));
-  });
-  it('offers Install app only once the browser allows it, and hides it after answering', async () => {
-    mockPageApi(SELF, FLAGS, () => ({}));
-    renderPage(<SidebarContent />);
-    await nav();
-    expect(screen.queryByRole('button', { name: 'Install app' })).toBeNull();
-    const event = Object.assign(new Event('beforeinstallprompt', { cancelable: true }), { prompt: vi.fn(() => Promise.resolve()), userChoice: Promise.resolve({ outcome: 'accepted' as const }) });
-    act(() => { window.dispatchEvent(event); });
-    expect(event.defaultPrevented).toBe(true);
-    await userEvent.click(await screen.findByRole('button', { name: 'Install app' }));
-    expect(event.prompt).toHaveBeenCalledTimes(1);
-    await waitFor(() => expect(screen.queryByRole('button', { name: 'Install app' })).toBeNull());
+    expect(onNavigate).toHaveBeenCalledTimes(1);
   });
 });
 
