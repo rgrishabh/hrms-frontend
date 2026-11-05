@@ -22,12 +22,23 @@ import { NotificationCentre } from './NotificationCentre';
 import { SidebarContent } from './SidebarContent';
 import './Shell.css';
 
+const RAIL_KEY = 'hrms.nav.expanded';
+
+/** The desktop rail's width is a preference: it stays as left, across pages and reloads, until its button changes it. */
+function useRailExpanded() {
+  const [expanded, setExpanded] = useState(() => localStorage.getItem(RAIL_KEY) === '1');
+  const toggle = () => {
+    localStorage.setItem(RAIL_KEY, expanded ? '0' : '1');
+    setExpanded(!expanded);
+  };
+  return [expanded, toggle] as const;
+}
+
 export function Shell({ children }: { children: ReactNode }) {
   const { config } = useAuth();
   const mobile = useMediaQuery(MOBILE_QUERY);
   const [drawer, setDrawer] = useState(false);
-  const [railExpanded, setRailExpanded] = useState(false);
-  const rail = useRef<HTMLElement>(null);
+  const [railExpanded, toggleRail] = useRailExpanded();
   const [notifications, setNotifications] = useState(false);
   const [palette, setPalette] = useState(false);
   const { pathname } = useLocation();
@@ -41,7 +52,6 @@ export function Shell({ children }: { children: ReactNode }) {
   // Moving to a new page: fresh title, focus at the page's start, drawer closed.
   useEffect(() => {
     setDrawer(false);
-    setRailExpanded(false);
     if (config) {
       const route = matchRoute(pathname);
       document.title = documentTitle(config, route ? route.labelFor?.(config.features) ?? route.label : undefined);
@@ -51,16 +61,6 @@ export function Shell({ children }: { children: ReactNode }) {
     window.scrollTo(0, 0);
   }, [pathname, config]);
 
-  // The expanded rail floats over the page, so anything outside it, or Esc, puts it away.
-  useEffect(() => {
-    if (!railExpanded) return undefined;
-    const outside = (e: PointerEvent) => { if (!rail.current?.contains(e.target as Node)) setRailExpanded(false); };
-    const escape = (e: KeyboardEvent) => { if (e.key === 'Escape') setRailExpanded(false); };
-    document.addEventListener('pointerdown', outside);
-    document.addEventListener('keydown', escape);
-    return () => { document.removeEventListener('pointerdown', outside); document.removeEventListener('keydown', escape); };
-  }, [railExpanded]);
-
   if (!config) return null;
   const unreadLabel = unread ? `Notifications, ${unread} unread` : 'Notifications';
 
@@ -68,11 +68,10 @@ export function Shell({ children }: { children: ReactNode }) {
     <div className={`shell${railExpanded ? ' shell--rail-expanded' : ''}`}>
       <a className="skip-link" href="#main" onClick={(e) => { e.preventDefault(); main.current?.focus(); }}>Skip to content</a>
       {!mobile && (
-        <aside ref={rail} className="shell__rail">
+        <aside className="shell__rail">
           <SidebarContent
             collapsed={!railExpanded}
-            onNavigate={() => setRailExpanded(false)}
-            toggle={<Button variant="ghost" iconOnly aria-label={railExpanded ? 'Close menu' : 'Open menu'} aria-expanded={railExpanded} icon={railExpanded ? <PanelLeftClose aria-hidden="true" /> : <Menu aria-hidden="true" />} onClick={() => setRailExpanded(!railExpanded)} />}
+            toggle={<Button variant="ghost" iconOnly aria-label={railExpanded ? 'Close menu' : 'Open menu'} aria-expanded={railExpanded} icon={railExpanded ? <PanelLeftClose aria-hidden="true" /> : <Menu aria-hidden="true" />} onClick={toggleRail} />}
           />
         </aside>
       )}
@@ -84,7 +83,7 @@ export function Shell({ children }: { children: ReactNode }) {
       <div className="shell__body">
         <header className="topbar">
           {mobile && <Button variant="ghost" iconOnly aria-label="Open menu" aria-expanded={drawer} icon={<Menu aria-hidden="true" />} onClick={() => setDrawer(true)} />}
-          <span className="topbar__brand"><BrandMark cfg={config} /><span>{config.brand.productName}</span></span>
+          {(mobile || !railExpanded) && <span className="topbar__brand"><BrandMark cfg={config} /><span>{config.brand.productName}</span></span>}
           {!mobile && <Breadcrumbs />}
           <span className="topbar__spacer" />
           {mobile
