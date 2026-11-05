@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronDown, Download, LogOut, Settings2 } from 'lucide-react';
 import { useAuth } from '../../auth';
-import { Avatar } from '../../components/Avatar';
+import { Avatar, initials } from '../../components/Avatar';
 import { useInstallPrompt } from '../../pwa/install';
 import { SupportLine } from './SupportLine';
 
@@ -47,7 +47,7 @@ export function UserMenu() {
         if (e.relatedTarget && !e.currentTarget.contains(e.relatedTarget)) close();
       }}
     >
-      <button ref={button} type="button" className="user-menu__button" aria-label={`Account menu, ${me.user.displayName}`} aria-expanded={open} onClick={() => setOpen(!open)}>
+      <button ref={button} type="button" className="user-menu__button" aria-label={`${initials(me.user.displayName)}, account menu, ${me.user.displayName}`} aria-expanded={open} onClick={() => setOpen(!open)}>
         <Avatar name={me.user.displayName} />
         <ChevronDown aria-hidden="true" />
       </button>

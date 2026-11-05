@@ -52,6 +52,7 @@ export function EmployeeCards({ employeeId }: { employeeId: string }) {
           <DownloadButton url={`/api/v1/employees/${employeeId}/id-card.pdf`} fileName="id-card.pdf">ID card</DownloadButton>
           <DownloadButton url={`/api/v1/employees/${employeeId}/business-card.pdf`} fileName="business-card.pdf">Business card</DownloadButton>
         </div>
+        <p className="text-sm text-2">Print business cards on both sides, flipping on the long edge. Print ID cards on one side: each has its front and back side by side.</p>
         <FileUpload label="Photo for the ID card" hint="JPEG or PNG. Without a photo, the card prints a box to paste one into." accept="image/jpeg,image/png" file={file} error={error} onChange={(f) => void choose(f)} />
       </div>
     </Card>

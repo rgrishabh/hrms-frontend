@@ -9,7 +9,7 @@ const roles = { roles: [{ key: 'employee', name: 'Employee', group: 'staff' }, {
 const show = async () => {
   const f = mockPageApi(['leave.self'], [], () => ({}), 'e1', roles);
   renderPage(<><UserMenu /><p>Elsewhere</p><button type="button">After</button></>);
-  return { f, button: await screen.findByRole('button', { name: /^Account menu/ }) };
+  return { f, button: await screen.findByRole('button', { name: /account menu/ }) };
 };
 const account = () => screen.queryByRole('link', { name: 'Account' });
 
@@ -17,8 +17,9 @@ beforeAll(() => { captureInstallPrompt(); });
 afterEach(() => { vi.restoreAllMocks(); });
 
 describe('account menu', () => {
-  it('shows nothing but the button until opened', async () => {
+  it('shows nothing but the button until opened, and its name starts with the initials it shows', async () => {
     const { button } = await show();
+    expect(button.getAttribute('aria-label')?.startsWith(`${button.querySelector('.avatar')?.textContent}, account menu, `)).toBe(true);
     expect(button.getAttribute('aria-expanded')).toBe('false');
     expect(account()).toBeNull();
   });
@@ -36,7 +37,7 @@ describe('account menu', () => {
     expect(account()).toBeNull();
     expect(button.getAttribute('aria-expanded')).toBe('false');
     expect(button.nextElementSibling?.className).toBe('user-menu__tip');
-    expect(button.nextElementSibling?.textContent).toBe(screen.getByRole('button', { name: /^Account menu/ }).getAttribute('aria-label')?.replace('Account menu, ', ''));
+    expect(button.nextElementSibling?.textContent).toBe(screen.getByRole('button', { name: /account menu/ }).getAttribute('aria-label')?.split('account menu, ')[1]);
     await userEvent.click(button);
     await userEvent.unhover(button);
     expect(account()).toBeTruthy();
