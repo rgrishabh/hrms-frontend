@@ -16,6 +16,7 @@ import { useToast } from '../../components/Toast';
 import { useSubmit } from '../../components/useSubmit';
 import { useTableState } from '../../components/useTableState';
 import { fmtDate } from '../../format';
+import type { ApiResponse } from '../../lib/api-types';
 import { useApiQuery } from '../../lib/query';
 import { reloadLifecycle } from './Checklist';
 import { options, RECOMMENDATION, type ProbationRow } from './types';
@@ -36,7 +37,7 @@ export function Probation() {
   ], [me?.user.employeeId]);
   const table = useTableState('lifecycle.probation', columns, INITIAL);
   const status = table.filters['status'] ?? '';
-  const query = useApiQuery<{ items: ProbationRow[] }>(`/api/v1/lifecycle/probation${qs({ status })}`, { placeholderData: (p) => p });
+  const query = useApiQuery<ApiResponse<'/api/v1/lifecycle/probation'>>(`/api/v1/lifecycle/probation${qs({ status })}`, { placeholderData: (p) => p });
   return (
     <div className="stack-4">
       <FilterBar activeCount={table.activeFilterCount} onClear={table.clearFilters}>

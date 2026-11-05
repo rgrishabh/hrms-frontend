@@ -9,6 +9,7 @@ import { QueryState } from '../../components/QueryState';
 import { Table, type Column } from '../../components/Table';
 import { useAction } from '../../components/useSubmit';
 import { fmtDate } from '../../format';
+import type { ApiResponse } from '../../lib/api-types';
 import { useApiQuery } from '../../lib/query';
 import { ChecklistDetail, reloadLifecycle } from './Checklist';
 import { OWNER, type MyTask } from './types';
@@ -17,7 +18,7 @@ export function MyTasks() {
   const { can } = useAuth();
   const { run, isBusy } = useAction();
   const [open, setOpen] = useState<string | null>(null);
-  const query = useApiQuery<{ date: string; items: MyTask[] }>('/api/v1/lifecycle/tasks/mine');
+  const query = useApiQuery<ApiResponse<'/api/v1/lifecycle/tasks/mine'>>('/api/v1/lifecycle/tasks/mine');
   const today = query.data?.date ?? '';
   // Only lifecycle.manage may reopen, so only they get the undo.
   const undo = (t: MyTask) => (can('lifecycle.manage') ? { label: 'Undo', onClick: () => void run(t.id, async () => { await api.post(`/api/v1/lifecycle/tasks/${t.id}/reopen`, {}); await reloadLifecycle(); }, 'Reopened') } : undefined);

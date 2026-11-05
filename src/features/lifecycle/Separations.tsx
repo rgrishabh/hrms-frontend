@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { LogOut } from 'lucide-react';
-import { api, qs, type Paged } from '../../api';
+import { api, qs } from '../../api';
 import { useAuth } from '../../auth';
 import { Badge, statusLabel, StatusBadge } from '../../components/Badge';
 import { Button } from '../../components/Button';
@@ -23,6 +23,7 @@ import { useToast } from '../../components/Toast';
 import { useSubmit } from '../../components/useSubmit';
 import { useTableState } from '../../components/useTableState';
 import { addDays, fmtDate, todayLocal } from '../../format';
+import type { ApiResponse } from '../../lib/api-types';
 import { isMaskedField } from '../../lib/masking';
 import { useApiQuery } from '../../lib/query';
 import { EmployeeField } from '../employees/EmployeeField';
@@ -49,7 +50,7 @@ export function Separations() {
   const initial = useMemo(() => ({ filters: { scope: hr ? 'all' : 'mine' } }), [hr]);
   const table = useTableState('lifecycle.separations', columns, initial);
   const scope = table.filters['scope'] ?? 'mine';
-  const query = useApiQuery<Paged<SeparationRow>>(`${URL_BASE}${qs({ scope, page: table.page, pageSize: 25 })}`, { placeholderData: (p) => p });
+  const query = useApiQuery<ApiResponse<'/api/v1/lifecycle/separations'>>(`${URL_BASE}${qs({ scope, page: table.page, pageSize: 25 })}`, { placeholderData: (p) => p });
   return (
     <div className="stack-4">
       <FilterBar
@@ -78,8 +79,8 @@ function SeparationForm({ kind, onClose, onSaved }: { kind: 'resign' | 'hr'; onC
   const [f, setF] = useState({ kind: 'termination', reason: '', noticeDate: today, requestedLwd: addDays(today, 30) });
   const form = useSubmit(async () => {
     const r = kind === 'resign'
-      ? await api.post<{ id: string; shortfallDays?: number; noticeDaysRequired?: number }>(`${URL_BASE}/resign`, { reason: f.reason, requestedLwd: f.requestedLwd })
-      : await api.post<{ id: string; shortfallDays?: number; noticeDaysRequired?: number }>(URL_BASE, { ...f, employeeId: employee!.id });
+      ? await api.post<ApiResponse<'/api/v1/lifecycle/separations/resign', 'post'>>(`${URL_BASE}/resign`, { reason: f.reason, requestedLwd: f.requestedLwd })
+      : await api.post<ApiResponse<'/api/v1/lifecycle/separations', 'post'>>(URL_BASE, { ...f, employeeId: employee!.id });
     toast(r.shortfallDays ? `Submitted. Notice short by ${r.shortfallDays} day(s) of the ${r.noticeDaysRequired} required.` : 'Submitted for approval');
     await reloadLifecycle();
     onSaved(r.id);

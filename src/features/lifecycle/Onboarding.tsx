@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { ClipboardList } from 'lucide-react';
-import { api, qs, type Paged } from '../../api';
+import { api, qs } from '../../api';
 import { useAuth } from '../../auth';
 import { Badge, StatusBadge } from '../../components/Badge';
 import { Button } from '../../components/Button';
@@ -16,6 +16,7 @@ import { useToast } from '../../components/Toast';
 import { useSubmit } from '../../components/useSubmit';
 import { useTableState } from '../../components/useTableState';
 import { fmtDate } from '../../format';
+import type { ApiResponse } from '../../lib/api-types';
 import { useApiQuery } from '../../lib/query';
 import { EmployeeField } from '../employees/EmployeeField';
 import { ChecklistDetail, reloadLifecycle } from './Checklist';
@@ -36,7 +37,7 @@ export function Onboarding() {
   ], []);
   const table = useTableState('lifecycle.onboarding', columns, INITIAL);
   const status = table.filters['status'] ?? '';
-  const query = useApiQuery<Paged<ChecklistRow>>(`/api/v1/lifecycle/checklists${qs({ kind: 'onboarding', status, page: table.page, pageSize: 25 })}`, { placeholderData: (p) => p });
+  const query = useApiQuery<ApiResponse<'/api/v1/lifecycle/checklists'>>(`/api/v1/lifecycle/checklists${qs({ kind: 'onboarding', status, page: table.page, pageSize: 25 })}`, { placeholderData: (p) => p });
   return (
     <div className="stack-4">
       <FilterBar activeCount={table.activeFilterCount} onClear={table.clearFilters} actions={can('lifecycle.manage') && <Button variant="primary" onClick={() => setStarting(true)}>Start onboarding</Button>}>
@@ -55,7 +56,7 @@ function StartForm({ onClose, onStarted }: { onClose: () => void; onStarted: (id
   const toast = useToast();
   const [employee, setEmployee] = useState<PickerItem | null>(null);
   const form = useSubmit(async () => {
-    const r = await api.post<{ id: string }>('/api/v1/lifecycle/checklists', { employeeId: employee!.id });
+    const r = await api.post<ApiResponse<'/api/v1/lifecycle/checklists', 'post'>>('/api/v1/lifecycle/checklists', { employeeId: employee!.id });
     toast('Onboarding started; owners notified');
     await reloadLifecycle();
     onStarted(r.id);

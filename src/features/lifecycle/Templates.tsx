@@ -12,6 +12,7 @@ import { Select } from '../../components/Select';
 import { Table, type Column } from '../../components/Table';
 import { useToast } from '../../components/Toast';
 import { useSubmit } from '../../components/useSubmit';
+import type { ApiResponse } from '../../lib/api-types';
 import { useApiQuery } from '../../lib/query';
 import { reloadLifecycle } from './Checklist';
 import { options, OWNER, type Template, type TemplateTask } from './types';
@@ -23,7 +24,7 @@ const blank = (kind: string): TemplateValues => ({ kind, name: '', isDefault: tr
 const toValues = (t: Template): TemplateValues => ({ id: t.id, kind: t.kind, name: t.name, isDefault: t.is_default, status: t.status, tasks: t.tasks.map((k) => ({ ...k, description: k.description ?? '' })) });
 
 export function Templates() {
-  const query = useApiQuery<{ items: Template[] }>('/api/v1/lifecycle/templates');
+  const query = useApiQuery<ApiResponse<'/api/v1/lifecycle/templates'>>('/api/v1/lifecycle/templates');
   const [edit, setEdit] = useState<TemplateValues | null>(null);
   const columns: Column<Template>[] = [
     { key: 'name', header: 'Name', card: 'title', cell: (t) => <span className="cluster">{t.name}{t.is_default && <Badge tone="info">Default</Badge>}</span> },
