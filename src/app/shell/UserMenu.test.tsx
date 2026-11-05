@@ -14,7 +14,7 @@ const show = async () => {
 const account = () => screen.queryByRole('link', { name: 'Account' });
 
 beforeAll(() => { captureInstallPrompt(); });
-afterEach(() => { vi.restoreAllMocks(); vi.useRealTimers(); });
+afterEach(() => { vi.restoreAllMocks(); });
 
 describe('account menu', () => {
   it('shows nothing but the button until opened', async () => {
@@ -30,12 +30,20 @@ describe('account menu', () => {
     expect(account()?.getAttribute('href')).toBe('/account');
     expect(screen.getByRole('button', { name: 'Sign out' })).toBeTruthy();
   });
-  it('a clicked menu stays when the mouse leaves; a second click, a click elsewhere and Esc close it', async () => {
+  it('hovering names the person without opening it, and the mouse leaving does not close a clicked one', async () => {
     const { button } = await show();
+    await userEvent.hover(button);
+    expect(account()).toBeNull();
+    expect(button.getAttribute('aria-expanded')).toBe('false');
+    expect(button.nextElementSibling?.className).toBe('user-menu__tip');
+    expect(button.nextElementSibling?.textContent).toBe(screen.getByRole('button', { name: /^Account menu/ }).getAttribute('aria-label')?.replace('Account menu, ', ''));
     await userEvent.click(button);
     await userEvent.unhover(button);
-    await new Promise((r) => setTimeout(r, 250));
     expect(account()).toBeTruthy();
+  });
+  it('a second click, a click elsewhere and Esc each close it', async () => {
+    const { button } = await show();
+    await userEvent.click(button);
     await userEvent.click(button);
     expect(account()).toBeNull();
     await userEvent.click(button);
@@ -45,28 +53,6 @@ describe('account menu', () => {
     await userEvent.keyboard('{Escape}');
     expect(account()).toBeNull();
     expect(document.activeElement).toBe(button);
-  });
-  it('hovering opens it, moving into the panel keeps it, and leaving closes it shortly after', async () => {
-    const { button } = await show();
-    await userEvent.hover(button);
-    expect(account()).toBeTruthy();
-    await userEvent.hover(account()!);
-    await new Promise((r) => setTimeout(r, 250));
-    expect(account()).toBeTruthy();
-    await userEvent.unhover(account()!);
-    await waitFor(() => expect(account()).toBeNull());
-  });
-  it('a click on a hover-opened menu keeps it open rather than closing it', async () => {
-    const { button } = await show();
-    await userEvent.hover(button);
-    await userEvent.click(button);
-    expect(account()).toBeTruthy();
-  });
-  it('a touch does not count as hovering, so a tap opens it once', async () => {
-    const user = userEvent.setup();
-    const { button } = await show();
-    await user.pointer({ keys: '[TouchA]', target: button });
-    expect(account()).toBeTruthy();
   });
   it('tabbing out closes it, and choosing Account closes it', async () => {
     const { button } = await show();
