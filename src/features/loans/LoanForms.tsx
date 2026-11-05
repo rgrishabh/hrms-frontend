@@ -8,6 +8,7 @@ import { Input, Textarea } from '../../components/Input';
 import { Modal } from '../../components/Modal';
 import { Money, formatMoney } from '../../components/Money';
 import { RevealToggle } from '../../components/RevealToggle';
+import type { ApiResponse } from '../../lib/api-types';
 import { isMaskedField, useRevealable } from '../../lib/masking';
 import type { PickerItem } from '../../components/Picker';
 import { QueryState } from '../../components/QueryState';
@@ -18,7 +19,7 @@ import { useToast } from '../../components/Toast';
 import { useSubmit, type FieldErrors } from '../../components/useSubmit';
 import { currencySymbol, fmtDateTime, fmtMonth, todayLocal } from '../../format';
 import { EmployeeField } from '../employees/EmployeeField';
-import { KIND_LABEL, loanKinds, loansNoun, reloadLoans, terms, type Loan, type LoanDetailData, type LoanKind } from './types';
+import { KIND_LABEL, loanKinds, loansNoun, reloadLoans, terms, type DeferAnswer, type Loan, type LoanDetailData, type LoanKind } from './types';
 
 const URL_BASE = '/api/v1/loans/requests';
 
@@ -79,7 +80,7 @@ export function RepaymentForm({ loan, onClose }: { loan: Loan; onClose: () => vo
   const toast = useToast();
   const [f, setF] = useState({ amount: '', reference: '' });
   const form = useSubmit(async () => {
-    const r = await api.post<{ closed: boolean }>(`${URL_BASE}/${loan.id}/repayment`, { amount: Number(f.amount), reference: f.reference });
+    const r = await api.post<ApiResponse<'/api/v1/loans/requests/{id}/repayment', 'post'>>(`${URL_BASE}/${loan.id}/repayment`, { amount: Number(f.amount), reference: f.reference });
     toast(r.closed ? 'Repaid in full; closed' : 'Repayment recorded');
     await reloadLoans();
     onClose();
@@ -101,7 +102,7 @@ export function DeferForm({ loan, onClose }: { loan: Loan; onClose: () => void }
   const month = todayLocal().slice(0, 7);
   const [f, setF] = useState({ period: '', reason: '' });
   const form = useSubmit(async () => {
-    const r = await api.post<{ recomputePayroll: string | null }>(`${URL_BASE}/${loan.id}/defer`, f);
+    const r = await api.post<DeferAnswer>(`${URL_BASE}/${loan.id}/defer`, f);
     toast(r.recomputePayroll ? `Deferred. Recompute the ${r.recomputePayroll} payroll run.` : 'Deferred');
     await reloadLoans();
     onClose();

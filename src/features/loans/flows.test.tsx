@@ -10,8 +10,8 @@ import type { Loan, LoanDetailData } from './types';
 const SELF = ['loans.self'];
 const MANAGE = ['loans.read', 'loans.manage', 'loans.approve'];
 const BOTH = ['FEATURE_LOANS', 'FEATURE_SALARY_ADVANCE'];
-const loan = (over: Partial<Loan> = {}): Loan => ({ id: 'l1', employee_id: 'e9', employee_code: 'E9', name: 'Rohan Iyer', department: 'Ops', kind: 'loan', amount: '25000', installments: 6, installment_amount: '4167', first_period: '2026-11', skip_periods: [], purpose: 'Laptop', status: 'disbursed', outstanding: '20000', recorded_by_other: false, disbursed_at: null, disbursement_reference: null, ...over });
-const detail = (over: Partial<LoanDetailData> = {}): LoanDetailData => ({ ...loan(), balance: { outstanding: '20000', inProgress: '1000', recovered: '4000' }, schedule: [{ period: '2026-11', amount: '4167' }], recoveries: [], ...over });
+const loan = (over: Partial<Loan> = {}): Loan => ({ id: 'l1', employee_id: 'e9', employee_code: 'E9', name: 'Rohan Iyer', department: 'Ops', kind: 'loan', amount: '25000', installments: 6, installment_amount: '4167', first_period: '2026-11', skip_periods: [], purpose: 'Laptop', status: 'disbursed', outstanding: '20000', recorded_by_other: false, created_at: '2026-10-01T05:00:00Z', decided_at: null, disbursed_at: null, disbursement_reference: null, ...over });
+const detail = (over: Partial<LoanDetailData> = {}): LoanDetailData => ({ ...loan(), recorded_by_other: false, approval_request_id: null, cancel_reason: null, closed_at: null, balance: { amount: '25000', outstanding: '20000', inProgress: '1000', recovered: '4000' }, schedule: [{ period: '2026-11', amount: '4167' }], recoveries: [], ...over });
 const paged = (items: Loan[]) => ({ items, page: 1, pageSize: 25, total: items.length });
 
 const api = (items: Loan[], extra: Handler = () => undefined, one: LoanDetailData = detail()): Handler => (url, init) => {
