@@ -26,6 +26,7 @@
 * The `outstanding` figure in the repayment toast, as the API no longer sends it.
 * The `/branding` dev proxy, and `E2E_DOMAIN`, `E2E_BASE_URL` and the old backend environment in `e2e.yml`.
 * The shared `_app-ci.yml` from this repo's CI. Its jobs are now in `ci.yml` and `security.yml`.
+* The 2FA badge and warning on roles: MFA no longer follows permissions (backend D45).
 * `src/test/pageApi.tsx` and `src/test/pageHarness.tsx`, merged into `src/test/page.tsx`.
 
 ### Changed

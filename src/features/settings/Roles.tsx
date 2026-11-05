@@ -1,7 +1,5 @@
 import { useMemo, useState } from 'react';
 import { api } from '../../api';
-import { Alert } from '../../components/Alert';
-import { Badge } from '../../components/Badge';
 import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
@@ -19,8 +17,8 @@ import { invalidateApi, useApiQuery } from '../../lib/query';
 
 const ROLES_URL = '/api/v1/tenant/roles';
 
-interface Perm { key: string; label: string; privileged: boolean }
-interface Role { key: string; name: string; description?: string | null; permissions: string[]; users: number; grantable: boolean; mfaRequired?: boolean; updated_at?: string; updated_by_name?: string | null }
+interface Perm { key: string; label: string }
+interface Role { key: string; name: string; description?: string | null; permissions: string[]; users: number; grantable: boolean; updated_at?: string; updated_by_name?: string | null }
 export interface RolesData { system: Role[]; custom: Role[]; permissions: Perm[]; canManage: boolean; maxPermissions: string[] | null }
 
 const AREA: Record<string, string> = {
@@ -47,7 +45,6 @@ function RoleForm({ role, copyFrom, perms, allowed, builtIn, onClose }: { role: 
     return [...g.entries()];
   }, [perms, filter]);
   const toggle = (k: string, on: boolean) => { const n = new Set(selected); if (on) n.add(k); else n.delete(k); setSelected(n); };
-  const privileged = perms.filter((p) => p.privileged && selected.has(p.key));
   const form = useSubmit(async () => {
     const body = { name: name.trim(), description: description.trim() || null, permissions: [...selected] };
     if (role) {
@@ -86,14 +83,13 @@ function RoleForm({ role, copyFrom, perms, allowed, builtIn, onClose }: { role: 
                   checked={selected.has(p.key)}
                   disabled={!may(p.key)}
                   onChange={(e) => toggle(p.key, e.target.checked)}
-                  label={<>{p.label}{p.privileged && <> <Badge tone="warn">2FA</Badge></>} <span className="mono text-xs text-3">{p.key}</span></>}
+                  label={<>{p.label} <span className="mono text-xs text-3">{p.key}</span></>}
                 />
               ))}
             </fieldset>
           ))}
           {!groups.length && <EmptyState compact title={`No permission matches “${filter}”.`} />}
         </div>
-        {privileged.length > 0 && <Alert tone="warn">People with this role must use two-factor authentication: it includes {privileged.map((p) => p.label.toLowerCase()).join('; ')}.</Alert>}
         {role && role.users > 0 && <p className="text-xs text-2">Changing permissions signs out the {role.users} {role.users === 1 ? 'person' : 'people'} with this role so the change applies at once.</p>}
         <FormActions error={form.error} busy={form.busy} submitLabel={role ? 'Save role' : 'Create role'} onCancel={onClose} />
       </form>
@@ -125,7 +121,7 @@ export function Roles() {
           </>
         );
         const customColumns: Column<Role>[] = [
-          { key: 'role', header: 'Role', card: 'title', cell: (r) => <><span className="cluster"><strong>{r.name}</strong>{r.mfaRequired && <Badge tone="warn">2FA</Badge>}</span>{r.description && <div className="table__cell-sub">{r.description}</div>}</> },
+          { key: 'role', header: 'Role', card: 'title', cell: (r) => <><span className="cluster"><strong>{r.name}</strong></span>{r.description && <div className="table__cell-sub">{r.description}</div>}</> },
           { key: 'permissions', header: 'Permissions', cell: permissionsCell },
           { key: 'people', header: 'People', align: 'right', cell: (r) => r.users },
           { key: 'changed', header: 'Last changed', cell: (r) => <>{fmtDateTime(r.updated_at)}{r.updated_by_name && <div className="table__cell-sub">{r.updated_by_name}</div>}</> },

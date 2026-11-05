@@ -58,17 +58,17 @@ const USERS = [
 ];
 
 const PERMS = [
-  { key: 'employees.read', label: 'View employee records', privileged: false }, { key: 'payroll.read', label: 'View payroll runs, salaries and registers', privileged: true },
-  { key: 'assets.manage', label: 'Maintain the asset register; issue and receive assets', privileged: true }, { key: 'attendance.team.read', label: 'See attendance for their reporting team', privileged: false },
-  { key: 'org.read', label: 'View legal entities, branches and departments', privileged: false },
+  { key: 'employees.read', label: 'View employee records' }, { key: 'payroll.read', label: 'View payroll runs, salaries and registers' },
+  { key: 'assets.manage', label: 'Maintain the asset register; issue and receive assets' }, { key: 'attendance.team.read', label: 'See attendance for their reporting team' },
+  { key: 'org.read', label: 'View legal entities, branches and departments' },
 ];
 const ROLES = {
   canManage: true, maxPermissions: null, permissions: PERMS,
   system: [{ key: 'employee', name: 'Employee', permissions: ['employees.read'], grantable: true, users: 180 }, { key: 'hr_admin', name: 'HR Administrator', permissions: ['employees.read', 'payroll.read'], grantable: true, users: 4 }, { key: 'tenant_admin', name: 'Administrator', permissions: PERMS.map((p) => p.key), grantable: true, users: 1 }],
   custom: [
-    { key: 'custom_supervisor', name: 'Shift supervisor', description: 'Sees team attendance', permissions: ['attendance.team.read'], grantable: true, users: 6, mfaRequired: false, updated_at: iso('2026-10-01'), updated_by_name: 'Kavita Menon' },
-    { key: 'custom_long', name: LONG.title, description: LONG.text, permissions: ['payroll.read', 'assets.manage', 'org.read'], grantable: true, users: 0, mfaRequired: true, updated_at: iso('2026-10-15'), updated_by_name: LONG.name },
-    { key: 'custom_locked', name: 'Payroll reader', description: null, permissions: ['payroll.read'], grantable: false, users: 2, mfaRequired: true, updated_at: iso('2026-08-15'), updated_by_name: null },
+    { key: 'custom_supervisor', name: 'Shift supervisor', description: 'Sees team attendance', permissions: ['attendance.team.read'], grantable: true, users: 6, updated_at: iso('2026-10-01'), updated_by_name: 'Kavita Menon' },
+    { key: 'custom_long', name: LONG.title, description: LONG.text, permissions: ['payroll.read', 'assets.manage', 'org.read'], grantable: true, users: 0, updated_at: iso('2026-10-15'), updated_by_name: LONG.name },
+    { key: 'custom_locked', name: 'Payroll reader', description: null, permissions: ['payroll.read'], grantable: false, users: 2, updated_at: iso('2026-08-15'), updated_by_name: null },
   ],
 };
 

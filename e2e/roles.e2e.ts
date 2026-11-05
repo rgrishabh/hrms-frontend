@@ -21,7 +21,6 @@ test('an IT administrator defines a role from permissions they hold, edits it an
   const mine = page.locator('[aria-label="Organization roles"]');
   const row = mine.getByRole('row').filter({ hasText: name });
   await expect(row).toContainText('1 permission');
-  await expect(row).toContainText('2FA');
 
   await row.getByRole('button', { name: 'Edit' }).click();
   dlg = page.getByRole('dialog', { name: `Edit role: ${name}` });

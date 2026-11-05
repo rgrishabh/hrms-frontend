@@ -29,7 +29,6 @@ describe('users', () => {
     mockPageApi(['users.manage'], api([{ ...USER, invite_pending: true, locked: true }, { ...USER, id: 'u3', display_name: 'Cy', email: 'cy@x.test', mfa_enabled: false, roles: ['payroll_admin', 'unknown_role'], employee_code: null }, { ...USER, id: 'u4', display_name: 'Di', roles: [] }]));
     renderPage(<Users />);
     const table = await screen.findByRole('table', { name: 'Users' });
-    expect(within(table).getAllByText('2FA')).toHaveLength(2);
     expect(within(table).getByText('Invited')).toBeTruthy();
     expect(within(table).getByText('Locked')).toBeTruthy();
     expect(within(table).getByText('Payroll, unknown_role')).toBeTruthy();
@@ -247,7 +246,7 @@ describe('roles', () => {
     await waitFor(() => expect(writes(f, '/tenant/roles/desk')).toHaveLength(1));
     expect(await screen.findByText('Role deleted')).toBeTruthy();
   });
-  it('creating needs a permission, warns about two-factor, and posts the body', async () => {
+  it('creating needs a permission, and posts the body', async () => {
     const f = mockPageApi(['users.manage'], api());
     renderPage(<Roles />);
     await userEvent.click(await screen.findByRole('button', { name: 'New role' }));
@@ -259,9 +258,7 @@ describe('roles', () => {
     expect(writes(f, '/tenant/roles')).toHaveLength(0);
     await userEvent.selectOptions(within(dlg).getByLabelText(/Start from/), 'hr');
     expect(within(dlg).getByText('Permissions (2)')).toBeTruthy();
-    expect(within(dlg).getByText(/must use two-factor authentication: it includes approve payroll/)).toBeTruthy();
     await userEvent.click(within(dlg).getByRole('checkbox', { name: 'Approve payroll' }));
-    expect(within(dlg).queryByText(/must use two-factor authentication/)).toBeNull();
     expect(within(dlg).getByText('Permissions (1)')).toBeTruthy();
     await userEvent.click(within(dlg).getByRole('button', { name: 'Create role' }));
     await waitFor(() => expect(writes(f, '/tenant/roles')).toHaveLength(1));
