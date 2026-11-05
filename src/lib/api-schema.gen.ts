@@ -7276,6 +7276,9 @@ export interface operations {
                         nextDirection: string;
                         timezone: string;
                         today: string;
+                    } | {
+                        /** @enum {boolean} */
+                        linked: false;
                     };
                 };
             };
@@ -11156,7 +11159,7 @@ export interface operations {
                         masked?: boolean;
                         maskedFields?: string[];
                         updatedAt: string;
-                    };
+                    } | null;
                 };
             };
             /** @description An RFC 7807 problem */
@@ -11256,7 +11259,7 @@ export interface operations {
                             ifsc: string;
                             requestedAt: string;
                             requestedBy: string;
-                        };
+                        } | null;
                     };
                 };
             };
@@ -11388,7 +11391,7 @@ export interface operations {
                             }[];
                             nominees: {
                                 address?: unknown;
-                                dateOfBirth: string;
+                                dateOfBirth: string | null;
                                 guardianName: string | null;
                                 name: string;
                                 purpose: string;
@@ -14868,27 +14871,29 @@ export interface operations {
                 content: {
                     "application/json": {
                         items: {
-                            amount: string;
+                            amount: string | null;
                             approval_request_id?: unknown;
                             cancel_reason?: unknown;
                             closed_at?: unknown;
                             created_at: string;
-                            decided_at: string;
-                            department: string;
-                            disbursed_at: string;
-                            disbursement_reference: string;
+                            decided_at: string | null;
+                            department: string | null;
+                            disbursed_at: string | null;
+                            disbursement_reference: string | null;
                             employee_code: string;
                             employee_id: string;
-                            first_period: string;
+                            first_period: string | null;
                             id: string;
-                            installment_amount: string;
-                            installments: number;
+                            installment_amount: string | null;
+                            installments: number | null;
                             kind: string;
+                            masked?: boolean;
+                            maskedFields?: string[];
                             name: string;
-                            outstanding: string;
-                            purpose: string;
-                            recorded_by_other: boolean;
-                            skip_periods: unknown[];
+                            outstanding: string | null;
+                            purpose: string | null;
+                            recorded_by_other: boolean | null;
+                            skip_periods: unknown[] | null;
                             status: string;
                         }[];
                         page: number;
@@ -16543,9 +16548,7 @@ export interface operations {
                     "application/json": {
                         items: {
                             amounts: {
-                                BASIC: number;
-                                HRA?: number;
-                                SPECIAL?: number;
+                                [key: string]: number;
                             } | null;
                             annual_ctc: string | null;
                             approved_at: string;
@@ -16677,7 +16680,7 @@ export interface operations {
                         pt_state: string | null;
                         tax_regime: string;
                         uan: string | null;
-                        updated_at: string;
+                        updated_at?: string;
                     };
                 };
             };
@@ -16801,7 +16804,7 @@ export interface operations {
                         noticeShortfallDays: number;
                         period: string;
                         salary: {
-                            BASIC: number;
+                            [key: string]: number;
                         } | null;
                         shortfallWaived: boolean;
                         today: string;
@@ -17040,31 +17043,31 @@ export interface operations {
                 content: {
                     "application/json": {
                         items: {
-                            computed_at: string;
-                            created_by_name: string;
+                            computed_at: string | null;
+                            created_by_name: string | null;
                             employee_name?: unknown;
                             excluded?: number;
-                            finalized_at: string;
+                            finalized_at: string | null;
                             id: string;
                             kind: string;
-                            legal_entity_name: string;
+                            legal_entity_name: string | null;
                             masked?: boolean;
                             maskedFields?: string[];
                             paid_at: string | null;
                             payment_reference?: unknown;
                             period: string;
-                            released_count: number;
+                            released_count: number | null;
                             status: string;
                             totals: {
-                                deductions: number;
-                                employees: number;
-                                employerCost: number;
-                                gross: number;
-                                held: number;
-                                net: number;
+                                deductions: number | null;
+                                employees: number | null;
+                                employerCost: number | null;
+                                gross: number | null;
+                                held: number | null;
+                                net: number | null;
                             } | null;
-                            warnings: number;
-                            warnings_acknowledged: boolean;
+                            warnings: number | null;
+                            warnings_acknowledged: boolean | null;
                         }[];
                         page: number;
                         pageSize: number;
@@ -17168,70 +17171,74 @@ export interface operations {
                 content: {
                     "application/json": {
                         adjustments: {
-                            amount: string;
-                            created_by_name: string;
+                            amount: string | null;
+                            created_by_name: string | null;
                             employee_id: string;
                             id: string;
                             kind: string;
-                            label: string;
+                            label: string | null;
                             note?: unknown;
-                            taxable: boolean;
+                            taxable: boolean | null;
                         }[];
                         approved_at: string | null;
-                        attendanceLocked: boolean;
-                        computed_at: string;
+                        attendanceLocked: boolean | null;
+                        computed_at: string | null;
                         computed_by: string | null;
                         created_at: string;
-                        created_by: string;
+                        created_by: string | null;
                         employee_id: string | null;
                         excluded: number;
                         finalized_at: string | null;
                         id: string;
                         items: {
-                            deductions: string;
-                            employed_days: string;
+                            deductions: string | null;
+                            employed_days: string | null;
                             employee_code: string;
                             employee_id: string;
-                            employee_name: string;
-                            employer_cost: string;
-                            gross: string;
-                            hold: boolean;
+                            employee_name: string | null;
+                            employer_cost: string | null;
+                            gross: string | null;
+                            hold: boolean | null;
                             hold_released_at?: string | null;
                             id: string;
                             lines: {
-                                amount: number;
+                                amount: number | null;
                                 basis?: string;
-                                code: string;
+                                code: string | null;
                                 kind: string;
                                 name: string;
-                            }[];
-                            lop_days: string;
-                            net: string;
-                            paid_days: string;
-                            warnings: string[];
+                            }[] | null;
+                            lop_days: string | null;
+                            masked?: boolean;
+                            maskedFields?: string[];
+                            net: string | null;
+                            paid_days: string | null;
+                            warnings: string[] | null;
                         }[];
                         kind: string;
                         legal_entity_id: string;
-                        legal_entity_name: string;
+                        legal_entity_name: string | null;
+                        masked?: boolean;
+                        maskedFields?: string[];
                         page: number;
                         pageSize: number;
                         paid_at: string | null;
                         payment_reference?: unknown;
                         period: string;
-                        released_count: number;
+                        released_count: number | null;
                         status: string;
-                        tenant_id: string;
+                        tenant_id: string | null;
                         total: number;
                         totals: {
-                            deductions: number;
-                            employees: number;
-                            employerCost: number;
-                            gross: number;
-                            held: number;
-                            net: number;
-                        };
-                        warnings: number;
-                        warnings_acknowledged: boolean;
+                            deductions: number | null;
+                            employees: number | null;
+                            employerCost: number | null;
+                            gross: number | null;
+                            held: number | null;
+                            net: number | null;
+                        } | null;
+                        warnings: number | null;
+                        warnings_acknowledged: boolean | null;
                     };
                 };
             };
@@ -18854,7 +18861,7 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        date: string;
+                        date?: string;
                         items: {
                             acknowledged_at: string | null;
                             category: string;
@@ -18868,7 +18875,7 @@ export interface operations {
                             title: string;
                             version_no: number;
                         }[];
-                        overdue: number;
+                        overdue?: number;
                         pending: number;
                     };
                 };
