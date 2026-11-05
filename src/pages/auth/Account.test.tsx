@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { bodyOf, mockPageApi, problem, renderPage, reads, writes, type PageOptions } from '../../test/page';
 import { Account } from './Account';
+import { ChangePasswordForm } from './ChangePasswordForm';
 
 const session = (over = {}) => ({ id: 's1', user_agent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Version/17.0 Safari/605.1.15', ip: '10.0.0.1', last_seen_at: '2026-10-01T10:00:00Z', created_at: '2026-09-01T10:00:00Z', current: false, ...over });
 const CURRENT = session({ id: 'me', current: true, ip: null, user_agent: 'Mozilla/5.0 (X11; Linux x86_64) Gecko/20100101 Firefox/120.0' });
@@ -100,6 +101,21 @@ describe('change password', () => {
     await fill();
     expect(await screen.findByText('Choose a different password. It is too repetitive.')).toBeTruthy();
     expect(screen.getByLabelText(/^New password/).getAttribute('aria-invalid')).toBe('true');
+  });
+});
+
+describe('forced password change', () => {
+  it('explains why, asks for the temporary password, and finishes', async () => {
+    const f = mockPageApi([], [], () => ({}));
+    const onDone = vi.fn();
+    renderPage(<ChangePasswordForm forced onDone={onDone} />);
+    expect(await screen.findByText('You must choose a new password before continuing.')).toBeTruthy();
+    await userEvent.type(screen.getByLabelText(/^Temporary password/), 'temporary-one');
+    await userEvent.type(screen.getByLabelText(/^New password/), 'a-long-enough-password');
+    await userEvent.type(screen.getByLabelText(/^Confirm new password/), 'a-long-enough-password');
+    await userEvent.click(screen.getByRole('button', { name: 'Change password' }));
+    await waitFor(() => expect(onDone).toHaveBeenCalledTimes(1));
+    expect(bodyOf(writes(f, '/api/v1/auth/password')[0]!)).toEqual({ currentPassword: 'temporary-one', newPassword: 'a-long-enough-password' });
   });
 });
 
