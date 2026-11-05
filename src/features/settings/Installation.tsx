@@ -4,20 +4,14 @@ import { Card } from '../../components/Card';
 import { KeyValue } from '../../components/KeyValue';
 import { QueryState } from '../../components/QueryState';
 import { Table, type Column } from '../../components/Table';
+import type { ApiResponse } from '../../lib/api-types';
 import { useApiQuery } from '../../lib/query';
 
 const CATEGORY_LABEL: Record<string, string> = { core_hr: 'Core HR', workforce: 'Workforce management', payroll_finance: 'Payroll & finance', talent: 'Talent', operations: 'Operations & compliance' };
 
-interface Module { key: string; name: string; description: string; category: string; core: boolean; dependencies: readonly string[]; supported: boolean; enabled: boolean; configured: boolean; operational: string; usable: boolean; blockers: string[] }
-interface Domain { hostname: string; activation_status: string; is_primary: boolean }
-interface InstallationData {
-  product: { name: string };
-  brand: { name: string; legalName: string; logoUrl: string | null; primaryColor: string; secondaryColor: string | null; accentColor: string | null; supportEmail: string; supportPhone: string | null; helpUrl: string | null; loginMessage: string | null; domain: string; locale: string; timezone: string; currency: string; dateFormat: string; financialYearStart: string; country: string };
-  mode: string;
-  mfa: { available: boolean; enforced: boolean };
-  domains: Domain[];
-  modules: Module[];
-}
+type InstallationData = ApiResponse<'/api/v1/tenant/installation'>;
+type Module = InstallationData['modules'][number];
+type Domain = InstallationData['domains'][number];
 
 const MODE_LABEL: Record<string, string> = { single: 'One person', single_hr: 'One HR person', multi: 'Multiple people' };
 

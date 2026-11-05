@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { UsersRound } from 'lucide-react';
-import { api, errorMessage, qs, type Paged } from '../../api';
+import { api, errorMessage, qs } from '../../api';
 import { useAuth } from '../../auth';
 import { Badge, StatusBadge } from '../../components/Badge';
 import { Button } from '../../components/Button';
@@ -19,15 +19,16 @@ import { Table, type Column } from '../../components/Table';
 import { useToast } from '../../components/Toast';
 import { useSubmit } from '../../components/useSubmit';
 import { fmtDateTime } from '../../format';
-import type { ApiBody } from '../../lib/api-types';
+import type { ApiBody, ApiResponse } from '../../lib/api-types';
 import { invalidateApi, useApiQuery } from '../../lib/query';
-import { toPickerItem, type EmployeeHit } from '../employees/searchEmployees';
+import { toPickerItem } from '../employees/searchEmployees';
 import type { RolesData } from './Roles';
 
 const USERS_URL = '/api/v1/tenant/users';
 
-interface UserRow { id: string; email: string; display_name: string; status: string; roles: string[]; mfa_enabled: boolean; locked: boolean; invite_pending: boolean; salary_access_level: number; effective_salary_level: number; employee_code?: string | null; last_login_at: string | null }
-type RoleChoice = RolesData['system'][number];
+type UsersPage = ApiResponse<'/api/v1/tenant/users'>;
+type UserRow = UsersPage['items'][number];
+type RoleChoice = RolesData['system'][number] | RolesData['custom'][number];
 
 /** `/tenant/roles` answers 404 in the smaller modes, where the choice is fixed. Owner cannot be granted here. */
 const SMALL_MODE_ROLES: Record<'single' | 'single_hr', readonly Pick<RoleChoice, 'key' | 'name'>[]> = {
@@ -36,7 +37,7 @@ const SMALL_MODE_ROLES: Record<'single' | 'single_hr', readonly Pick<RoleChoice,
 };
 
 const searchUnlinked = async (text: string): Promise<PickerItem[]> => {
-  const r = await api.get<{ items: (EmployeeHit & { user_id?: string | null })[] }>(`/api/v1/employees${qs({ search: text || undefined, pageSize: 20 })}`);
+  const r = await api.get<ApiResponse<'/api/v1/employees'>>(`/api/v1/employees${qs({ search: text || undefined, pageSize: 20 })}`);
   return r.items.filter((e) => !e.user_id).map(toPickerItem);
 };
 
@@ -47,7 +48,7 @@ export function Users() {
   const debounced = useDebouncedValue(search);
   const [page, setPage] = useState(1);
   const roles = useApiQuery<RolesData>(mode === 'multi' ? '/api/v1/tenant/roles' : null);
-  const query = useApiQuery<Paged<UserRow>>(`${USERS_URL}${qs({ search: debounced, page })}`, { placeholderData: (p) => p });
+  const query = useApiQuery<UsersPage>(`${USERS_URL}${qs({ search: debounced, page })}`, { placeholderData: (p) => p });
   const [edit, setEdit] = useState<UserRow | 'new' | null>(null);
   const allRoles: RoleChoice[] = mode === 'multi' ? [...(roles.data?.system ?? []), ...(roles.data?.custom ?? [])] : (SMALL_MODE_ROLES[mode] as RoleChoice[]);
   const roleName = (key: string) => allRoles.find((r) => r.key === key)?.name ?? key;
@@ -93,7 +94,7 @@ function UserForm({ user, self, roles, onClose }: { user: UserRow | null; self: 
   const form = useSubmit(async () => {
     if (user) await api.patch(`${USERS_URL}/${user.id}`, { roles: selected, status });
     else {
-      const r = await api.post<{ inviteSent: boolean }>(USERS_URL, { ...f, employeeId: employee?.id, roles: selected } satisfies ApiBody<'/api/v1/tenant/users'>);
+      const r = await api.post<ApiResponse<'/api/v1/tenant/users', 'post'>>(USERS_URL, { ...f, employeeId: employee?.id, roles: selected } satisfies ApiBody<'/api/v1/tenant/users'>);
       toast(r.inviteSent ? `Invitation sent to ${f.email}.` : `User added, but no invitation went out because email is not set up. An operator can issue a link with: hrms bootstrap --issue-link --admin-email ${f.email}`);
       await invalidateApi(USERS_URL);
       onClose();
@@ -180,7 +181,7 @@ function SalaryLevel({ user, onSaved }: { user: UserRow; onSaved: () => void }) 
           message={`${user.display_name} moves to stored level ${level} and is signed out. This is recorded in the audit history.`}
           onClose={() => setConfirming(false)}
           onConfirm={async () => {
-            const r = await api.put<{ effectiveLevel: number }>(`${USERS_URL}/${user.id}/salary-level`, { level: Number(level) });
+            const r = await api.put<ApiResponse<'/api/v1/tenant/users/{id}/salary-level', 'put'>>(`${USERS_URL}/${user.id}/salary-level`, { level: Number(level) });
             toast(`Salary level changed. Effective level is now ${r.effectiveLevel}.`);
             await invalidateApi(USERS_URL);
             onSaved();

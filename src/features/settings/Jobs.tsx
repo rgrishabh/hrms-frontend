@@ -10,16 +10,18 @@ import { QueryState } from '../../components/QueryState';
 import { Table, type Column } from '../../components/Table';
 import { useToast } from '../../components/Toast';
 import { fmtDateTime } from '../../format';
+import type { ApiResponse, Refine } from '../../lib/api-types';
 import { invalidateApi, useApiQuery } from '../../lib/query';
 
 const JOBS_URL = '/api/v1/tenant/jobs';
 
-interface Run { id: string; period_key: string; trigger: string; status: string; attempts: number; started_at: string | null; result: Record<string, unknown> | null; error: string | null; triggered_by_name: string | null }
-interface JobSchedule { kind: 'daily' | 'monthly'; at: string; day?: number }
-interface Job { key: string; name: string; description: string; schedule: JobSchedule; active: boolean; nextRun: string; canRun: boolean; recentRuns: Run[] }
-interface JobsData { timezone: string; maxAttempts: number; items: Job[] }
+type JobsApi = ApiResponse<'/api/v1/tenant/jobs'>;
+/** The spec was drawn from a finished manual run; a scheduled run has no user, and a run that has not finished has no result. */
+type Run = Refine<JobsApi['items'][number]['recentRuns'][number], { result: Record<string, unknown> | null; triggered_by_name: string | null }>;
+type Job = Refine<JobsApi['items'][number], { recentRuns: Run[] }>;
+type JobsData = Refine<JobsApi, { items: Job[] }>;
 
-const scheduleText = (s: JobSchedule) => (s.kind === 'daily' ? `Daily at ${s.at}` : `Monthly on day ${s.day} at ${s.at}`);
+const scheduleText = (s: Job['schedule']) => (s.kind === 'daily' ? `Daily at ${s.at}` : `Monthly on day ${s.day} at ${s.at}`);
 const inProgress = (d: JobsData | undefined) => !!d?.items.some((j) => j.recentRuns.some((r) => r.status === 'queued' || r.status === 'running'));
 const resultText = (r: Run) => Object.entries(r.result ?? {}).filter(([k]) => k !== 'durationMs').map(([k, v]) => `${k}: ${typeof v === 'object' ? JSON.stringify(v) : String(v)}`).join(' · ');
 
@@ -45,7 +47,7 @@ export function Jobs() {
   const run = async (j: Job) => {
     setBusy(j.key);
     try {
-      await api.post<{ runId: string; status: string }>(`${JOBS_URL}/${j.key}/run`);
+      await api.post<ApiResponse<'/api/v1/tenant/jobs/{key}/run', 'post'>>(`${JOBS_URL}/${j.key}/run`);
       toast(`${j.name} queued. It starts on the next worker pass.`);
       await invalidateApi(JOBS_URL);
     } catch (e) {

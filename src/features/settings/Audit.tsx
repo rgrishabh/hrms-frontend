@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { History } from 'lucide-react';
-import { qs, type Paged } from '../../api';
+import { qs } from '../../api';
 import { Badge } from '../../components/Badge';
 import { EmptyState } from '../../components/EmptyState';
 import { FilterBar } from '../../components/FilterBar';
@@ -8,9 +8,10 @@ import { QueryState } from '../../components/QueryState';
 import { Select } from '../../components/Select';
 import { Table, type Column } from '../../components/Table';
 import { fmtDateTime } from '../../format';
+import type { ApiItem, ApiResponse } from '../../lib/api-types';
 import { useApiQuery } from '../../lib/query';
 
-interface Entry { id: string; created_at: string; actor_name: string | null; actor_type: string | null; category: string; action: string; setting_key: string | null; target_type: string | null; change_metadata: unknown }
+type Entry = ApiItem<'/api/v1/tenant/audit'>;
 
 const CATEGORIES = [{ value: 'auth', label: 'Sign-in' }, { value: 'configuration', label: 'Configuration' }, { value: 'data', label: 'Data' }, { value: 'security', label: 'Security' }, { value: 'access', label: 'Access' }];
 
@@ -26,7 +27,7 @@ const columns: Column<Entry>[] = [
 export function Audit() {
   const [category, setCategory] = useState('');
   const [page, setPage] = useState(1);
-  const query = useApiQuery<Paged<Entry>>(`/api/v1/tenant/audit${qs({ category, page, pageSize: 50 })}`, { placeholderData: (p) => p });
+  const query = useApiQuery<ApiResponse<'/api/v1/tenant/audit'>>(`/api/v1/tenant/audit${qs({ category, page, pageSize: 50 })}`, { placeholderData: (p) => p });
   return (
     <div className="stack-3">
       <FilterBar activeCount={category ? 1 : 0} onClear={() => { setCategory(''); setPage(1); }}>

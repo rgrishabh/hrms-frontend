@@ -13,11 +13,14 @@ import { Select } from '../../components/Select';
 import { Table, type Column } from '../../components/Table';
 import { useToast } from '../../components/Toast';
 import { useSubmit } from '../../components/useSubmit';
+import type { ApiResponse } from '../../lib/api-types';
 import { invalidateApi, useApiQuery } from '../../lib/query';
 
 type Kind = 'legal-entities' | 'branches' | 'departments' | 'grades' | 'designations';
-interface Row { id: string; name: string; status: string; code?: string | null; gstin?: string | null; cin?: string | null; state_code?: string | null; state?: string | null; city?: string | null; legal_entity_id?: string; parent_id?: string | null }
-interface OrgData { legalEntities: Row[]; branches: Row[]; departments: Row[]; grades: Row[]; designations: Row[] }
+type OrgData = ApiResponse<'/api/v1/org'>;
+type LegalEntity = OrgData['legalEntities'][number];
+/** Any one kind of row: every kind has these three, and the rest belong to some kinds only. */
+type Row = Pick<LegalEntity, 'id' | 'name' | 'status'> & Partial<LegalEntity> & Partial<OrgData['branches'][number]> & Partial<OrgData['departments'][number]> & Partial<OrgData['grades'][number]> & Partial<OrgData['designations'][number]>;
 
 const NOUN: Record<Kind, string> = { 'legal-entities': 'legal entity', branches: 'branch', departments: 'department', grades: 'grade', designations: 'designation' };
 const STATUS_OPTIONS = [{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }];

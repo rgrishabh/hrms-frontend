@@ -11,6 +11,7 @@ import { QueryState } from '../../components/QueryState';
 import { Select } from '../../components/Select';
 import { useToast } from '../../components/Toast';
 import { useSubmit } from '../../components/useSubmit';
+import type { ApiItem, ApiResponse } from '../../lib/api-types';
 import { invalidateApi, useApiQuery } from '../../lib/query';
 import { useOrg } from '../org/useOrg';
 
@@ -19,11 +20,8 @@ const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const TIMEZONES = ['Asia/Kolkata', 'Asia/Dubai', 'Asia/Singapore', 'Europe/London', 'UTC'];
 const SOURCE_LABEL: Record<string, string> = { default: 'Default', deployment: 'Installation default', platform: 'Installation default', tenant: 'Organization setting', branch: 'Branch override', deployment_ceiling: 'Capped by installation limit' };
 
-type Value = string | number | boolean | number[] | null;
-interface Setting {
-  key: string; group: string; label: string; description: string; control: 'text' | 'number' | 'boolean' | 'select' | 'weekdays' | 'timezone'; options: { value: string; label: string }[] | null;
-  scopes: string[]; feature: string | null; editable: boolean; effective: Value; source: string; defaultValue: Value; tenantValue: Value; branchValue: Value; version: number | null;
-}
+type Setting = ApiItem<'/api/v1/tenant/settings'>;
+type Value = Setting['effective'];
 
 function ValueEditor({ s, value, error, onChange }: { s: Setting; value: Value; error?: string; onChange: (v: Value) => void }) {
   switch (s.control) {
@@ -115,7 +113,7 @@ export function SettingsGroup({ group }: { group: string }) {
   const [branchId, setBranchId] = useState('');
   const [search, setSearch] = useState('');
   const org = useOrg();
-  const query = useApiQuery<{ items: Setting[] }>(`${SETTINGS_URL}${qs({ branchId })}`, { placeholderData: (p) => p });
+  const query = useApiQuery<ApiResponse<'/api/v1/tenant/settings'>>(`${SETTINGS_URL}${qs({ branchId })}`, { placeholderData: (p) => p });
   const inGroup = (query.data?.items ?? []).filter((s) => s.group === group);
   return (
     <div className="stack-3">

@@ -13,13 +13,15 @@ import { Table, type Column } from '../../components/Table';
 import { useToast } from '../../components/Toast';
 import { useSubmit } from '../../components/useSubmit';
 import { fmtDateTime } from '../../format';
+import type { ApiResponse } from '../../lib/api-types';
 import { invalidateApi, useApiQuery } from '../../lib/query';
 
 const ROLES_URL = '/api/v1/tenant/roles';
 
-interface Perm { key: string; label: string }
-interface Role { key: string; name: string; description?: string | null; permissions: string[]; users: number; grantable: boolean; updated_at?: string; updated_by_name?: string | null }
-export interface RolesData { system: Role[]; custom: Role[]; permissions: Perm[]; canManage: boolean; maxPermissions: string[] | null }
+export type RolesData = ApiResponse<'/api/v1/tenant/roles'>;
+type Perm = RolesData['permissions'][number];
+type SystemRole = RolesData['system'][number];
+type CustomRole = RolesData['custom'][number];
 
 const AREA: Record<string, string> = {
   settings: 'Administration', security: 'Administration', users: 'Administration', audit: 'Administration', approvals: 'Approvals',
@@ -31,7 +33,7 @@ const AREA: Record<string, string> = {
 };
 const areaOf = (k: string) => AREA[k.split('.')[0]!] ?? 'Other';
 
-function RoleForm({ role, copyFrom, perms, allowed, builtIn, onClose }: { role: Role | null; copyFrom?: Role; perms: readonly Perm[]; allowed: Set<string> | null; builtIn: readonly Role[]; onClose: () => void }) {
+function RoleForm({ role, copyFrom, perms, allowed, builtIn, onClose }: { role: CustomRole | null; copyFrom?: SystemRole; perms: readonly Perm[]; allowed: Set<string> | null; builtIn: readonly SystemRole[]; onClose: () => void }) {
   const toast = useToast();
   const [name, setName] = useState(role?.name ?? (copyFrom ? `${copyFrom.name} (custom)` : ''));
   const [description, setDescription] = useState(role?.description ?? '');
@@ -48,7 +50,7 @@ function RoleForm({ role, copyFrom, perms, allowed, builtIn, onClose }: { role: 
   const form = useSubmit(async () => {
     const body = { name: name.trim(), description: description.trim() || null, permissions: [...selected] };
     if (role) {
-      const r = await api.patch<{ holdersSignedOut?: number }>(`${ROLES_URL}/${encodeURIComponent(role.key)}`, body);
+      const r = await api.patch<ApiResponse<'/api/v1/tenant/roles/{key}', 'patch'>>(`${ROLES_URL}/${encodeURIComponent(role.key)}`, body);
       toast(r?.holdersSignedOut ? `Role saved. ${r.holdersSignedOut} ${r.holdersSignedOut === 1 ? 'person was' : 'people were'} signed out so it applies now` : 'Role saved');
     } else {
       await api.post(ROLES_URL, body);
@@ -97,7 +99,7 @@ function RoleForm({ role, copyFrom, perms, allowed, builtIn, onClose }: { role: 
   );
 }
 
-function PermissionList({ role, perms }: { role: Role; perms: readonly Perm[] }) {
+function PermissionList({ role, perms }: { role: SystemRole | CustomRole; perms: readonly Perm[] }) {
   const byArea = new Map<string, string[]>();
   for (const p of perms) if (role.permissions.includes(p.key)) byArea.set(areaOf(p.key), [...(byArea.get(areaOf(p.key)) ?? []), p.label]);
   return <div className="stack-1 role-permissions">{[...byArea.entries()].map(([a, l]) => <div key={a}><strong>{a}:</strong> <span className="text-2">{l.join('; ')}</span></div>)}</div>;
@@ -107,20 +109,20 @@ function PermissionList({ role, perms }: { role: Role; perms: readonly Perm[] })
 export function Roles() {
   const toast = useToast();
   const query = useApiQuery<RolesData>(ROLES_URL);
-  const [form, setForm] = useState<{ role: Role | null; copyFrom?: Role } | null>(null);
-  const [del, setDel] = useState<Role | null>(null);
+  const [form, setForm] = useState<{ role: CustomRole | null; copyFrom?: SystemRole } | null>(null);
+  const [del, setDel] = useState<CustomRole | null>(null);
   const [open, setOpen] = useState<string | null>(null);
   return (
     <QueryState query={query}>
       {(d) => {
         const allowed = d.maxPermissions ? new Set(d.maxPermissions) : null;
-        const permissionsCell = (r: Role) => (
+        const permissionsCell = (r: SystemRole | CustomRole) => (
           <>
             <Button variant="link" aria-expanded={open === r.key} onClick={() => setOpen(open === r.key ? null : r.key)}>{r.permissions.length} permission{r.permissions.length === 1 ? '' : 's'}</Button>
             {open === r.key && <PermissionList role={r} perms={d.permissions} />}
           </>
         );
-        const customColumns: Column<Role>[] = [
+        const customColumns: Column<CustomRole>[] = [
           { key: 'role', header: 'Role', card: 'title', cell: (r) => <><span className="cluster"><strong>{r.name}</strong></span>{r.description && <div className="table__cell-sub">{r.description}</div>}</> },
           { key: 'permissions', header: 'Permissions', cell: permissionsCell },
           { key: 'people', header: 'People', align: 'right', cell: (r) => r.users },
@@ -131,7 +133,7 @@ export function Roles() {
               : <span className="text-xs text-2">Administrator only</span>),
           },
         ];
-        const systemColumns: Column<Role>[] = [
+        const systemColumns: Column<SystemRole>[] = [
           { key: 'role', header: 'Role', card: 'title', cell: (r) => r.name },
           { key: 'permissions', header: 'Permissions', cell: permissionsCell },
           { key: 'people', header: 'People', align: 'right', cell: (r) => r.users },
