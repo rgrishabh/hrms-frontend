@@ -16,18 +16,18 @@ import { QueryState } from '../../components/QueryState';
 import { Table, type Column } from '../../components/Table';
 import { useToast } from '../../components/Toast';
 import { addDays, fmtDate, todayLocal } from '../../format';
+import type { ApiResponse } from '../../lib/api-types';
 import { invalidateApi, useApiQuery } from '../../lib/query';
 
-interface Delegation {
-  id: string; delegator_id: string; delegator_name: string; delegate_id: string; delegate_name: string; starts_on: string; ends_on: string;
-  note: string | null; state: 'scheduled' | 'active' | 'ended' | 'revoked'; set_up_by_hr: boolean; created_by_name: string;
-}
+/** One route, two answers: `given` and `received` for me, `items` with `?scope=all`. */
+type DelegationsAnswer = ApiResponse<'/api/v1/approvals/delegations'>;
+type Delegation = NonNullable<DelegationsAnswer['items']>[number];
 
 const period = (d: Pick<Delegation, 'starts_on' | 'ends_on'>) => (d.starts_on === d.ends_on ? fmtDate(d.starts_on) : `${fmtDate(d.starts_on)} – ${fmtDate(d.ends_on)}`);
 const isOpen = (d: Delegation) => d.state === 'active' || d.state === 'scheduled';
 
 export async function searchDelegates(text: string): Promise<PickerItem[]> {
-  const r = await api.get<{ items: { id: string; name: string; code: string | null; designation: string | null }[] }>(`/api/v1/approvals/delegates${qs({ q: text })}`);
+  const r = await api.get<ApiResponse<'/api/v1/approvals/delegates'>>(`/api/v1/approvals/delegates${qs({ q: text })}`);
   return r.items.map((x) => ({ id: x.id, label: x.name, description: [x.designation, x.code].filter(Boolean).join(' · ') }));
 }
 
@@ -88,14 +88,14 @@ export function Delegations() {
   const { can } = useAuth();
   const toast = useToast();
   const hr = can('approvals.delegations');
-  const mine = useApiQuery<{ given: Delegation[]; received: Delegation[] }>('/api/v1/approvals/delegations');
-  const all = useApiQuery<{ items: Delegation[] }>(hr ? '/api/v1/approvals/delegations?scope=all' : null);
+  const mine = useApiQuery<DelegationsAnswer>('/api/v1/approvals/delegations');
+  const all = useApiQuery<DelegationsAnswer>(hr ? '/api/v1/approvals/delegations?scope=all' : null);
   const [form, setForm] = useState<null | 'self' | 'other'>(null);
   const [ending, setEnding] = useState<{ d: Delegation; label: string; confirm: string } | null>(null);
   const reload = () => invalidateApi('/api/v1/approvals');
   return (
     <QueryState query={mine}>
-      {({ given, received }) => {
+      {({ given = [], received = [] }) => {
         const current = given.find(isOpen);
         return (
           <div className="stack-4">
@@ -117,8 +117,8 @@ export function Delegations() {
               <Card title="All handovers" aria-label="All handovers" actions={<Button size="sm" onClick={() => setForm('other')}>Hand over for someone</Button>}>
                 <div className="stack-3">
                   <p className="text-2 text-sm">For an unplanned absence. Both people are told.</p>
-                  <QueryState query={all} isEmpty={(d) => !d.items.length} empty={<EmptyState compact title="No handovers in the last 30 days." />}>
-                    {(d) => <HandoverTable label="All handovers" rows={d.items} who="both" endLabel="End now" onEnd={(x) => setEnding({ d: x, label: `End ${x.delegator_name}'s handover now`, confirm: 'End now' })} />}
+                  <QueryState query={all} isEmpty={(d) => !d.items?.length} empty={<EmptyState compact title="No handovers in the last 30 days." />}>
+                    {(d) => <HandoverTable label="All handovers" rows={d.items ?? []} who="both" endLabel="End now" onEnd={(x) => setEnding({ d: x, label: `End ${x.delegator_name}'s handover now`, confirm: 'End now' })} />}
                   </QueryState>
                 </div>
               </Card>

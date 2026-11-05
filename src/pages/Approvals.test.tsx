@@ -113,6 +113,18 @@ describe('approval history', () => {
     expect(dlg.getByText(/Bo for Asha \(escalated\)/)).toBeTruthy();
     expect(reads(f, '/api/v1/approvals/a1').length).toBeGreaterThan(0);
   });
+  it('a step not yet decided, or with nobody named, prints neither null nor a blank approver', async () => {
+    mockPageApi([], api({ inbox: [ITEM], detail: { summary: 'Leave for Rohan', status: 'pending', entity_type: 'leave_request', entity_id: 'x', decided_at: null, steps: [
+      { step_index: 0, status: 'pending', approver_name: null, approver_permission: null, escalated_at: null, escalated_to_name: null, acted_by_name: null, acted_for_name: null, acted_via: null, acted_at: null, comment: null },
+      { step_index: 1, status: 'approved', approver_name: 'Cy', approver_permission: null, escalated_at: null, escalated_to_name: null, acted_by_name: 'Cy', acted_for_name: null, acted_via: null, acted_at: null },
+    ] } }));
+    renderPage(<Approvals />);
+    await userEvent.click(await screen.findByRole('button', { name: 'Leave for Rohan' }));
+    const dlg = await screen.findByRole('dialog', { name: 'Approval history' });
+    expect(await within(dlg).findByText(/Step 1: Approver/)).toBeTruthy();
+    expect(within(dlg).getByText('Cy · —')).toBeTruthy();
+    expect(dlg.textContent).not.toMatch(/null|undefined|Invalid/);
+  });
   it('a personal details change shows the proposal beside the record', async () => {
     const f = mockPageApi([], api({ inbox: [ITEM], detail: { summary: 'Leave for Rohan', status: 'pending', entity_type: 'employee_profile_change', entity_id: 'c1', steps: [] } }));
     renderPage(<Approvals />);

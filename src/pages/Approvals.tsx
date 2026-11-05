@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Inbox, Send } from 'lucide-react';
-import { api, qs, type Paged } from '../api';
+import { api, qs } from '../api';
 import { useAuth } from '../auth';
 import { StatusBadge } from '../components/Badge';
 import { Button } from '../components/Button';
@@ -17,17 +17,22 @@ import { Delegations } from '../features/approvals/Delegations';
 import { ReassignForm } from '../features/approvals/ReassignForm';
 import { ProfileChangeView } from '../features/profile/PersonalDetails';
 import { fmtDateTime } from '../format';
+import type { ApiItem, ApiResponse, Refine } from '../lib/api-types';
 import { invalidateApi, useApiQuery } from '../lib/query';
 
 const ENTITY_LABEL: Record<string, string> = { attendance_regularization: 'Attendance correction', leave_request: 'Leave', expense_claim: 'Expense claim', lab_authorization: 'Technical authorization', job_requisition: 'Job requisition', job_offer: 'Job offer', separation: 'Separation', probation_review: 'Probation review', salary_change: 'Salary change', payroll_run: 'Payroll run', overtime_claim: 'Overtime', field_duty: 'Field duty', travel_request: 'Travel', employee_loan: 'Advance / loan', employee_profile_change: 'Personal details', employee_bank_change: 'Bank account change' };
 const APPROVER_GROUP: Record<string, string> = { 'attendance.approve': 'HR approvers', 'leave.approve': 'HR approvers', 'expenses.approve': 'Finance approvers', 'competency.authorize': 'Quality', 'recruitment.approve': 'HR approvers', 'lifecycle.manage': 'HR approvers', 'profile.approve': 'HR approvers', 'payroll.approve': 'Payroll approvers', 'employees.bank.approve': 'Bank detail approvers', 'approvals.escalations': 'HR approvers' };
 
-interface InboxItem { id: string; summary: string; via?: string; on_behalf_of?: string | null; entity_type: string; requester_name: string; created_at: string }
-interface MineItem { id: string; summary: string; status: string; created_at: string; decided_at: string | null }
-interface Step { step_index: number; status: string; approver_name: string | null; approver_permission: string; escalated_at: string | null; escalated_to_name: string | null; acted_by_name: string | null; acted_for_name: string | null; acted_via: string | null; acted_at: string | null; comment: string | null }
-interface Approval { summary: string; status: string; entity_type: string; entity_id: string; steps: Step[] }
+type InboxItem = ApiItem<'/api/v1/approvals/inbox'>;
+type MineItem = ApiItem<'/api/v1/approvals/mine'>;
+type StuckItem = ApiItem<'/api/v1/approvals/stuck'>;
+type ApprovalAnswer = ApiResponse<'/api/v1/approvals/{id}'>;
+/** The names come from left joins, so they are null when nobody is named, whatever the schema says. */
+type Step = Refine<ApprovalAnswer['steps'][number], { approver_name: string | null; acted_by_name: string | null; acted_for_name: string | null }>;
+type Approval = Refine<ApprovalAnswer, { steps: Step[] }>;
 type Action = { id: string; kind: 'approve' | 'reject' | 'return'; summary: string };
 
+const stepApprover = (s: Step) => s.approver_name ?? (s.approver_permission ? APPROVER_GROUP[s.approver_permission] ?? s.approver_permission : 'Approver');
 const stepState = (status: string): StepState => (['approved', 'done', 'skipped'].includes(status) ? 'done' : ['rejected', 'returned', 'cancelled', 'failed'].includes(status) ? 'failed' : status === 'pending' ? 'current' : 'upcoming');
 
 function Detail({ id, onClose }: { id: string; onClose: () => void }) {
@@ -44,7 +49,7 @@ function Detail({ id, onClose }: { id: string; onClose: () => void }) {
               steps={data.steps.map((s) => ({
                 key: String(s.step_index),
                 state: stepState(s.status),
-                title: <>Step {s.step_index + 1}: {s.approver_name ?? APPROVER_GROUP[s.approver_permission] ?? s.approver_permission}</>,
+                title: <>Step {s.step_index + 1}: {stepApprover(s)}</>,
                 meta: <StatusBadge status={s.status} />,
                 description: (s.escalated_at || s.acted_by_name || s.comment) && (
                   <div className="stack-1">
@@ -64,7 +69,6 @@ function Detail({ id, onClose }: { id: string; onClose: () => void }) {
 
 const TABS = ['inbox', 'mine', 'away', 'stuck'] as const;
 const PAGE_SIZE = 25;
-interface StuckItem { id: string; entity_type: string; summary: string; created_at: string; requester_name: string }
 
 export function Approvals() {
   const toast = useToast();
@@ -76,9 +80,9 @@ export function Approvals() {
   const [minePage, setMinePage] = useState(1);
   const [stuckPage, setStuckPage] = useState(1);
   const showStuck = can('users.manage');
-  const inbox = useApiQuery<Paged<InboxItem>>(`/api/v1/approvals/inbox${qs({ page: inboxPage, pageSize: PAGE_SIZE })}`, { placeholderData: (p) => p });
-  const mine = useApiQuery<Paged<MineItem>>(`/api/v1/approvals/mine${qs({ page: minePage, pageSize: PAGE_SIZE })}`, { placeholderData: (p) => p });
-  const stuck = useApiQuery<Paged<StuckItem>>(showStuck && tab === 'stuck' ? `/api/v1/approvals/stuck${qs({ page: stuckPage, pageSize: PAGE_SIZE })}` : null, { placeholderData: (p) => p });
+  const inbox = useApiQuery<ApiResponse<'/api/v1/approvals/inbox'>>(`/api/v1/approvals/inbox${qs({ page: inboxPage, pageSize: PAGE_SIZE })}`, { placeholderData: (p) => p });
+  const mine = useApiQuery<ApiResponse<'/api/v1/approvals/mine'>>(`/api/v1/approvals/mine${qs({ page: minePage, pageSize: PAGE_SIZE })}`, { placeholderData: (p) => p });
+  const stuck = useApiQuery<ApiResponse<'/api/v1/approvals/stuck'>>(showStuck && tab === 'stuck' ? `/api/v1/approvals/stuck${qs({ page: stuckPage, pageSize: PAGE_SIZE })}` : null, { placeholderData: (p) => p });
   const stuckColumns: Column<StuckItem>[] = [
     { key: 'summary', header: 'Request', card: 'title', cell: (r) => <span className="cell-wrap">{r.summary}</span> },
     { key: 'type', header: 'Type', card: 'subtitle', cell: (r) => ENTITY_LABEL[r.entity_type] ?? r.entity_type },
@@ -162,7 +166,7 @@ export function Approvals() {
           requireComment={action.kind !== 'approve' ? true : undefined}
           onClose={() => setAction(null)}
           onConfirm={async (comment) => {
-            const r = await api.post<{ status: string }>(`/api/v1/approvals/${action.id}/act`, { action: action.kind, comment: comment || undefined });
+            const r = await api.post<ApiResponse<'/api/v1/approvals/{id}/act', 'post'>>(`/api/v1/approvals/${action.id}/act`, { action: action.kind, comment: comment || undefined });
             toast(`Request ${r.status}`);
             await invalidateApi('/api/v1/approvals', '/api/v1/dashboard');
           }}
