@@ -19,6 +19,7 @@ import { Table, type Column } from '../../components/Table';
 import { useToast } from '../../components/Toast';
 import { useSubmit } from '../../components/useSubmit';
 import { fmtDateTime } from '../../format';
+import type { ApiBody } from '../../lib/api-types';
 import { invalidateApi, useApiQuery } from '../../lib/query';
 import { toPickerItem, type EmployeeHit } from '../employees/searchEmployees';
 import type { RolesData } from './Roles';
@@ -92,7 +93,7 @@ function UserForm({ user, self, roles, onClose }: { user: UserRow | null; self: 
   const form = useSubmit(async () => {
     if (user) await api.patch(`${USERS_URL}/${user.id}`, { roles: selected, status });
     else {
-      const r = await api.post<{ inviteSent: boolean }>(USERS_URL, { ...f, employeeId: employee?.id, roles: selected });
+      const r = await api.post<{ inviteSent: boolean }>(USERS_URL, { ...f, employeeId: employee?.id, roles: selected } satisfies ApiBody<'/api/v1/tenant/users'>);
       toast(r.inviteSent ? `Invitation sent to ${f.email}.` : `User added, but no invitation went out because email is not set up. An operator can issue a link with: hrms bootstrap --issue-link --admin-email ${f.email}`);
       await invalidateApi(USERS_URL);
       onClose();

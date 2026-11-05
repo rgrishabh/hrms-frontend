@@ -196,7 +196,6 @@ export interface Paged<T> { items: T[]; page: number; pageSize: number; total: n
 
 /** A feature that is on, but missing something only an administrator can supply. */
 export const isNotConfigured = (e: unknown): boolean => e instanceof ApiError && e.code === 'feature_not_configured';
-export const isHigherLevel = (e: unknown): boolean => e instanceof ApiError && e.code === 'requires_higher_level';
 const NOT_CONFIGURED = 'This feature is switched on but not set up yet. Ask your administrator to finish setting it up.';
 
 /** Human message for any thrown value, with field errors appended. */

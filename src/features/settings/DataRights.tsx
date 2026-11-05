@@ -18,6 +18,7 @@ import { Table, type Column } from '../../components/Table';
 import { useToast } from '../../components/Toast';
 import { useSubmit } from '../../components/useSubmit';
 import { fmtDate, fmtDateTime } from '../../format';
+import type { ApiBody } from '../../lib/api-types';
 import { invalidateApi, useApiQuery } from '../../lib/query';
 import { EmployeeField } from '../employees/EmployeeField';
 
@@ -107,7 +108,7 @@ function RaiseErasure({ onClose }: { onClose: () => void }) {
   const [employee, setEmployee] = useState<PickerItem | null>(null);
   const [reason, setReason] = useState('');
   const form = useSubmit(async () => {
-    await api.post(`${BASE}/erasure-requests`, { subjectType: 'employee', subjectId: employee!.id, reason: reason || undefined });
+    await api.post(`${BASE}/erasure-requests`, { subjectType: 'employee', subjectId: employee!.id, reason: reason || undefined } satisfies ApiBody<'/api/v1/tenant/data-rights/erasure-requests'>);
     toast('Erasure request raised');
     await invalidateApi(`${BASE}/erasure-requests`);
     onClose();

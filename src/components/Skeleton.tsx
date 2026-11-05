@@ -5,7 +5,7 @@ export function Skeleton({ width = 'full', height = 'line' }: { width?: 'xs' | '
 }
 
 /** Announces once and keeps the placeholder bars out of the accessibility tree. */
-export function LoadingRegion({ label = 'Loading', children }: { label?: string; children: React.ReactNode }) {
+function LoadingRegion({ label = 'Loading', children }: { label?: string; children: React.ReactNode }) {
   return <div aria-busy="true" role="status" aria-label={label} className="skeleton-region">{children}</div>;
 }
 

@@ -18,6 +18,3 @@ export type ApiResponse<P extends keyof paths, M extends Method = 'get'> =
 export type ApiBody<P extends keyof paths, M extends Method = 'post'> =
   Op<P, M> extends { requestBody?: { content: { 'application/json': infer B } } } ? B : never;
 
-/** The query parameters a route accepts. */
-export type ApiQuery<P extends keyof paths, M extends Method = 'get'> =
-  Op<P, M> extends { parameters: { query?: infer Q } } ? NonNullable<Q> : never;

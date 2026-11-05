@@ -19,6 +19,7 @@ import { Select } from '../../components/Select';
 import { Table, type Column } from '../../components/Table';
 import { useToast } from '../../components/Toast';
 import { useSubmit, type FieldErrors } from '../../components/useSubmit';
+import type { ApiBody } from '../../lib/api-types';
 import { isMaskedField, useRevealable } from '../../lib/masking';
 import { invalidateApi, useApiQuery } from '../../lib/query';
 import { EmployeeField } from '../employees/EmployeeField';
@@ -93,7 +94,7 @@ function NewRun({ onClose, onCreated }: { onClose: () => void; onCreated: (id: s
   const suggested = suggestion.data?.period;
   useEffect(() => { if (suggested) setPeriod(suggested); }, [suggested]);
   const form = useSubmit(async () => {
-    const r = await api.post<{ id: string }>(RUNS_URL, { period, legalEntityId, kind, employeeId: fnf ? employee?.id : undefined });
+    const r = await api.post<{ id: string }>(RUNS_URL, { period, legalEntityId, kind, employeeId: fnf ? employee?.id : undefined } satisfies ApiBody<'/api/v1/payroll/runs'>);
     toast('Run created');
     await invalidateApi(RUNS_URL);
     onCreated(r.id);

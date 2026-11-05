@@ -11,7 +11,7 @@ export function useUnreadCount(enabled = true) {
   return q.data?.unread ?? 0;
 }
 
-export const invalidateNotifications = () => invalidateApi('/api/v1/notifications');
+const invalidateNotifications = () => invalidateApi('/api/v1/notifications');
 
 export async function markRead(id: string) {
   await api.post(`/api/v1/notifications/${id}/read`);

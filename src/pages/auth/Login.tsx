@@ -6,7 +6,7 @@ import { Alert } from '../../components/Alert';
 import { Button } from '../../components/Button';
 import { InlineError } from '../../components/ErrorState';
 import { Input } from '../../components/Input';
-import type { ApiResponse } from '../../lib/api-types';
+import type { ApiBody, ApiResponse } from '../../lib/api-types';
 import type { PublicConfig } from '../../lib/config';
 import { CardPage } from './CardPage';
 
@@ -23,7 +23,7 @@ export function Login({ cfg }: { cfg: PublicConfig }) {
     setBusy(true);
     setError(null);
     try {
-      const r = await api.post<ApiResponse<'/api/v1/auth/login', 'post'>>('/api/v1/auth/login', { email, password });
+      const r = await api.post<ApiResponse<'/api/v1/auth/login', 'post'>>('/api/v1/auth/login', { email, password } satisfies ApiBody<'/api/v1/auth/login'>);
       setChallenge(r.mfaRequired ? { method: r.mfaMethod, delivery: r.mfaDelivery } : null);
       await refresh();
     } catch (err) { setError(err); } finally { setBusy(false); }
