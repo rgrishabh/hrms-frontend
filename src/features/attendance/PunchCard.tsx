@@ -9,15 +9,15 @@ import { QueryState } from '../../components/QueryState';
 import { SkeletonRows } from '../../components/Skeleton';
 import { useToast } from '../../components/Toast';
 import { EXCEPTION_LABEL, fmtClock, fmtDate, fmtMinutes, fmtTime } from '../../format';
+import type { ApiResponse, Refine } from '../../lib/api-types';
 import { invalidateApi, useApiQuery } from '../../lib/query';
 import { SelfieCapture } from './SelfieCapture';
-import type { AttendanceEvent, DailyResult } from './types';
 import './PunchCard.css';
 
-interface Today {
-  linked: boolean; today: string; timezone: string; nextDirection: 'in' | 'out'; locationMode: 'off' | 'optional' | 'required';
-  channels: { web: boolean; mobile: boolean }; selfieRequired?: boolean; events: Pick<AttendanceEvent, 'direction' | 'event_time'>[]; daily: Pick<DailyResult, 'status' | 'exceptions' | 'worked_minutes'> | null;
-}
+type TodayAnswer = ApiResponse<'/api/v1/attendance/me/today'>;
+/** The schema says `string` for the two closed sets, and leaves out `selfieRequired`, which the route sends with the selfie feature on. */
+type LinkedToday = Refine<Extract<TodayAnswer, { today: string }>, { nextDirection: 'in' | 'out'; locationMode: 'off' | 'optional' | 'required'; selfieRequired?: boolean }>;
+type Today = LinkedToday | Exclude<TodayAnswer, { today: string }>;
 interface PunchBody { channel: 'web' | 'mobile'; idempotencyKey: string; direction: 'in' | 'out'; latitude?: number; longitude?: number; selfieId?: string }
 
 /** A touch-first device, not a narrow window, counts as mobile: resizing a desktop browser must not change the channel. */
@@ -45,7 +45,7 @@ function locate(): Promise<{ position: GeolocationPosition } | { failure: string
   ));
 }
 
-function Punch({ data }: { data: Today }) {
+function Punch({ data }: { data: LinkedToday }) {
   const toast = useToast();
   const { hasFeature } = useAuth();
   const [busy, setBusy] = useState(false);
@@ -74,15 +74,16 @@ function Punch({ data }: { data: Today }) {
       if (photo && !selfieId.current) {
         const form = new FormData();
         form.append('file', photo, 'selfie.jpg');
-        selfieId.current = (await api.upload<{ id: string }>('/api/v1/attendance/selfies', form)).id;
+        selfieId.current = (await api.upload<ApiResponse<'/api/v1/attendance/selfies', 'post'>>('/api/v1/attendance/selfies', form)).id;
       }
       if (selfieId.current) body.selfieId = selfieId.current;
-      const r = await api.post<{ duplicate?: boolean; direction: string; eventTime: string; outsideGeofence?: boolean }>('/api/v1/attendance/punch', body);
+      const r = await api.post<ApiResponse<'/api/v1/attendance/punch', 'post'>>('/api/v1/attendance/punch', body);
+      const direction = r.direction ?? body.direction;
       selfieId.current = null;
       setSelfieOpen(false);
       if (r.duplicate) toast('Already recorded');
-      else if (r.outsideGeofence) toast(`Clocked ${r.direction} at ${fmtTime(r.eventTime)}. You were outside your branch's area, so HR will see this flagged.`);
-      else toast(`Clocked ${r.direction} at ${fmtTime(r.eventTime)}`);
+      else if (r.outsideGeofence) toast(`Clocked ${direction} at ${fmtTime(r.eventTime)}. You were outside your branch's area, so HR will see this flagged.`);
+      else toast(`Clocked ${direction} at ${fmtTime(r.eventTime)}`);
       await invalidateApi('/api/v1/attendance/me');
     } catch (e) {
       const code = e instanceof ApiError ? e.code : '';

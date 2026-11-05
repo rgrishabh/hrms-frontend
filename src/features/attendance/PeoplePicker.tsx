@@ -4,15 +4,16 @@ import { useDebouncedValue } from '../../components/hooks';
 import { Checkbox, Input } from '../../components/Input';
 import { QueryState } from '../../components/QueryState';
 import { EmptyState } from '../../components/EmptyState';
+import type { ApiResponse } from '../../lib/api-types';
 import { useApiQuery } from '../../lib/query';
-import { employeeName, type EmployeeHit } from '../employees/searchEmployees';
+import { employeeName } from '../employees/searchEmployees';
 import './Roster.css';
 
 /** Tick several active employees. Who is ticked stays listed by name, so a search cannot hide a selection. */
 export function PeoplePicker({ selected, onChange }: { selected: Record<string, string>; onChange: (s: Record<string, string>) => void }) {
   const [search, setSearch] = useState('');
   const debounced = useDebouncedValue(search.trim());
-  const emps = useApiQuery<{ items: EmployeeHit[] }>(`/api/v1/employees${qs({ search: debounced, status: 'active', pageSize: 50 })}`, { placeholderData: (p) => p });
+  const emps = useApiQuery<ApiResponse<'/api/v1/employees'>>(`/api/v1/employees${qs({ search: debounced, status: 'active', pageSize: 50 })}`, { placeholderData: (p) => p });
   const names = Object.values(selected);
   return (
     <div className="stack-2">

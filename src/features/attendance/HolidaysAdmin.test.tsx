@@ -8,7 +8,7 @@ import { HolidaysAdmin } from './HolidaysAdmin';
 // A first render under CPU load can take seconds; failures should be about behaviour, not machine speed.
 
 const DIWALI = { id: 'h1', holiday_date: '2026-11-08T00:00:00.000Z', name: 'Diwali', branch_id: 'b1', branch_name: 'HQ', optional: true };
-const NEW_YEAR = { id: 'h2', holiday_date: '2026-01-01', name: 'New Year', branch_name: null, optional: false };
+const NEW_YEAR = { id: 'h2', holiday_date: '2026-01-01', name: 'New Year', branch_id: null, branch_name: null, optional: false };
 const api = (extra: Handler = () => undefined) => mockPageApi(['attendance.configure'], (url, init) => {
   const x = extra(url, init);
   if (x !== undefined) return x;

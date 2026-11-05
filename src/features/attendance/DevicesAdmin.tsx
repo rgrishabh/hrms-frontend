@@ -17,22 +17,23 @@ import { Table, type Column } from '../../components/Table';
 import { useToast } from '../../components/Toast';
 import { useSubmit, type FieldErrors } from '../../components/useSubmit';
 import { fmtDateTime } from '../../format';
+import type { ApiItem, ApiResponse } from '../../lib/api-types';
 import { invalidateApi, useApiQuery } from '../../lib/query';
 import { EmployeeField } from '../employees/EmployeeField';
 import { orgOptions, useOrg } from '../org/useOrg';
 import './Roster.css';
 
-interface Device { id: string; name: string; serial_number: string; api_key_prefix: string; branch_name: string; status: string; last_sync_at: string | null; last_clock_drift_seconds: number | null; last_error: string | null; unmapped_events: number }
-interface Unmapped { id: string; device_user_id: string; event_time: string; device_name: string }
-interface Mapping { device_user_id: string; name: string; employee_code: string }
+type Device = ApiItem<'/api/v1/attendance/devices'>;
+type Unmapped = ApiItem<'/api/v1/attendance/device-events/unmapped'>;
+type Mapping = ApiItem<'/api/v1/attendance/device-mappings'>;
 
 const reload = () => invalidateApi('/api/v1/attendance/device');
 
 export function DevicesAdmin() {
   const toast = useToast();
-  const devices = useApiQuery<{ items: Device[] }>('/api/v1/attendance/devices');
-  const unmapped = useApiQuery<{ items: Unmapped[] }>('/api/v1/attendance/device-events/unmapped');
-  const mappings = useApiQuery<{ items: Mapping[] }>('/api/v1/attendance/device-mappings');
+  const devices = useApiQuery<ApiResponse<'/api/v1/attendance/devices'>>('/api/v1/attendance/devices');
+  const unmapped = useApiQuery<ApiResponse<'/api/v1/attendance/device-events/unmapped'>>('/api/v1/attendance/device-events/unmapped');
+  const mappings = useApiQuery<ApiResponse<'/api/v1/attendance/device-mappings'>>('/api/v1/attendance/device-mappings');
   const [rotating, setRotating] = useState<Device | null>(null);
   const [toggling, setToggling] = useState<Device | null>(null);
   const [newKey, setNewKey] = useState<string | null>(null);
@@ -55,10 +56,10 @@ export function DevicesAdmin() {
     },
   ];
   const unmappedColumns: Column<Unmapped>[] = [
-    { key: 'user', header: 'Device user ID', card: 'title', cell: (e) => <span className="mono">{e.device_user_id}</span> },
+    { key: 'user', header: 'Device user ID', card: 'title', cell: (e) => <span className="mono">{e.device_user_id ?? '—'}</span> },
     { key: 'time', header: 'Time', cell: (e) => fmtDateTime(e.event_time) },
     { key: 'device', header: 'Device', cell: (e) => e.device_name },
-    { key: 'actions', header: 'Actions', card: 'actions', cell: (e) => <div className="table__actions"><Button size="sm" onClick={() => setMapUser(e.device_user_id)}>Map to employee</Button></div> },
+    { key: 'actions', header: 'Actions', card: 'actions', cell: (e) => <div className="table__actions"><Button size="sm" onClick={() => setMapUser(e.device_user_id ?? '')}>Map to employee</Button></div> },
   ];
   const mappingColumns: Column<Mapping>[] = [
     { key: 'user', header: 'Device user ID', card: 'title', cell: (m) => <span className="mono">{m.device_user_id}</span> },
@@ -93,7 +94,7 @@ export function DevicesAdmin() {
           danger
           message={`The current key for ${rotating.name} stops working immediately. The device cannot sync until it is given the new key.`}
           onClose={() => setRotating(null)}
-          onConfirm={async () => { const r = await api.post<{ apiKey: string }>(`/api/v1/attendance/devices/${rotating.id}/rotate-key`); setNewKey(r.apiKey); await reload(); }}
+          onConfirm={async () => { const r = await api.post<ApiResponse<'/api/v1/attendance/devices/{id}/rotate-key', 'post'>>(`/api/v1/attendance/devices/${rotating.id}/rotate-key`); setNewKey(r.apiKey); await reload(); }}
         />
       )}
       {toggling && (
@@ -135,7 +136,7 @@ function RegisterDevice({ onClose, onKey }: { onClose: () => void; onKey: (key: 
   const org = useOrg();
   const [f, setF] = useState({ branchId: '', serialNumber: '', name: '', adapterKey: 'generic_push_v1' });
   const s = useSubmit(async () => {
-    const r = await api.post<{ apiKey: string }>('/api/v1/attendance/devices', f);
+    const r = await api.post<ApiResponse<'/api/v1/attendance/devices', 'post'>>('/api/v1/attendance/devices', f);
     onKey(r.apiKey);
     await reload();
     onClose();
@@ -158,7 +159,7 @@ function MapDialog({ initial, onClose }: { initial: string; onClose: () => void 
   const [deviceUserId, setDeviceUserId] = useState(initial);
   const [employee, setEmployee] = useState<PickerItem | null>(null);
   const s = useSubmit(async () => {
-    const r = await api.put<{ reprocessedEvents: number }>(`/api/v1/attendance/device-mappings/${encodeURIComponent(deviceUserId)}`, { employeeId: employee!.id });
+    const r = await api.put<ApiResponse<'/api/v1/attendance/device-mappings/{deviceUserId}', 'put'>>(`/api/v1/attendance/device-mappings/${encodeURIComponent(deviceUserId)}`, { employeeId: employee!.id });
     toast(`Mapped. ${r.reprocessedEvents} queued event(s) processed.`);
     await reload();
     onClose();

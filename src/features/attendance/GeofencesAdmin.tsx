@@ -13,10 +13,11 @@ import { Table, type Column } from '../../components/Table';
 import { useToast } from '../../components/Toast';
 import { useSubmit, type FieldErrors } from '../../components/useSubmit';
 import { fmtDateTime, fmtNumber } from '../../format';
+import type { ApiItem, ApiResponse } from '../../lib/api-types';
 import { invalidateApi, useApiQuery } from '../../lib/query';
 import { useOrg } from '../org/useOrg';
 
-interface Geofence { branch_id: string; branch_name: string; latitude: string | number; longitude: string | number; radius_m: number; updated_at: string }
+type Geofence = ApiItem<'/api/v1/attendance/geofences'>;
 interface Row { branchId: string; branchName: string; fence: Geofence | null }
 
 const URL = '/api/v1/attendance/geofences';
@@ -36,7 +37,7 @@ export function validateGeofence(latitude: string, longitude: string, radius: st
 
 export function GeofencesAdmin({ canEdit }: { canEdit: boolean }) {
   const toast = useToast();
-  const query = useApiQuery<{ items: Geofence[] }>(URL);
+  const query = useApiQuery<ApiResponse<'/api/v1/attendance/geofences'>>(URL);
   const org = useOrg();
   const [edit, setEdit] = useState<Row | null>(null);
   const [remove, setRemove] = useState<Row | null>(null);

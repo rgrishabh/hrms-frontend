@@ -1,13 +1,16 @@
-export interface AttendanceEvent { id: string; direction: string; event_time: string; source: string; status: string }
+import type { ApiItem, ApiResponse, Refine } from '../../lib/api-types';
 
-export interface DailyResult {
-  work_date: string; status: string; shift_code: string | null; first_in: string | null; last_out: string | null; worked_minutes: number; late_minutes: number; early_exit_minutes: number; overtime_minutes: number;
-  leave_fraction: number | string; leave_type_code: string | null; duty_fraction: number | string; exceptions: string[]; locked?: boolean;
-}
+type Month = ApiResponse<'/api/v1/attendance/me'>;
 
-export interface Regularization { id: string; work_date: string; requested_in: string | null; requested_out: string | null; reason: string; status: string }
+export type AttendanceEvent = Month['events'][number];
 
-export interface Shift {
-  id: string; code: string; name: string; start_time: string; end_time: string; break_minutes: number; grace_minutes: number; early_exit_grace_minutes: number;
-  half_day_min_minutes: number; full_day_min_minutes: number; overtime_after_minutes: number | null; overnight?: boolean; status: string;
-}
+/** The schema says `shift_code` is always a string; the route left-joins shifts, so a day without a shift answers null. */
+export type DailyResult = Refine<Month['days'][number], { shift_code: string | null }>;
+
+/** What /attendance/me and /attendance/employees/{id} both answer: the one query behind them. */
+export type AttendanceMonth = Refine<Month, { days: DailyResult[] }>;
+
+/** The schema has no masking here; the route answers `reason: null` with `masked` for a reader who may not see it. */
+export type Regularization = Refine<ApiItem<'/api/v1/attendance/regularizations'>, { reason: string | null; masked?: boolean; maskedFields?: string[] }>;
+
+export type Shift = ApiItem<'/api/v1/attendance/shifts'>;

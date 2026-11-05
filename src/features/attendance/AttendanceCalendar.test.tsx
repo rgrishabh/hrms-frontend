@@ -85,6 +85,14 @@ describe('a day', () => {
     expect(screen.queryByText('Leave')).toBeNull();
     expect(screen.queryByText('Field duty')).toBeNull();
   });
+  it('leave with no type code on record does not print null', async () => {
+    api((_url, init) => (init.method === 'GET' ? { days: [result({ leave_fraction: '1', leave_type_code: null })], events: [] } : undefined));
+    renderPage(<AttendanceCalendar employeeId="e1" self />);
+    await openDay('2026-11-03');
+    await screen.findByText('Raw punches');
+    expect(value('Leave')).toContain('full day');
+    expect(value('Leave')).not.toContain('null');
+  });
   it('shows half-day leave and duty, known and unknown exceptions, and the next morning for an overnight shift', async () => {
     api();
     renderPage(<AttendanceCalendar employeeId="e1" self />);

@@ -14,6 +14,7 @@ import { Table, type Column } from '../../components/Table';
 import { useToast } from '../../components/Toast';
 import { useSubmit, type FieldErrors } from '../../components/useSubmit';
 import { fmtMinutes, todayLocal } from '../../format';
+import type { ApiResponse } from '../../lib/api-types';
 import { invalidateApi, useApiQuery } from '../../lib/query';
 import { PeoplePicker } from './PeoplePicker';
 import type { Shift } from './types';
@@ -29,7 +30,7 @@ const toForm = (s: Shift): ShiftForm => ({
 });
 
 export function ShiftsAdmin() {
-  const query = useApiQuery<{ items: Shift[] }>('/api/v1/attendance/shifts');
+  const query = useApiQuery<ApiResponse<'/api/v1/attendance/shifts'>>('/api/v1/attendance/shifts');
   const [edit, setEdit] = useState<ShiftForm | null>(null);
   const [assign, setAssign] = useState<Shift | null>(null);
   const columns: Column<Shift>[] = [
@@ -95,7 +96,7 @@ function AssignShift({ shift, onClose }: { shift: Shift; onClose: () => void }) 
   const [selected, setSelected] = useState<Record<string, string>>({});
   const [from, setFrom] = useState(todayLocal());
   const s = useSubmit(async () => {
-    const r = await api.post<{ assigned: number }>('/api/v1/attendance/shift-assignments', { employeeIds: Object.keys(selected), shiftId: shift.id, effectiveFrom: from });
+    const r = await api.post<ApiResponse<'/api/v1/attendance/shift-assignments', 'post'>>('/api/v1/attendance/shift-assignments', { employeeIds: Object.keys(selected), shiftId: shift.id, effectiveFrom: from });
     toast(`Assigned ${r.assigned} employee(s)`);
     onClose();
   }, { validate: (): FieldErrors => (Object.keys(selected).length ? {} : { people: 'Select at least one person' }) });

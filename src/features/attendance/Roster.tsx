@@ -19,16 +19,19 @@ import { Table, type Column } from '../../components/Table';
 import { useToast } from '../../components/Toast';
 import { useSubmit, type FieldErrors } from '../../components/useSubmit';
 import { addDays, fmtDate, todayLocal } from '../../format';
+import type { ApiItem, ApiResponse, Refine } from '../../lib/api-types';
 import { invalidateApi, useApiQuery } from '../../lib/query';
 import { PeoplePicker } from './PeoplePicker';
-import type { Shift } from './types';
 import './Roster.css';
 
-type RosterShift = Pick<Shift, 'id' | 'code' | 'name' | 'start_time' | 'end_time'>;
-interface Cell { date: string; shiftId: string | null; off: boolean; holiday: string | null; source: 'override' | 'roster' | 'assignment' | null; pattern: string | null; reason: string | null }
-interface Row { id: string; code: string; name: string; department: string | null; days: Cell[] }
-interface RosterData { from: string; to: string; dates: string[]; shifts: RosterShift[]; items: Row[]; canEdit: boolean }
-interface Pattern { id: string; code: string; name: string; days: (string | null)[]; status: string; employees: number; used?: boolean }
+type RosterAnswer = ApiResponse<'/api/v1/attendance/roster'>;
+type RosterShift = RosterAnswer['shifts'][number];
+/** The schema says `source: string`; the route answers null for a day with no shift of any kind. */
+type Cell = Refine<RosterAnswer['items'][number]['days'][number], { source: 'override' | 'roster' | 'assignment' | null }>;
+/** The schema says `department: string`; the route left-joins departments, so it can be null. */
+type Row = Refine<RosterAnswer['items'][number], { department: string | null; days: Cell[] }>;
+type RosterData = Refine<RosterAnswer, { items: Row[] }>;
+type Pattern = ApiItem<'/api/v1/attendance/roster-patterns'>;
 
 const TONES: BadgeTone[] = ['info', 'ok', 'warn', 'brand'];
 const toneFor = (shifts: readonly RosterShift[], id: string | null): BadgeTone => { const i = shifts.findIndex((s) => s.id === id); return i < 0 ? 'neutral' : TONES[i % TONES.length]!; };
@@ -226,7 +229,7 @@ function AssignRoster({ pattern, shifts, onClose, onDone }: { pattern: Pattern; 
   // The date field is empty while someone retypes it, and there is nothing to preview from then.
   const preview = !from ? [] : Array.from({ length: Math.min(14, Math.max(7, pattern.days.length)) }, (_, i) => ({ date: addDays(from, i), shift: pattern.days[(startDay + i) % pattern.days.length] ?? null }));
   const f = useSubmit(async () => {
-    const r = await api.post<{ assigned: number }>('/api/v1/attendance/roster-assignments', { employeeIds: Object.keys(selected), patternId: pattern.id, effectiveFrom: from, startDay });
+    const r = await api.post<ApiResponse<'/api/v1/attendance/roster-assignments', 'post'>>('/api/v1/attendance/roster-assignments', { employeeIds: Object.keys(selected), patternId: pattern.id, effectiveFrom: from, startDay });
     onDone(`${r.assigned} ${r.assigned === 1 ? 'person' : 'people'} on ${pattern.code} from ${fmtDate(from)}`);
     onClose();
   }, { validate: (): FieldErrors => (Object.keys(selected).length ? {} : { people: 'Select at least one person' }) });
@@ -268,8 +271,8 @@ function EndRoster({ onClose, onDone }: { onClose: () => void; onDone: (m: strin
 /** Attendance setup, Rosters: patterns, who follows them, and the roster itself. */
 export function RosterSetup() {
   const toast = useToast();
-  const patterns = useApiQuery<{ items: Pattern[] }>('/api/v1/attendance/roster-patterns');
-  const shifts = useApiQuery<{ items: Shift[] }>('/api/v1/attendance/shifts');
+  const patterns = useApiQuery<ApiResponse<'/api/v1/attendance/roster-patterns'>>('/api/v1/attendance/roster-patterns');
+  const shifts = useApiQuery<ApiResponse<'/api/v1/attendance/shifts'>>('/api/v1/attendance/shifts');
   const [form, setForm] = useState<Pattern | null | undefined>(undefined);
   const [assign, setAssign] = useState<Pattern | null>(null);
   const [ending, setEnding] = useState(false);

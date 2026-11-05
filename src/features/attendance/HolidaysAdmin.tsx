@@ -14,17 +14,18 @@ import { Table, type Column } from '../../components/Table';
 import { useToast } from '../../components/Toast';
 import { useSubmit } from '../../components/useSubmit';
 import { fmtDate, todayLocal } from '../../format';
+import type { ApiItem, ApiResponse } from '../../lib/api-types';
 import { invalidateApi, useApiQuery } from '../../lib/query';
 import { orgOptions, useOrg } from '../org/useOrg';
 
-interface Holiday { id: string; holiday_date: string; name: string; branch_id?: string | null; branch_name: string | null; optional: boolean }
+type Holiday = ApiItem<'/api/v1/attendance/holidays'>;
 const BLANK = { holidayDate: '', name: '', branchId: '', optional: false };
 const reload = () => invalidateApi('/api/v1/attendance/holidays');
 
 export function HolidaysAdmin() {
   const toast = useToast();
   const [year, setYear] = useState(Number(todayLocal().slice(0, 4)));
-  const query = useApiQuery<{ items: Holiday[] }>(`/api/v1/attendance/holidays?year=${year}`, { placeholderData: (p) => p });
+  const query = useApiQuery<ApiResponse<'/api/v1/attendance/holidays'>>(`/api/v1/attendance/holidays?year=${year}`, { placeholderData: (p) => p });
   const org = useOrg();
   const [f, setF] = useState(BLANK);
   const [del, setDel] = useState<Holiday | null>(null);
@@ -72,7 +73,7 @@ export function HolidaysAdmin() {
           onClose={() => setDel(null)}
           onConfirm={async () => {
             await api.del(`/api/v1/attendance/holidays/${del.id}`);
-            const again = { holidayDate: del.holiday_date.slice(0, 10), name: del.name, branchId: del.branch_id ?? null, optional: del.optional };
+            const again = { holidayDate: del.holiday_date.slice(0, 10), name: del.name, branchId: del.branch_id, optional: del.optional };
             toast('Holiday removed', 'ok', { label: 'Undo', onClick: () => { void api.post('/api/v1/attendance/holidays', again).then(reload).then(() => toast('Holiday restored')).catch((x: unknown) => toast(errorMessage(x), 'error')); } });
             await reload();
           }}

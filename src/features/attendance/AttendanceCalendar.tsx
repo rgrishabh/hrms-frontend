@@ -15,7 +15,7 @@ import { SkeletonRows } from '../../components/Skeleton';
 import { useToast } from '../../components/Toast';
 import { addDays, EXCEPTION_LABEL, fmtDate, fmtDateTime, fmtMinutes, fmtMonth, fmtTime, localInputToIso, STATUS_LABEL, todayLocal } from '../../format';
 import { invalidateApi, useApiQuery } from '../../lib/query';
-import type { AttendanceEvent, DailyResult } from './types';
+import type { AttendanceEvent, AttendanceMonth, DailyResult } from './types';
 import './AttendanceCalendar.css';
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -39,7 +39,7 @@ export function AttendanceCalendar({ employeeId, self }: { employeeId: string; s
   const [regDate, setRegDate] = useState<string | null>(null);
   const { from, to } = monthBounds(month);
   const url = self ? `/api/v1/attendance/me${qs({ from, to })}` : `/api/v1/attendance/employees/${employeeId}${qs({ from, to })}`;
-  const query = useApiQuery<{ days: DailyResult[]; events: AttendanceEvent[] }>(url);
+  const query = useApiQuery<AttendanceMonth>(url);
   const go = (n: number) => { setMonth(shiftMonth(month, n)); setSelected(null); };
 
   return (
@@ -110,7 +110,7 @@ function DayDetail({ date, day, events, canCorrect, onCorrect }: { date: string;
               { label: 'Late', value: day.late_minutes ? `${day.late_minutes} min` : '—' },
               { label: 'Early exit', value: day.early_exit_minutes ? `${day.early_exit_minutes} min` : '—' },
               { label: 'Overtime', value: day.overtime_minutes ? fmtMinutes(day.overtime_minutes) : '—' },
-              ...(Number(day.leave_fraction) > 0 ? [{ label: 'Leave', value: `${day.leave_type_code} · ${Number(day.leave_fraction) === 1 ? 'full day' : 'half day'}` }] : []),
+              ...(Number(day.leave_fraction) > 0 ? [{ label: 'Leave', value: `${day.leave_type_code ? `${day.leave_type_code} · ` : ''}${Number(day.leave_fraction) === 1 ? 'full day' : 'half day'}` }] : []),
               ...(Number(day.duty_fraction) > 0 ? [{ label: 'Field duty', value: Number(day.duty_fraction) === 1 ? 'full day' : 'half day' }] : []),
             ]} />
           )

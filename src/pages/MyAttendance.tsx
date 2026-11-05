@@ -11,6 +11,7 @@ import { AttendanceCalendar } from '../features/attendance/AttendanceCalendar';
 import { PunchCard } from '../features/attendance/PunchCard';
 import type { Regularization } from '../features/attendance/types';
 import { fmtDate, fmtTime } from '../format';
+import type { ApiResponse, Refine } from '../lib/api-types';
 import { useApiQuery } from '../lib/query';
 
 const columns: Column<Regularization>[] = [
@@ -23,7 +24,7 @@ const columns: Column<Regularization>[] = [
 
 export function MyAttendance() {
   const { me, hasFeature } = useAuth();
-  const regs = useApiQuery<{ items: Regularization[] }>('/api/v1/attendance/regularizations?scope=mine&pageSize=10');
+  const regs = useApiQuery<Refine<ApiResponse<'/api/v1/attendance/regularizations'>, { items: Regularization[] }>>('/api/v1/attendance/regularizations?scope=mine&pageSize=10');
   return (
     <div className="stack-6">
       <PageHeader title="My attendance" description="Daily results are calculated from your punches, shift and holidays. Select a day for details." />

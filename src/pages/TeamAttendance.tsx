@@ -1,5 +1,5 @@
 import { CalendarCheck } from 'lucide-react';
-import { api, qs, type Paged } from '../api';
+import { api, qs } from '../api';
 import { useAuth } from '../auth';
 import { Badge, StatusBadge, statusLabel } from '../components/Badge';
 import { Button, ButtonLink } from '../components/Button';
@@ -17,19 +17,14 @@ import { useAction } from '../components/useSubmit';
 import { useTableState } from '../components/useTableState';
 import { orgOptions, useOrg } from '../features/org/useOrg';
 import { EXCEPTION_LABEL, fmtMinutes, fmtTime, todayLocal } from '../format';
+import type { ApiItem, ApiResponse } from '../lib/api-types';
 import { invalidateApi, useApiQuery } from '../lib/query';
 import '../features/attendance/Roster.css';
 
 /** What a daily result can be: the labels table in format.ts also holds other modules' statuses. */
 const ATTENDANCE_STATUSES = ['present', 'half_day', 'absent', 'missing_punch', 'weekly_off', 'holiday', 'on_leave', 'on_duty', 'not_calculated'];
 
-interface DailyRow {
-  employee_id: string; employee_code: string; name: string; branch_name: string; status: string; first_in: string | null; last_out: string | null; worked_minutes: number | null; late_minutes: number | null;
-  exceptions: string[] | null; locked: boolean | null; shift_code: string | null;
-  /** The clock-in photo, with the selfie feature on. */
-  selfie_id?: string | null;
-}
-type DailyResponse = Paged<DailyRow> & { summary: { status: string; count: number }[] };
+type DailyRow = ApiItem<'/api/v1/attendance/daily'>;
 
 const columns: Column<DailyRow>[] = [
   { key: 'employee', header: 'Employee', card: 'title', required: true, cell: (r) => <><ButtonLink variant="link" to={`/employees/${r.employee_id}?tab=attendance`}>{r.name}</ButtonLink><div className="table__cell-sub">{r.employee_code}</div></> },
@@ -49,11 +44,11 @@ export function TeamAttendance() {
   const table = useTableState('attendance.daily', columns, { filters: { date: todayLocal(), branchId: '', status: '', exceptionsOnly: '' } });
   const { date = todayLocal(), branchId, status, exceptionsOnly } = table.filters;
   const org = useOrg(all);
-  const query = useApiQuery<DailyResponse>(`/api/v1/attendance/daily${qs({ date, branchId, status, exceptionsOnly: exceptionsOnly || undefined, page: table.page, pageSize: 50 })}`, { placeholderData: (p) => p });
+  const query = useApiQuery<ApiResponse<'/api/v1/attendance/daily'>>(`/api/v1/attendance/daily${qs({ date, branchId, status, exceptionsOnly: exceptionsOnly || undefined, page: table.page, pageSize: 50 })}`, { placeholderData: (p) => p });
   const toast = useToast();
   const { run, isBusy } = useAction();
   const recalculate = () => run('recalculate', async () => {
-    const r = await api.post<{ daysCalculated: number; lockedDaysSkipped: number }>('/api/v1/attendance/recalculate', { from: date, to: date, branchId: branchId || undefined });
+    const r = await api.post<ApiResponse<'/api/v1/attendance/recalculate', 'post'>>('/api/v1/attendance/recalculate', { from: date, to: date, branchId: branchId || undefined });
     toast(`Recalculated ${r.daysCalculated} day(s)${r.lockedDaysSkipped ? `, ${r.lockedDaysSkipped} locked day(s) skipped` : ''}`);
     await invalidateApi('/api/v1/attendance/daily');
   });

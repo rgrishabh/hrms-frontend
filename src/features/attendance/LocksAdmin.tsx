@@ -11,9 +11,10 @@ import { Table, type Column } from '../../components/Table';
 import { useToast } from '../../components/Toast';
 import { useSubmit, type FieldErrors } from '../../components/useSubmit';
 import { fmtDate, fmtDateTime } from '../../format';
+import type { ApiItem, ApiResponse } from '../../lib/api-types';
 import { invalidateApi, useApiQuery } from '../../lib/query';
 
-interface AttendanceLock { id: string; period_start: string; period_end: string; locked_by: string; locked_at: string }
+type AttendanceLock = ApiItem<'/api/v1/attendance/locks'>;
 
 const columns: Column<AttendanceLock>[] = [
   { key: 'period', header: 'Period', card: 'title', cell: (l) => <span className="tnum">{fmtDate(l.period_start)} – {fmtDate(l.period_end)}</span> },
@@ -23,7 +24,7 @@ const columns: Column<AttendanceLock>[] = [
 
 export function LocksAdmin({ canLock }: { canLock: boolean }) {
   const toast = useToast();
-  const query = useApiQuery<{ items: AttendanceLock[] }>('/api/v1/attendance/locks');
+  const query = useApiQuery<ApiResponse<'/api/v1/attendance/locks'>>('/api/v1/attendance/locks');
   const [f, setF] = useState({ periodStart: '', periodEnd: '' });
   const [confirm, setConfirm] = useState(false);
   const s = useSubmit(async () => setConfirm(true), { validate: (): FieldErrors => (f.periodEnd < f.periodStart ? { periodEnd: 'Cannot be before the period start' } : {}) });
@@ -51,7 +52,7 @@ export function LocksAdmin({ canLock }: { canLock: boolean }) {
           onClose={() => setConfirm(false)}
           message={<>All attendance from <strong>{fmtDate(f.periodStart)}</strong> to <strong>{fmtDate(f.periodEnd)}</strong> will be recalculated and then frozen for payroll. Corrections and recalculation will no longer change these days. Locking fails if correction requests are still pending.</>}
           onConfirm={async () => {
-            const r = await api.post<{ rowsLocked: number }>('/api/v1/attendance/locks', f);
+            const r = await api.post<ApiResponse<'/api/v1/attendance/locks', 'post'>>('/api/v1/attendance/locks', f);
             toast(`Locked ${r.rowsLocked} attendance records`);
             setF({ periodStart: '', periodEnd: '' });
             await invalidateApi('/api/v1/attendance/locks');
