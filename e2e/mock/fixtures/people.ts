@@ -41,7 +41,7 @@ const REQ_DETAIL = {
     { id: 'app3', first_name: 'Rahul', last_name: null, current_company: null, experience_months: null, source: 'walk_in', avg_rating: 2, stage: 'rejected' },
   ],
 };
-const OFFER = { id: 'o1', designation: LONG.title, employment_type: 'permanent', annual_ctc: LONG.amount, joining_date: '2027-02-01', probation_months: 6, status: 'draft', above_budget: true, notes: LONG.text, employee_id: null, branch_name: 'Mumbai HQ', legal_entity_id: 'l1', branch_id: 'b1', department_id: null, contract_end_date: null };
+const OFFER = { id: 'o1', designation: LONG.title, employment_type: 'permanent', annual_ctc: LONG.amount, joining_date: '2027-02-01', probation_months: 6, status: 'draft', above_budget: true, notes: LONG.text, employee_id: null, branch_name: 'Mumbai HQ', legal_entity_id: 'l1', branch_id: 'b1', department_id: 'd1', contract_end_date: null };
 const APPLICATION = {
   id: 'app1', stage: 'offer', version: 4, access: 'full', requisition: { id: 'r1', code: 'REQ-0001', title: LONG.title, status: 'approved' },
   candidate: { id: 'c1', first_name: FIRST, last_name: LAST, current_designation: LONG.title, current_company: LONG.org, experience_months: 132, qualification: 'M.Sc. Analytical Chemistry, University of Mumbai', has_resume: true },
