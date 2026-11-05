@@ -18,17 +18,18 @@ import { Table, type Column } from '../../components/Table';
 import { useToast } from '../../components/Toast';
 import { useSubmit } from '../../components/useSubmit';
 import { fmtDateTime, todayLocal } from '../../format';
+import type { ApiResponse } from '../../lib/api-types';
 import { invalidateApi, useApiQuery } from '../../lib/query';
 import { EmployeeField } from '../employees/EmployeeField';
-import { CASES_URL, categoryLabel, GR_CAT, POSH_CAT, type CaseKind, type CaseRow } from './types';
+import { CASES_URL, categoryLabel, GR_CAT, POSH_CAT, type CaseKind, type CaseList, type CaseRow } from './types';
 
 export function MyCases({ onOpen }: { onOpen: (id: string) => void }) {
   const { hasFeature } = useAuth();
   const grievanceOn = hasFeature('FEATURE_GRIEVANCE');
   const poshOn = hasFeature('FEATURE_POSH');
   const [filing, setFiling] = useState<CaseKind | null>(null);
-  const g = useApiQuery<{ items: CaseRow[] }>(grievanceOn ? `${CASES_URL}?kind=grievance&scope=mine` : null);
-  const p = useApiQuery<{ items: CaseRow[] }>(poshOn ? `${CASES_URL}?kind=posh&scope=mine` : null);
+  const g = useApiQuery<CaseList>(grievanceOn ? `${CASES_URL}?kind=grievance&scope=mine` : null);
+  const p = useApiQuery<CaseList>(poshOn ? `${CASES_URL}?kind=posh&scope=mine` : null);
   const failed = g.error ?? p.error;
   const loading = (grievanceOn && g.isPending) || (poshOn && p.isPending);
   const items = [...(g.data?.items ?? []), ...(p.data?.items ?? [])];
@@ -66,7 +67,7 @@ function FileCase({ kind, onClose, onFiled }: { kind: CaseKind; onClose: () => v
   const [f, setF] = useState({ category: Object.keys(cats)[0]!, description: '', incidentDate: '', respondentText: '', anonymous: false, lateReason: '' });
   const [respondent, setRespondent] = useState<PickerItem | null>(null);
   const { busy, errors, error, submit } = useSubmit(async () => {
-    const r = await api.post<{ id: string; reference: string }>(CASES_URL, {
+    const r = await api.post<ApiResponse<'/api/v1/cases', 'post'>>(CASES_URL, {
       kind, category: f.category, description: f.description, incidentDate: f.incidentDate || null, respondentEmployeeId: respondent?.id ?? null,
       respondentText: f.respondentText || null, anonymous: kind === 'grievance' && f.anonymous, lateReason: f.lateReason || null,
     });

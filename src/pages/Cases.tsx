@@ -6,7 +6,7 @@ import { CaseDetail } from '../features/cases/CaseDetail';
 import { Committee } from '../features/cases/Committee';
 import { Handling } from '../features/cases/Handling';
 import { MyCases } from '../features/cases/MyCases';
-import { CASES_URL, type CaseRow, type CommitteeData } from '../features/cases/types';
+import { CASES_URL, type CaseList, type CommitteeData } from '../features/cases/types';
 import { useApiQuery } from '../lib/query';
 import '../features/cases/Cases.css';
 
@@ -19,7 +19,7 @@ export function Cases() {
   const manages = can('grievance.manage');
   const committee = useApiQuery<CommitteeData>(poshOn ? `${CASES_URL}/committee` : null);
   // Someone assigned a grievance handles it without holding the permission, so only the list can tell.
-  const assigned = useApiQuery<{ items: CaseRow[] }>(grievanceOn && !manages ? `${CASES_URL}?kind=grievance&scope=handling` : null);
+  const assigned = useApiQuery<CaseList>(grievanceOn && !manages ? `${CASES_URL}?kind=grievance&scope=handling` : null);
   const onCommittee = !!committee.data?.members.some((m) => m.user_id === me?.user.id);
   const [params, setParams] = useSearchParams();
   const tabs: TabItem<Tab>[] = [{ key: 'mine', label: 'My cases' }];

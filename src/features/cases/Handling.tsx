@@ -10,14 +10,14 @@ import { Select } from '../../components/Select';
 import { Table, type Column } from '../../components/Table';
 import { fmtDate, fmtDateTime, todayLocal } from '../../format';
 import { useApiQuery } from '../../lib/query';
-import { CASES_URL, categoryLabel, isClosed, STATUS, STATUS_BY_KIND, type CaseKind, type CaseRow } from './types';
+import { CASES_URL, categoryLabel, isClosed, STATUS, STATUS_BY_KIND, type CaseKind, type CaseList, type CaseRow } from './types';
 
 const dueDate = (c: CaseRow) => (c.kind === 'posh' ? (c.status === 'report_submitted' ? c.report_due : c.inquiry_due) : c.sla_due);
 
 /** The cases someone handles: every one for HR or the Committee, or those assigned to them. */
 export function Handling({ kind, label, onOpen }: { kind: CaseKind; label: string; onOpen: (id: string) => void }) {
   const [status, setStatus] = useState('');
-  const query = useApiQuery<{ items: CaseRow[] }>(`${CASES_URL}${qs({ kind, scope: 'handling', status })}`, { placeholderData: (p) => p });
+  const query = useApiQuery<CaseList>(`${CASES_URL}${qs({ kind, scope: 'handling', status })}`, { placeholderData: (p) => p });
   const today = todayLocal();
   const columns: Column<CaseRow>[] = [
     { key: 'reference', header: 'Reference', card: 'title', cell: (c) => <Button variant="link" onClick={() => onOpen(c.id)}>{c.reference}</Button> },
