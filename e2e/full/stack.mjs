@@ -162,14 +162,18 @@ async function main() {
   const children = [
     spawn(tsx(), ['src/server.ts'], { cwd: backend, env: backendEnv({ PROCESS_ROLE: 'api' }), stdio: 'inherit' }),
     spawn(tsx(), ['src/worker.ts'], { cwd: backend, env: backendEnv({ PROCESS_ROLE: 'worker' }), stdio: 'inherit' }),
-    spawn(join(root, 'node_modules/.bin/vite'), ['preview', '--host', '127.0.0.1', '--port', String(ports.web), '--strictPort'], { cwd: root, env: { ...process.env, HRMS_API_PROXY: `http://127.0.0.1:${ports.api}` }, stdio: 'inherit' }),
   ];
   const stop = () => { children.forEach((c) => c.kill('SIGTERM')); process.exit(0); };
+  const watch = (c) => c.on('exit', (code) => { if (code) { process.stderr.write(`stack process exited with ${code}\n`); stop(); } });
   process.on('SIGTERM', stop); process.on('SIGINT', stop);
-  children.forEach((c) => c.on('exit', (code) => { if (code) { process.stderr.write(`stack process exited with ${code}\n`); stop(); } }));
+  children.forEach(watch);
   await waitFor(`http://127.0.0.1:${ports.api}/ready`, 'API');
-  await waitFor(`http://127.0.0.1:${ports.web}/`, 'web');
   if (reset) await finishAdminSetup();
+  // Last, because Playwright starts the tests once this answers, and they read the admin password finishAdminSetup writes.
+  const web = spawn(join(root, 'node_modules/.bin/vite'), ['preview', '--host', '127.0.0.1', '--port', String(ports.web), '--strictPort'], { cwd: root, env: { ...process.env, HRMS_API_PROXY: `http://127.0.0.1:${ports.api}` }, stdio: 'inherit' });
+  children.push(web);
+  watch(web);
+  await waitFor(`http://127.0.0.1:${ports.web}/`, 'web');
   process.stdout.write(`stack ready: profile=${profile} http://127.0.0.1:${ports.web}\n`);
 }
 
