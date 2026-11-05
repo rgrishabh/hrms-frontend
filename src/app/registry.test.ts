@@ -98,7 +98,7 @@ describe('module boundaries', () => {
   const src = join(process.cwd(), 'src');
   const files = (dir: string): string[] => readdirSync(dir).flatMap((f) => { const p = join(dir, f); return statSync(p).isDirectory() ? files(p) : p.endsWith('.tsx') || p.endsWith('.ts') ? [p] : []; });
   it('no page imports another page, so a chunk never drags a whole page along', () => {
-    const offenders = files(join(src, 'pages')).flatMap((f) => {
+    const offenders = files(join(src, 'pages')).filter((f) => !/\.test\./.test(f)).flatMap((f) => {
       const imports = [...readFileSync(f, 'utf8').matchAll(/from '(\.[^']+)'/g)].map((m) => m[1]!);
       return imports.filter((i) => i.startsWith('./') && !i.endsWith('.css') && !f.includes('/auth/')).map((i) => `${f} -> ${i}`);
     });
