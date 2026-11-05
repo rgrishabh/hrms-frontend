@@ -66,7 +66,8 @@ function RunBody({ run: r, employeeName, revealed, revealing, setRevealed, serve
 
   const post = (path: string, body: unknown = {}) => api.post(`${base}/${path}`, body).then(reload);
   const setHold = (i: RunItem, hold: boolean) => action.run(`hold-${i.employee_id}`, () => post('hold', { employeeId: i.employee_id, hold }), hold ? `${i.employee_name} is on hold` : `${i.employee_name} is off hold`, { label: 'Undo', onClick: () => void action.run(`hold-${i.employee_id}`, () => post('hold', { employeeId: i.employee_id, hold: !hold }), hold ? 'Hold undone' : 'Back on hold') });
-  const removeAdjustment = (a: Adjustment) => action.run(`adj-${a.id}`, async () => { await api.del(`${base}/adjustments/${a.id}`); await reload(); }, 'Removed. Recompute the run.', {
+  // A hidden amount and note cannot be put back from here, so there is no undo for them.
+  const removeAdjustment = (a: Adjustment) => action.run(`adj-${a.id}`, async () => { await api.del(`${base}/adjustments/${a.id}`); await reload(); }, 'Removed. Recompute the run.', isMaskedField(a, 'amount') ? undefined : {
     label: 'Undo',
     onClick: () => void action.run(`adj-${a.id}`, () => post('adjustments', { employeeId: a.employee_id, kind: a.kind, label: a.label, amount: Number(a.amount), taxable: a.taxable, note: a.note }), 'Adjustment restored. Recompute the run.'),
   });

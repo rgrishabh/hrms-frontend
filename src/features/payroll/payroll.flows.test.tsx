@@ -339,6 +339,13 @@ describe('adjustments', () => {
     expect(bodyOf(posted)).toEqual({ employeeId: 'e9', kind: 'earning', label: 'Arrears', amount: 500, taxable: false, note: 'Q1' });
     expect(await screen.findByText('Adjustment restored. Recompute the run.')).toBeTruthy();
   });
+  it('removing one whose amount is hidden offers no undo, since the amount it would restore is unknown', async () => {
+    const f = await openRun({ ...RUN, adjustments: [{ ...ADJ, amount: null, note: null, masked: true, maskedFields: ['amount', 'note'] }] });
+    await userEvent.click(await screen.findByRole('button', { name: 'Remove Arrears' }));
+    await waitFor(() => expect(writes(f, '/runs/p1/adjustments/a1')).toHaveLength(1));
+    expect(await screen.findByText('Removed. Recompute the run.')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Undo' })).toBeNull();
+  });
   it('a closed run has no Remove', async () => {
     await openRun({ ...RUN, status: 'finalized', adjustments: [ADJ] });
     await screen.findByRole('table', { name: 'Adjustments' });
