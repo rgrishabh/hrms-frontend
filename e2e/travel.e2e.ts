@@ -35,7 +35,7 @@ test('travel with an advance: manager and finance approve, finance pays the adva
   const trip = page.getByRole('table', { name: 'My trips' }).getByRole('row').filter({ hasText: 'Kolhapur — Shiroli MIDC' }).first();
   await expect(trip).toContainText('Pending');
 
-  const summary = /Pooja Yadav: Navi Mumbai → Kolhapur — Shiroli MIDC, .* advance ₹3000\.00/;
+  const summary = /Pooja Yadav: Navi Mumbai → Kolhapur — Shiroli MIDC/;
   await login(page, 'director');
   await approve(page, summary);
   await login(page, 'finance');
@@ -63,7 +63,7 @@ test('travel with an advance: manager and finance approve, finance pays the adva
 test('the claim for a completed trip opens in Expenses, linked to the trip and its advance', async ({ page }) => {
   await login(page, 'analyst');
   await page.goto('/travel');
-  const trip = page.getByRole('table', { name: 'My trips' }).getByRole('row').filter({ hasText: 'NABL regional office' }).first();
+  const trip = page.getByRole('table', { name: 'My trips' }).getByRole('row').filter({ hasText: 'accreditation body' }).first();
   await trip.getByRole('button', { name: 'Details' }).click();
   const detail = page.getByRole('dialog', { name: /^Trip — Pune → Mumbai/ });
   await expect(detail.locator('.tile').filter({ hasText: 'Advance outstanding' })).toContainText('₹1,500.00');

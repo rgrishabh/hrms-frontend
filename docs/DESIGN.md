@@ -59,7 +59,7 @@ Variables go through CSSOM because the CSP forbids `<style>` injection. `public/
 | Status | `StatusBadge`, always words and never colour alone |
 | Ordered progress | `Stepper` |
 | File | `FileUpload` |
-| Sensitive value | `MaskedValue` |
+| Sensitive value | `MaskedValue` for one value, `RevealToggle` with `useRevealable` for a section, `Restricted` for L3 with no reveal |
 
 ### Native controls: why
 
@@ -107,7 +107,7 @@ A refetch keeps the current data on screen. After a write, call `invalidateApi(p
 
 ## Errors
 
-The API returns RFC 7807 only. `ApiError` carries `status`, `code`, `problem` and `errors`. `fieldErrors()` gives inline messages. Endpoint extras are extension members on `problem`. Any non-JSON body, such as a proxy 502, becomes a readable message.
+The API returns RFC 7807 only. `ApiError` carries `status`, `code`, `problem`, `errors` and `retryAfter`, and its message already says what a person needs: a `weak_password`'s reasons, how long to wait on a 429. `fieldErrors()` gives inline messages. Endpoint extras are extension members on `problem`. Any non-JSON body, such as a proxy 502, becomes a readable message.
 
 ## App shell
 
@@ -169,20 +169,29 @@ Hashed assets are immutable for a year. The build writes `.gz` and `.br` next to
 
 **D18: Cases respondent.** A complaint's respondent uses `EmployeeField` because the API takes an employee id and `cases/people` needs admin permission. Handler and committee pickers use `cases/people`.
 
+**D19: Masked sections reveal as a whole, single values one at a time.** The API masks by response, and `?reveal=1` is per request. So a table uses `RevealToggle` with `useRevealable`, which refetches, keeps nothing in the cache and forgets on hide. A value with its own route, such as one payslip, uses `MaskedValue`, so one look writes one audit row. Rejected: revealing every row one by one, which would write an audit row per click for a run of 200 people.
+
+**D20: Forms never start from masked values.** A masked field reads null, and saving a form built from it would clear what is stored. So Edit on statutory details and on company details needs the values shown first, and PAN and bank numbers are only sent if typed.
+
+**D21: Views come from the server and from permissions.** `/auth/me` lists views, and those are always offered, with the server's label. A custom role can hold recruitment alone, for which the server lists no view, so the permission table still adds views. Single-person modes never show Manager.
+
+**D22: Visual baselines use fixtures, not the real API.** Demo data is built from today's date, so baselines against it would change daily. They run on mocked data with a fixed clock, per platform.
+
+**D23: Role choices in smaller modes are a fixed list.** `/tenant/roles` answers 404 there, and the set is fixed by the mode. A backend change adding roles to a mode means changing `SMALL_MODE_ROLES` in `Users.tsx`.
+
 **D7: Decisions live here.** The shared rules ask for `DECISIONS.md`, but this batch was told to create no docs beyond this file and `QA_REPORT.md`.
 
 ## Migration status
 
 Every screen is on the design system. `src/app/registry.test.ts` scans `src/pages` and `src/features` and fails on a legacy import, an inline style, `any`, a clickable `<tr>`, a raw badge or table, or a browser dialog. The only raw tables are the team calendar and payslip lines, which are data grids with their own phone layout.
 
-Not yet built, by instruction: L4 masking and mode-specific menus. Backend batch C is defining those contracts.
-
 ## Verifying
 
 | Command | Covers |
 |---|---|
-| `npm run lint` | Types, including e2e |
+| `npm run lint` | Types, including e2e, and ESLint with no warnings |
 | `npm test` | Units, axe in jsdom, page failure sweep, runtime script |
 | `npm run build` | Type check and bundle |
 | `npm run e2e:mock` | Production build with mocked API: real contrast, CSP, lazy chunks, layout at 360 to 768 with long real rows, service worker, screenshots. Each group's rows and screens are in `e2e/mock/fixtures/` |
-| `npm run e2e` | Full stack, needs a backend with demo data |
+| `npm run e2e` | Full stack: `e2e/full/stack.mjs` starts the API, worker, mail sink and build. See the README |
+| `npm run e2e:visual` | Baselines for key screens at 360 and 1440 |

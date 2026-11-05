@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { acceptInvite, invited, linkFrom, signInWith, STRONG, totp, waitForMail } from './helpers';
+import { acceptInvite, invited, linkFrom, signInWith, STRONG, totp, waitForMail, welcomed } from './helpers';
 
 test('a wrong password says so, and repeated tries are told how long to wait', async ({ page }) => {
   const nobody = `nobody.${Date.now()}@example.test`;
@@ -17,16 +17,16 @@ test('invitation, a refused weak password with its reason, sign-in, then forgot 
   await page.goto(linkFrom(mail, '/setup'));
   // The token leaves the address bar as soon as it is read.
   await expect.poll(() => new URL(page.url()).hash).toBe('');
-  await page.getByLabel('New password').fill('passwordpassword');
-  await page.getByLabel(/Confirm/).fill('passwordpassword');
+  await page.getByLabel(/^New password/).fill('passwordpassword');
+  await page.getByLabel(/^Confirm/).fill('passwordpassword');
   await page.getByRole('button', { name: 'Set password' }).click();
   await expect(page.getByText(/leaked passwords|too repetitive/)).toBeVisible();
-  await page.getByLabel('New password').fill(STRONG);
-  await page.getByLabel(/Confirm/).fill(STRONG);
+  await page.getByLabel(/^New password/).fill(STRONG);
+  await page.getByLabel(/^Confirm/).fill(STRONG);
   await page.getByRole('button', { name: 'Set password' }).click();
   await page.getByRole('button', { name: 'Go to sign in' }).click();
   await signInWith(page, email);
-  await expect(page.getByRole('heading', { level: 1, name: /Welcome/ })).toBeVisible();
+  await welcomed(page);
 
   await page.context().clearCookies();
   await page.goto('/');
@@ -38,24 +38,25 @@ test('invitation, a refused weak password with its reason, sign-in, then forgot 
   const reset = await waitForMail(page.request, email, asked, /reset-password#token=/);
   await page.goto(linkFrom(reset, '/reset-password'));
   const next = `${STRONG}-again`;
-  await page.getByLabel('New password').fill(next);
-  await page.getByLabel(/Confirm/).fill(next);
+  await page.getByLabel(/^New password/).fill(next);
+  await page.getByLabel(/^Confirm/).fill(next);
   await page.getByRole('button', { name: 'Change password' }).click();
   await expect(page.getByRole('heading', { name: 'Password changed' })).toBeVisible();
   await page.getByRole('button', { name: 'Go to sign in' }).click();
   await signInWith(page, email, next);
-  await expect(page.getByRole('heading', { level: 1, name: /Welcome/ })).toBeVisible();
+  await welcomed(page);
 });
 
 test('changing a password rotates the CSRF token, and the next write still works', async ({ page }) => {
   const { email, since } = await invited(page.request, 'rotate');
   await acceptInvite(page, email, since);
   await signInWith(page, email);
+  await welcomed(page);
   await page.goto('/account');
   const next = `${STRONG}-rotated`;
   await page.getByLabel('Current password').fill(STRONG);
-  await page.getByLabel('New password', { exact: true }).fill(next);
-  await page.getByLabel(/Confirm/).fill(next);
+  await page.getByLabel(/^New password/).fill(next);
+  await page.getByLabel(/^Confirm/).fill(next);
   await page.getByRole('button', { name: 'Change password' }).click();
   await expect(page.getByText('Password changed')).toBeVisible();
   // Same page, no reload: a stale token would answer 403 here.
@@ -67,6 +68,7 @@ test('two-factor by authenticator: enrol, a wrong code is refused, the right one
   const { email, since } = await invited(page.request, 'totp');
   await acceptInvite(page, email, since);
   await signInWith(page, email);
+  await welcomed(page);
   await page.goto('/account');
   await page.getByRole('button', { name: 'Turn on' }).click();
   await page.getByRole('button', { name: 'Use an authenticator app' }).click();
@@ -86,7 +88,7 @@ test('two-factor by authenticator: enrol, a wrong code is refused, the right one
   // A step already used at enrolment is refused, so take the next one.
   await page.getByLabel('Code', { exact: true }).fill(totp(secret, Date.now() + 30_000));
   await page.getByRole('button', { name: 'Verify' }).click();
-  await expect(page.getByRole('heading', { level: 1, name: /Welcome/ })).toBeVisible();
+  await welcomed(page);
 
   await page.goto('/account');
   await page.getByRole('button', { name: 'Turn off' }).click();
@@ -100,6 +102,7 @@ test('two-factor by email: enrol with a mailed code, and sign in with the next o
   const { email, since } = await invited(page.request, 'emailcode');
   await acceptInvite(page, email, since);
   await signInWith(page, email);
+  await welcomed(page);
   await page.goto('/account');
   await page.getByRole('button', { name: 'Turn on' }).click();
   await page.getByRole('button', { name: 'Use codes sent by email' }).click();
@@ -121,17 +124,17 @@ test('two-factor by email: enrol with a mailed code, and sign in with the next o
   const next = /\b(\d{6})\b/.exec(await waitForMail(page.request, email, login, /\b\d{6}\b/))![1]!;
   await page.getByLabel('Code', { exact: true }).fill(next);
   await page.getByRole('button', { name: 'Verify' }).click();
-  await expect(page.getByRole('heading', { level: 1, name: /Welcome/ })).toBeVisible();
+  await welcomed(page);
 });
 
 test('sessions: another browser shows up, ending it signs it out', async ({ page, browser, viewport }) => {
   const { email, since } = await invited(page.request, 'sessions');
   await acceptInvite(page, email, since);
   await signInWith(page, email);
-  await expect(page.getByRole('heading', { level: 1, name: /Welcome/ })).toBeVisible();
+  await welcomed(page);
   const other = await (await browser.newContext({ viewport, serviceWorkers: 'block' })).newPage();
   await signInWith(other, email);
-  await expect(other.getByRole('heading', { level: 1, name: /Welcome/ })).toBeVisible();
+  await welcomed(other);
 
   await page.goto('/account');
   const list = page.getByRole('list', { name: 'Signed-in sessions' });
@@ -150,7 +153,7 @@ test('an expired session returns to sign-in and says why', async ({ page }) => {
   const { email, since } = await invited(page.request, 'idle');
   await acceptInvite(page, email, since);
   await signInWith(page, email);
-  await expect(page.getByRole('heading', { level: 1, name: /Welcome/ })).toBeVisible();
+  await welcomed(page);
   await page.goto('/notifications');
   await page.context().clearCookies();
   await page.getByRole('button', { name: /Mark all|Refresh/ }).first().click({ timeout: 2000 }).catch(() => page.evaluate(() => window.dispatchEvent(new Event('hrms:unauthorized'))));

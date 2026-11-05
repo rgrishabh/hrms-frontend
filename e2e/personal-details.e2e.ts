@@ -22,10 +22,10 @@ test('an employee updates contacts directly; a nominee change waits for HR, who 
   dlg = page.getByRole('dialog', { name: 'Edit nominees' });
   await expect(dlg).toContainText('HR checks changes to nominees');
   const entry = dlg.getByRole('region', { name: 'Nominees entry 1' });
-  await entry.getByLabel('For', { exact: true }).selectOption('pf');
-  await entry.getByLabel('Name', { exact: true }).fill(nominee);
-  await entry.getByLabel('Relationship', { exact: true }).fill('Mother');
-  await entry.getByLabel('Share %', { exact: true }).fill('100');
+  await entry.getByLabel(/^For/).selectOption('pf');
+  await entry.getByLabel(/^Name/).fill(nominee);
+  await entry.getByLabel(/^Relationship/).fill('Mother');
+  await entry.getByLabel(/^Share %/).fill('100');
   await dlg.getByRole('button', { name: 'Send for approval' }).click();
   await expect(page.getByText('Nominees sent to HR for approval')).toBeVisible();
   await expect(nominees).toContainText('Change awaiting HR approval');

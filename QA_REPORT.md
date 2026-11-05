@@ -64,6 +64,9 @@ Bugs found and fixed during the revamp. Each has a test that was run and seen to
 | QA-058 | Payroll, run adjustments | Med | Open a draft or computed run without revealing amounts, Remove an adjustment, press Undo in the toast | The API masks adjustment `amount` and `note` by default, so Undo posted `amount: 0, note: null`, which the server refuses | No Undo while the amount is masked; a revealed adjustment keeps it | `payroll.flows.test.tsx` |
 | QA-059 | Cases, Internal Committee | Med | Edit membership, add a person, open the picker again and pick them again; or remove someone and look for them | Picker results were cached under one fixed key for 30 seconds, so the filter on current members did not re-run: the person added could be added twice, and the person removed was not offered back | The query key includes the current member ids | `Committee.test.tsx` |
 | QA-060 | Travel (found in this batch) | High | Correct a returned trip, changing only the purpose | The form starts with blank estimate and advance, so resubmitting sent all zeros and lost the figures the approver had seen | Starts from the request's estimate, advance, accommodation and on-duty | `travel.test.tsx` |
+| QA-061 | Salaries, statutory | High | Edit statutory details with the fields masked | The form was built from masked nulls, so saving would have cleared UAN and ESI numbers | Edit needs the details shown first | `Salaries` tests, `journeys.full.ts` |
+| QA-062 | Accounting, loans, payroll | High | Open a list with L4 masked | `formatMoney(null)` read as ₹0.00, and masked `warnings`, `lines`, `balance` and `schedule` would have thrown | `Money masked`, null-safe screens | `e2e/full/journeys.full.ts`, payroll and loans tests |
+| QA-063 | Policies | Low | Have an overdue policy | A reminder used the error surface, so it read as a failure | Warning notice | `e2e/full/walk.full.ts` |
 
 ## Audit claims that needed correcting
 
@@ -74,9 +77,4 @@ Bugs found and fixed during the revamp. Each has a test that was run and seen to
 ## Known issues, not fixed here
 
 - **Exit interview for a non-HR employee (backend).** The API hides `exit_interview` from non-HR viewers, so an employee's form still opens blank, and their save replaces all recorded answers, including HR's. This needs a backend change: refuse or merge.
-- **The backend at HEAD still answers `{ error: { code, message, details } }`, not RFC 7807** (`hrms-backend/src/app.ts:149`). The client reads only RFC 7807, as the contract says, so until that handler changes people see generic messages, field errors do not reach fields, and `outside_geofence`, `selfie_required` and `feature_not_configured` are not recognised.
-- **Own-defer on a loan** is hidden in the UI, and the backend does not enforce it.
-- **A travel return cannot be edited.** The traveller gets guidance and can request again; editing needs a backend route.
-- **Released-pay bank file** shows on every closed run, because the API does not say whether anything was released.
-- **A `users.manage` administrator cannot find stuck approvals.** Reassign works from the inbox, and no route lists requests stuck on someone else.
 - **Backend text can still carry lab words:** approval summaries saying "field sampling", and "Calibration expired" on a legacy `lab_instrument` asset.

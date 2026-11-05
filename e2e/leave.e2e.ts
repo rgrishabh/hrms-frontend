@@ -32,8 +32,8 @@ test('an employee applies for leave, the manager approves it, and cancelling ret
   const form = page.getByRole('dialog', { name: 'Apply for leave' });
   const cl = await form.getByLabel('Leave type').locator('option', { hasText: /^Casual Leave/ }).getAttribute('value');
   await form.getByLabel('Leave type').selectOption(cl!);
-  await form.getByLabel('From', { exact: true }).fill(date);
-  await form.getByLabel('To', { exact: true }).fill(date);
+  await form.getByLabel(/^From/).fill(date);
+  await form.getByLabel(/^To\b/).fill(date);
   await expect(form.getByText('1 day(s)')).toBeVisible();
   await form.getByLabel('Reason').fill('Family function (E2E)');
   await form.getByRole('button', { name: 'Submit for approval' }).click();
@@ -76,8 +76,8 @@ test('a manager\'s own leave goes to their manager, who must give a reason to re
   const date = await freeWeekday(page);
   await page.getByRole('button', { name: 'Apply for leave' }).click();
   const form = page.getByRole('dialog', { name: 'Apply for leave' });
-  await form.getByLabel('From', { exact: true }).fill(date);
-  await form.getByLabel('To', { exact: true }).fill(date);
+  await form.getByLabel(/^From/).fill(date);
+  await form.getByLabel(/^To\b/).fill(date);
   await form.getByLabel('Reason').fill('Own request (E2E)');
   await expect(form.getByText(/day\(s\)/)).toBeVisible();
   await form.getByRole('button', { name: 'Submit for approval' }).click();

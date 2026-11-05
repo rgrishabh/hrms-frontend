@@ -117,11 +117,13 @@ export function linkFrom(mail: string, path: string): string {
 export async function acceptInvite(page: Page, email: string, since: number, password = STRONG) {
   const mail = await waitForMail(page.request, email, since, /setup#token=/);
   await page.goto(linkFrom(mail, '/setup'));
-  await page.getByLabel('New password', { exact: false }).first().fill(password);
-  await page.getByLabel(/Confirm/).fill(password);
+  await page.getByLabel(/^New password/).fill(password);
+  await page.getByLabel(/^Confirm/).fill(password);
   await page.getByRole('button', { name: 'Set password' }).click();
   await expect(page.getByRole('heading', { name: 'Password set' })).toBeVisible();
 }
+
+export const welcomed = (page: Page) => expect(page.getByRole('heading', { level: 1, name: /Welcome/ })).toBeVisible();
 
 export async function signInWith(page: Page, email: string, password = STRONG) {
   await page.goto('/');

@@ -5,7 +5,7 @@ test('an IT administrator defines a role from permissions they hold, edits it an
   const name = `Asset desk ${Date.now() % 100000}`;
   await login(page, 'it');
   await page.goto('/settings/roles');
-  await expect(page.locator('[aria-label="Built-in roles"]')).toContainText('HR Administrator');
+  await expect(page.getByRole('region', { name: 'Built-in roles' })).toContainText('HR Administrator');
 
   await page.getByRole('button', { name: 'New role' }).click();
   let dlg = page.getByRole('dialog', { name: 'New role' });

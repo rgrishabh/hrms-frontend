@@ -15,10 +15,10 @@ test('an instrument past calibration cannot be issued', async ({ page }) => {
   await page.getByLabel('Search').fill('INS-PH-01');
   const row = page.getByRole('row', { name: /INS-PH-01/ });
   await expect(row.getByText(/expired/)).toBeVisible();
-  await row.getByRole('button', { name: 'Issue' }).click();
+  await row.getByRole('button', { name: 'Issue', exact: true }).click();
   const dlg = page.getByRole('dialog');
   await pickEmployee(dlg, 'Aditya Joshi');
-  await dlg.getByRole('button', { name: 'Issue' }).click();
+  await dlg.getByRole('button', { name: 'Issue', exact: true }).click();
   await expect(dlg.getByRole('alert')).toContainText('Calibration expired');
 });
 
@@ -32,11 +32,11 @@ test('issue a pH meter, the analyst confirms receipt, IT receives it back', asyn
     await row.getByRole('button', { name: 'Receive' }).click();
     await page.getByRole('dialog').getByRole('button', { name: 'Record return' }).click();
   }
-  await row.getByRole('button', { name: 'Issue' }).click();
+  await row.getByRole('button', { name: 'Issue', exact: true }).click();
   const dlg = page.getByRole('dialog');
   await pickEmployee(dlg, 'Aditya Joshi');
   await dlg.getByLabel('Condition at issue').fill('Good, with electrode and stand');
-  await dlg.getByRole('button', { name: 'Issue' }).click();
+  await dlg.getByRole('button', { name: 'Issue', exact: true }).click();
   await expect(row.getByText('Aditya Joshi')).toBeVisible();
   await expect(row.getByText('receipt not confirmed')).toBeVisible();
 

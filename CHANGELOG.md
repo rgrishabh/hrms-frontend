@@ -19,6 +19,14 @@
 * "Within India" as a travel option label, now "Domestic".
 * `ASSET_CATEGORY` and the `fmtCell` export from Reports.
 * The "attendance setup" banner and its `tenant/installation` call: the Biometric tab now needs `FEATURE_ATTENDANCE_BIOMETRIC`.
+* `initialPassword` on Add user: people choose their own from an invitation.
+* "Print or save as PDF" on payslips: the server's PDF replaces the browser's print.
+* "Show masked details" on bank details: a masked answer writes no audit row, so it loads at once and only showing the details is asked for.
+* "Request again" on a returned trip: Correct and resubmit replaces it, on the same request.
+* The `outstanding` figure in the repayment toast, as the API no longer sends it.
+* The `/branding` dev proxy, and `E2E_DOMAIN`, `E2E_BASE_URL` and the old backend environment in `e2e.yml`.
+* The shared `_app-ci.yml` from this repo's CI. Its jobs are now in `ci.yml` and `security.yml`.
+* `src/test/pageApi.tsx` and `src/test/pageHarness.tsx`, merged into `src/test/page.tsx`.
 
 ### Changed
 
@@ -30,6 +38,14 @@
 
 ### Added
 
+* API types generated from the backend's `openapi.json` (`npm run api:generate`, checked by `npm run api:check`), and a test that every call in the app is a route in the spec.
+* One path for problems in `src/api.ts`: `weak_password` reasons, `Retry-After`, `malware_detected`, `scanner_unavailable`, `requires_higher_level`, and CSRF rotation from any answer that carries a token.
+* Auth: email codes and method choice from `/auth/mfa/methods`, `mfa_locked`, forgot and reset password, invitations at `/setup`, session list and revoke, and a notice after the server ends a session.
+* Users: invitations, resend and reset links, Invited status, salary level. Roles by mode, since `/tenant/roles` answers 404 in the smaller modes.
+* L4 masking with `useRevealable`, `RevealToggle` and `Money masked`; `?reveal=1` on payroll, payslips, salaries, statutory, bank, loans, F&F, reports, accounting, recruitment and company. L3 reasons and masked phone and date of birth. Directory and team views of employees.
+* Settings: Company with signature and stamp, Data retention, Data rights with erasure and exports, Audit chain with verify, Grades and Designations.
+* Stuck approvals, resubmit for returned trips, clock-in selfie for HR, `released_count` on the bank file, PDF payslips, letters with an includePay choice, report PDFs, `total` on inbox and my requests, payroll-related document categories, and a Payroll view.
+* Full-stack browser tests (`e2e/full`), Axe on every screen against the real API, visual baselines, ESLint, coverage thresholds, CI for lint, types, drift, E2E, Lighthouse, Trivy, SBOM, Semgrep, CodeQL and Gitleaks.
 * Clock-in with camera selfie (`FEATURE_ATTENDANCE_SELFIE`) and geofence messages (`FEATURE_ATTENDANCE_GEOFENCE`), on My attendance and the dashboard. Geofences tab in Attendance setup.
 * Payroll: reopen an approved run, release held pay, the released-pay bank file, and F&F suggestions from a picked employee, with leave year.
 * Recruitment: edit an offer. Onboarding: cancel a checklist. Competency: cancel an authorization. Policies: edit details. Approvals: reassign. Leave: balance history. Cases: "Assigned to me".

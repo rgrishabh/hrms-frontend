@@ -27,8 +27,8 @@ test("while the lab manager is away, the quality manager approves her team's lea
   const form = page.getByRole('dialog', { name: 'Apply for leave' });
   const cl = await form.getByLabel('Leave type').locator('option', { hasText: /^Casual Leave/ }).getAttribute('value');
   await form.getByLabel('Leave type').selectOption(cl!);
-  await form.getByLabel('From', { exact: true }).fill(date);
-  await form.getByLabel('To', { exact: true }).fill(date);
+  await form.getByLabel(/^From/).fill(date);
+  await form.getByLabel(/^To\b/).fill(date);
   await form.getByLabel('Reason').fill('Delegation check (E2E)');
   await form.getByRole('button', { name: 'Submit for approval' }).click();
   await expect(page.getByText('Leave requested: 1 day(s). Sent for approval.')).toBeVisible();

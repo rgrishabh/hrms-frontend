@@ -34,8 +34,8 @@ test('employee: HR adds someone, the record opens, and a directory reader sees n
   await form.getByLabel('Date of joining').fill('2026-01-05');
   await form.getByRole('button', { name: /Save|Create|Add/ }).click();
   await expect(form).toHaveCount(0);
-  await page.getByLabel('Search employees').fill(code);
-  await expect(page.getByRole('link', { name: 'Tanvi Kapoor' })).toBeVisible();
+  // Creating opens the new record, on the page or as a link.
+  await expect(page.getByRole('heading', { level: 1, name: 'Tanvi Kapoor' })).toBeVisible();
   await page.context().close();
 
   const directory = await pageAs(browser, 'analyst', { viewport });
@@ -52,10 +52,14 @@ test('payroll: run, masked until shown, approved, finalized, payslip revealed an
   const period = lastMonths(info.project.name === 'desktop' ? 1 : 2);
   const page = await pageAs(browser, 'payroll', { viewport });
 
-  // The month's attendance must be locked before a regular run can be finalized: set up through the API.
+  // A run must be computed on locked attendance: set up through the API.
   const api = await playwright.request.newContext({ baseURL: `http://localhost:${process.env.E2E_WEB_PORT ?? 4311}` });
   const { headers } = await apiAs(api, 'payroll');
   const org = (await (await api.get('/api/v1/org')).json()) as { legalEntities: { id: string; name: string }[] };
+  const [y, m] = period.split('-').map(Number) as [number, number];
+  const lock = await api.post('/api/v1/attendance/locks', { headers, data: { periodStart: `${period}-01`, periodEnd: `${period}-${String(new Date(y, m, 0).getDate()).padStart(2, '0')}` } });
+  expect([200, 201, 409]).toContain(lock.status());
+
 
   await page.goto('/payroll');
   await page.getByRole('button', { name: 'New run' }).click();
@@ -66,7 +70,7 @@ test('payroll: run, masked until shown, approved, finalized, payslip revealed an
   const run = page.getByRole('dialog', { name: new RegExp(`Payroll ${period}`) });
   await expect(run).toBeVisible();
   await run.getByRole('button', { name: 'Compute' }).click();
-  await expect(run.getByRole('table', { name: 'Employees in this run' }).or(run.getByText(/Rohan|DM-/).first())).toBeVisible();
+  await expect(run.getByText(/DM-\d+/).first()).toBeVisible();
   await settled(page);
 
   // Masked by default: no figure on screen until someone asks, and asking is on the record.
@@ -99,10 +103,6 @@ test('payroll: run, masked until shown, approved, finalized, payslip revealed an
   await decide.getByRole('button', { name: 'Approve' }).click();
   await expect(decide).toHaveCount(0);
   await approver.context().close();
-
-  const [y, m] = period.split('-').map(Number) as [number, number];
-  const lock = await api.post('/api/v1/attendance/locks', { headers, data: { periodStart: `${period}-01`, periodEnd: `${period}-${String(new Date(y, m, 0).getDate()).padStart(2, '0')}` } });
-  expect([200, 201, 409]).toContain(lock.status());
 
   const back = await pageAs(browser, 'payroll', { viewport });
   await back.goto('/payroll');
@@ -177,8 +177,9 @@ test('users: invite shows as pending, a link can be resent, and a salary level c
   await add.getByRole('button', { name: 'Save' }).click();
   await expect(page.getByText(`Invitation sent to ${email}.`)).toBeVisible();
   await page.getByLabel('Search users').fill(email);
-  await expect(page.getByText('Invited')).toBeVisible();
-  await page.getByRole('button', { name: 'Manage' }).click();
+  const person = page.getByRole('row').filter({ hasText: email }).or(page.getByRole('listitem').filter({ hasText: email }));
+  await expect(person.getByText('Invited')).toBeVisible();
+  await person.getByRole('button', { name: 'Manage' }).click();
   const manage = page.getByRole('dialog', { name: /Manage Added Person/ });
   await manage.getByRole('button', { name: 'Send invitation again' }).click();
   await expect(page.getByText(`Invitation sent to ${email}.`).first()).toBeVisible();
