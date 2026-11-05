@@ -17,6 +17,53 @@ const columns: Column<Row>[] = [
 
 afterEach(resetViewport);
 
+describe('the columns and views panel', () => {
+  const baseViews = { saved: [{ name: 'Short', hidden: ['days'], sort: null, filters: {} }], onApply: vi.fn(), onSave: vi.fn(), onDelete: vi.fn() };
+  const open = async () => { await userEvent.click(screen.getByRole('button', { name: 'Columns and views' })); return screen.findByRole('dialog', { name: 'Columns and views' }); };
+  it('lists the columns, holds required ones, and reports a toggle', async () => {
+    const onToggleColumn = vi.fn();
+    renderUi(<Table label="Days" columns={columns} rows={rows} rowKey={(r) => r.id} onToggleColumn={onToggleColumn} hidden={['days']} />);
+    const panel = await open();
+    expect((within(panel).getByRole('checkbox', { name: 'Name' }) as HTMLInputElement).disabled).toBe(true);
+    const days = within(panel).getByRole('checkbox', { name: 'Days' }) as HTMLInputElement;
+    expect(days.checked).toBe(false);
+    await userEvent.click(days);
+    expect(onToggleColumn).toHaveBeenCalledWith('days');
+  });
+  it('applying a saved view closes the panel', async () => {
+    const onApply = vi.fn();
+    renderUi(<Table label="Days" columns={columns} rows={rows} rowKey={(r) => r.id} views={{ ...baseViews, onApply }} />);
+    await userEvent.selectOptions(within(await open()).getByLabelText('Saved views'), 'Short');
+    expect(onApply).toHaveBeenCalledWith(baseViews.saved[0]);
+    expect(screen.queryByRole('dialog', { name: 'Columns and views' })).toBeNull();
+  });
+  it('saves a view under a trimmed name, and holds Save until there is one', async () => {
+    const onSave = vi.fn();
+    renderUi(<Table label="Days" columns={columns} rows={rows} rowKey={(r) => r.id} views={{ ...baseViews, saved: [], onSave }} />);
+    const panel = await open();
+    expect(within(panel).queryByLabelText('Saved views')).toBeNull();
+    const save = within(panel).getByRole('button', { name: 'Save view' }) as HTMLButtonElement;
+    expect(save.disabled).toBe(true);
+    const name = within(panel).getByLabelText('Save current view as') as HTMLInputElement;
+    await userEvent.type(name, '  Mine  ');
+    await userEvent.click(save);
+    expect(onSave).toHaveBeenCalledWith('Mine');
+    expect(name.value).toBe('');
+  });
+  it('deletes a saved view by name', async () => {
+    const onDelete = vi.fn();
+    renderUi(<Table label="Days" columns={columns} rows={rows} rowKey={(r) => r.id} views={{ ...baseViews, onDelete }} />);
+    await userEvent.click(within(await open()).getByRole('button', { name: 'Delete “Short”' }));
+    expect(onDelete).toHaveBeenCalledWith('Short');
+  });
+  it('closes on Escape', async () => {
+    renderUi(<Table label="Days" columns={columns} rows={rows} rowKey={(r) => r.id} views={baseViews} />);
+    await open();
+    await userEvent.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog', { name: 'Columns and views' })).toBeNull();
+  });
+});
+
 describe('Table on desktop', () => {
   it('a summary row is a real tfoot on desktop and a last card on phones', () => {
     const foot = (c: Column<Row>, i: number) => (i === 0 ? 'Total' : c.key === 'days' ? '5' : null);

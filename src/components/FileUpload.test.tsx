@@ -30,6 +30,21 @@ describe('FileUpload', () => {
     fireEvent.drop(container.querySelector('.file-upload')!, { dataTransfer: { files: [csv] } });
     expect(screen.getByRole('alert').textContent).toContain('larger than');
   });
+  it('highlights while a file is dragged over, and stops when it leaves', () => {
+    const { container } = renderUi(<Harness />);
+    const zone = container.querySelector('.file-upload')!;
+    fireEvent.dragOver(zone);
+    expect(zone.className).toContain('file-upload--over');
+    fireEvent.dragLeave(zone);
+    expect(zone.className).not.toContain('file-upload--over');
+  });
+  it('a required file that is missing shows the reason on the field', () => {
+    renderUi(<form><Harness required /></form>);
+    const input = screen.getByLabelText(/Resume/) as HTMLInputElement;
+    fireEvent.invalid(input);
+    expect(screen.getByRole('alert')).toBeTruthy();
+    expect(input.getAttribute('aria-invalid')).toBe('true');
+  });
   it('has no axe violations', async () => {
     const { container } = renderUi(<Harness hint="PDF only" />);
     await expectNoAxeViolations(container);

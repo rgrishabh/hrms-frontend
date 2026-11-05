@@ -24,6 +24,26 @@ describe('Picker', () => {
     expect(screen.getByTestId('value').textContent).toBe('2');
     expect(screen.getByRole('group', { name: 'Employee' }).textContent).toContain('Ben Roy');
   });
+  it('the arrows move through the list, stay in it, and Escape closes it', async () => {
+    renderUi(<Harness search={async () => people} />);
+    const box = screen.getByRole('combobox', { name: 'Employee' });
+    await userEvent.type(box, 'r');
+    await screen.findByRole('option', { name: /Ben Roy/ });
+    await waitFor(() => expect(screen.getAllByRole('option')).toHaveLength(2));
+    await userEvent.keyboard('{ArrowUp}{ArrowDown}{ArrowDown}{ArrowDown}{ArrowUp}{ArrowDown}');
+    expect(screen.getAllByRole('option')[1]!.getAttribute('aria-selected')).toBe('true');
+    await userEvent.keyboard('{Escape}');
+    expect(screen.queryByRole('option')).toBeNull();
+    await userEvent.keyboard('{ArrowDown}');
+    expect(await screen.findAllByRole('option')).toHaveLength(2);
+  });
+  it('leaving the field closes the list', async () => {
+    renderUi(<Harness search={async () => people} />);
+    await userEvent.click(screen.getByRole('combobox', { name: 'Employee' }));
+    await screen.findByRole('option', { name: /Asha Rao/ });
+    await userEvent.tab();
+    expect(screen.queryByRole('option')).toBeNull();
+  });
   it('clearing removes the selection, so no hidden id can be submitted', async () => {
     renderUi(<Harness search={async () => people} />);
     await userEvent.click(screen.getByRole('combobox', { name: 'Employee' }));

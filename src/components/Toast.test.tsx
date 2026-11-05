@@ -1,4 +1,4 @@
-import { act, screen } from '@testing-library/react';
+import { act, fireEvent, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { expectNoAxeViolations } from '../test/axe';
 import { renderUi } from '../test/render';
@@ -8,6 +8,24 @@ let toast: (text: string, kind?: ToastKind, action?: ToastAction) => void;
 function Capture() { toast = useToast(); return null; }
 
 describe('Toast', () => {
+  it('waits while hovered or focused, and starts again on leaving', () => {
+    vi.useFakeTimers();
+    try {
+      renderUi(<Capture />);
+      act(() => { toast('Saved'); });
+      const item = screen.getByText('Saved').closest('.toast')!;
+      fireEvent.mouseEnter(item);
+      act(() => { vi.advanceTimersByTime(60000); });
+      expect(screen.getByText('Saved')).toBeTruthy();
+      fireEvent.mouseLeave(item);
+      fireEvent.focus(item);
+      act(() => { vi.advanceTimersByTime(60000); });
+      expect(screen.getByText('Saved')).toBeTruthy();
+      fireEvent.blur(item);
+      act(() => { vi.advanceTimersByTime(4500); });
+      expect(screen.queryByText('Saved')).toBeNull();
+    } finally { vi.useRealTimers(); }
+  });
   it('offers an undo that runs once and closes the toast', () => {
     const undo = vi.fn();
     renderUi(<Capture />);
