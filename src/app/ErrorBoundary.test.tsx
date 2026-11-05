@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { ERROR_SURFACE_ATTR } from '../contract';
 import { expectNoAxeViolations } from '../test/axe';
@@ -10,6 +11,15 @@ function Bomb({ on }: { on: boolean }): null | never {
 }
 
 describe('ErrorBoundary', () => {
+  it('Reload reloads the page', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const reload = vi.fn();
+    vi.stubGlobal('location', { ...window.location, reload });
+    render(<ErrorBoundary><Bomb on /></ErrorBoundary>);
+    await userEvent.click(screen.getByRole('button', { name: 'Reload' }));
+    expect(reload).toHaveBeenCalledTimes(1);
+    vi.unstubAllGlobals();
+  });
   it('contains a crash, marks an error surface and offers reload', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const { container } = render(<ErrorBoundary><Bomb on /></ErrorBoundary>);
