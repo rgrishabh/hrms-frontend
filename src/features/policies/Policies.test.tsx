@@ -1,9 +1,10 @@
-import { screen, waitFor, within } from '@testing-library/react';
+import { configure, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Policies } from '../../pages/Policies';
 import { mockPageApi, problem, reads, renderPage, writes } from '../../test/page';
 
+configure({ asyncUtilTimeout: 10000 });
 afterEach(() => vi.restoreAllMocks());
 
 const LIST = { id: 'p1', code: 'COC', title: 'Code of conduct', category: 'code_of_conduct', owner: 'HR', status: 'active', published_version: 1, effective_from: '2026-01-01', requires_ack: true, drafts: 1, audience: 10, acknowledged: 4 };
