@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Clock, Hourglass } from 'lucide-react';
-import { api, qs, type Paged } from '../api';
+import { api, qs } from '../api';
 import { useAuth } from '../auth';
 import { Alert } from '../components/Alert';
 import { StatusBadge } from '../components/Badge';
@@ -24,6 +24,7 @@ import { useToast } from '../components/Toast';
 import { useSubmit, type FieldErrors } from '../components/useSubmit';
 import { useTableState } from '../components/useTableState';
 import { fmtDate, fmtMinutes, fmtTime } from '../format';
+import type { ApiItem, ApiResponse } from '../lib/api-types';
 import { invalidateApi, useApiQuery } from '../lib/query';
 import '../features/attendance/Roster.css';
 
@@ -36,13 +37,10 @@ const hours = (m: number) => `${Math.round((m / 60) * 100) / 100} h`;
 const compDays = (minutes: number, dayMinutes: number) => Math.floor(minutes / (dayMinutes / 2)) / 2;
 const reload = () => invalidateApi('/api/v1/overtime');
 
-interface EligibleDay { work_date: string; overtime_minutes: number; first_in: string | null; last_out: string | null; worked_minutes: number; shift_code: string | null }
-interface PayoutOptions { pay: boolean; payBlocker: string | null; compOff: { code: string; name: string; dayMinutes: number } | null }
-interface Eligible { items: EligibleDay[]; windowDays: number; minMinutes: number; payout: PayoutOptions }
-interface Claim {
-  id: string; work_date: string; minutes: number; recorded_minutes: number; payout: Payout; status: string; reason: string; name: string; employee_code: string;
-  payroll_period: string | null; payroll_status: string | null; comp_off_days: number | string | null; cancel_reason: string | null;
-}
+type Eligible = ApiResponse<'/api/v1/overtime/eligible'>;
+type EligibleDay = Eligible['items'][number];
+type PayoutOptions = Eligible['payout'];
+type Claim = ApiItem<'/api/v1/overtime/claims'>;
 
 export function Overtime() {
   const { canAny, can, me } = useAuth();
@@ -70,6 +68,7 @@ export function Overtime() {
 function outcome(c: Claim) {
   if (c.status === 'cancelled' && c.cancel_reason) return `Cancelled: ${c.cancel_reason}`;
   if (c.status !== 'approved') return '—';
+  if (c.payout === 'comp_off' && c.comp_off_days === null) return 'Added to leave';
   if (c.payout === 'comp_off') return `${Number(c.comp_off_days)} day${Number(c.comp_off_days) === 1 ? '' : 's'} added to leave`;
   return c.payroll_period ? `In ${c.payroll_period} payroll${['finalized', 'paid'].includes(c.payroll_status ?? '') ? '' : ' (not final yet)'}` : 'In the next payroll';
 }
@@ -78,7 +77,7 @@ function Mine() {
   const toast = useToast();
   const [page, setPage] = useState(1);
   const eligible = useApiQuery<Eligible>('/api/v1/overtime/eligible');
-  const claims = useApiQuery<Paged<Claim>>(`/api/v1/overtime/claims${qs({ scope: 'mine', page, pageSize: 25 })}`, { placeholderData: (p) => p });
+  const claims = useApiQuery<ApiResponse<'/api/v1/overtime/claims'>>(`/api/v1/overtime/claims${qs({ scope: 'mine', page, pageSize: 25 })}`, { placeholderData: (p) => p });
   const [claim, setClaim] = useState<EligibleDay | null>(null);
   const [withdraw, setWithdraw] = useState<Claim | null>(null);
   const can = (e: Eligible) => e.payout.pay || !!e.payout.compOff;
@@ -181,7 +180,7 @@ function Claims({ scope }: { scope: 'team' | 'all' }) {
   ];
   const table = useTableState(`overtime.${scope}`, columns, { filters: { status: '', period: '' } });
   const { status, period } = table.filters;
-  const query = useApiQuery<Paged<Claim> & { minutesByStatus?: Record<string, number> }>(`/api/v1/overtime/claims${qs({ scope, status, period, page: table.page, pageSize: 25 })}`, { placeholderData: (p) => p });
+  const query = useApiQuery<ApiResponse<'/api/v1/overtime/claims'>>(`/api/v1/overtime/claims${qs({ scope, status, period, page: table.page, pageSize: 25 })}`, { placeholderData: (p) => p });
   const totals = query.data?.minutesByStatus;
   return (
     <div className="stack-3">
@@ -209,7 +208,7 @@ function Claims({ scope }: { scope: 'team' | 'all' }) {
           onClose={() => setCancel(null)}
           message={`Cancel ${cancel.name}'s ${hours(cancel.minutes)} on ${fmtDate(cancel.work_date)}? ${cancel.payout === 'comp_off' ? 'The compensatory off is taken back from their leave.' : 'It will not be paid.'}`}
           onConfirm={async (reason) => {
-            const r = await api.post<{ payrollRunToRecompute?: string }>(`/api/v1/overtime/claims/${cancel.id}/cancel`, { reason });
+            const r = await api.post<ApiResponse<'/api/v1/overtime/claims/{id}/cancel', 'post'>>(`/api/v1/overtime/claims/${cancel.id}/cancel`, { reason });
             toast(r.payrollRunToRecompute ? `Claim cancelled. Recompute the ${r.payrollRunToRecompute} payroll run.` : 'Claim cancelled');
             await reload();
           }}

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { MapPin } from 'lucide-react';
-import { api, qs, type Paged } from '../api';
+import { api, qs } from '../api';
 import { useAuth } from '../auth';
 import { StatusBadge } from '../components/Badge';
 import { Button } from '../components/Button';
@@ -23,6 +23,7 @@ import { useSubmit, type FieldErrors } from '../components/useSubmit';
 import { useTableState } from '../components/useTableState';
 import { EmployeeField } from '../features/employees/EmployeeField';
 import { fmtDate, todayLocal } from '../format';
+import type { ApiItem, ApiResponse } from '../lib/api-types';
 import { invalidateApi, useApiQuery } from '../lib/query';
 import '../features/attendance/Roster.css';
 
@@ -39,11 +40,8 @@ const usePurposes = (): Record<string, string> => {
   return { client_visit: 'Client visit', field_sampling: hasFeature('FEATURE_LAB_COMPETENCY') ? 'Field sampling' : 'Field work', site_audit: 'Site audit', training: 'Training', official_work: 'Official work', other: 'Other' };
 };
 
-interface Duty {
-  id: string; employee_id: string; start_date: string; end_date: string; day_part: string; purpose: string; place: string; client_name: string | null; reference: string | null; reason: string; status: string;
-  outcome: string | null; outcome_note: string | null; cancel_reason: string | null; recorded_by_other?: boolean; name?: string; employee_code?: string; department?: string | null;
-}
-type DutyPage = Paged<Duty> & { today?: string };
+type Duty = ApiItem<'/api/v1/field-duty/requests'>;
+type DutyPage = ApiResponse<'/api/v1/field-duty/requests'>;
 
 const when = (d: Duty) => (d.start_date === d.end_date
   ? `${fmtDate(d.start_date)}${d.day_part === 'full' ? '' : ` · ${PART[d.day_part]!.toLowerCase()}`}`

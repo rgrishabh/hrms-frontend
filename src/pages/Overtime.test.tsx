@@ -150,6 +150,13 @@ describe('claiming', () => {
 });
 
 describe('my claims', () => {
+  it('an approved compensatory off with no day count on record does not read as zero days', async () => {
+    api(MINE, { items: [claim({ status: 'approved', payout: 'comp_off', comp_off_days: null })] });
+    renderPage(<Overtime />);
+    const table = await screen.findByRole('table', { name: 'My overtime claims' });
+    expect(within(table).queryByText(/0 days/)).toBeNull();
+    expect(within(table).getByText('Added to leave')).toBeTruthy();
+  });
   it('says what became of each claim', async () => {
     api(MINE, { items: [
       claim({ id: 'a', work_date: '2026-10-01', status: 'approved', payout: 'comp_off', comp_off_days: '1' }),
