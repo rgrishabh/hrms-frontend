@@ -10,6 +10,7 @@
 .topbar__spacer { flex: 1; }
 .topbar__brand { display: inline-flex; align-items: center; gap: var(--space-2); min-width: 0; font-weight: var(--weight-semibold); }
 .topbar__brand > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.topbar__brand + .crumbs { margin-left: var(--space-4); }
 .topbar__search { display: inline-flex; align-items: center; gap: var(--space-2); min-height: 32px; min-width: 200px; padding: 0 var(--space-2); background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--radius); color: var(--text-2); font-size: var(--text-sm); cursor: pointer; }
 .topbar__search svg { width: 14px; height: 14px; }
 .topbar__search span { flex: 1; text-align: left; }
@@ -27,7 +28,7 @@
 .offline-banner svg { width: 16px; height: 16px; flex: none; }
 
 .side { display: flex; flex-direction: column; height: 100%; min-height: 0; }
-.side__brand { display: flex; align-items: center; gap: var(--space-2); min-height: var(--topbar-height); padding: var(--space-2) var(--space-4); border-bottom: 1px solid var(--border); font-weight: var(--weight-semibold); }
+.side__brand { display: flex; align-items: center; gap: var(--space-2); min-height: var(--topbar-height); padding: var(--space-1) var(--space-4); border-bottom: 1px solid var(--border); font-weight: var(--weight-semibold); }
 .side__brand-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .side__switch { padding: var(--space-3) var(--space-3) 0; }
 .side__nav { flex: 1; min-height: 0; overflow-y: auto; padding: var(--space-2) var(--space-2) var(--space-4); }

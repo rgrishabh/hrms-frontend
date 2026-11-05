@@ -31,3 +31,19 @@ for (const width of [360, 1440]) {
     });
   }
 }
+
+for (const s of SCREENS) {
+  test(`prints no empty value: ${s.path}`, async ({ page }) => {
+    await mockApi(page, { persona: s.persona });
+    await page.goto(s.path);
+    await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible();
+    await page.waitForLoadState('networkidle');
+    // Monospace text is data shown as it is stored, such as the JSON of a statutory rule, where null means something.
+    const text = await page.locator('#main').evaluate((main) => {
+      const copy = main.cloneNode(true) as HTMLElement;
+      copy.querySelectorAll('.mono').forEach((el) => el.remove());
+      return copy.textContent;
+    });
+    expect(text).not.toMatch(/\b(NaN|undefined|null)\b|\[object Object\]/);
+  });
+}

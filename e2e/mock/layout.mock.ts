@@ -124,3 +124,30 @@ test.describe('desktop shell', () => {
     await expect(page.getByRole('heading', { level: 1, name: 'Notifications' })).toBeVisible();
   });
 });
+
+test.describe('above 860px', () => {
+  for (const width of [861, 1024, 1440, 1920]) {
+    for (const expanded of [false, true]) {
+      test(`the rail and top bar line up at ${width}, ${expanded ? 'expanded' : 'icons only'}`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 800 });
+        await mockApi(page, { persona: 'hr' });
+        await page.addInitScript((on) => localStorage.setItem('hrms.nav.expanded', on ? '1' : '0'), expanded);
+        await page.goto('/employees');
+        await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible();
+        expect(await noSidewaysScroll(page)).toBeLessThanOrEqual(0);
+        const bottom = (selector: string) => page.locator(selector).evaluate((el) => el.getBoundingClientRect().bottom);
+        expect(await bottom('.side__brand')).toBe(await bottom('.topbar'));
+        const rail = await page.locator('.shell__rail').boundingBox();
+        expect(rail?.width).toBe(expanded ? 232 : 56);
+        const main = await page.locator('.shell__main').boundingBox();
+        expect(main?.width).toBeLessThanOrEqual(1240);
+        expect(main!.x).toBeGreaterThanOrEqual(rail!.width);
+        if (!expanded) {
+          const brand = await page.locator('.topbar__brand').boundingBox();
+          const crumbs = await page.locator('.crumbs').boundingBox();
+          expect(crumbs!.x - (brand!.x + brand!.width), 'product name and breadcrumbs read as one line').toBeGreaterThanOrEqual(16);
+        }
+      });
+    }
+  }
+});
