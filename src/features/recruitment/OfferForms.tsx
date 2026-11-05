@@ -8,6 +8,7 @@ import { Modal } from '../../components/Modal';
 import { useToast } from '../../components/Toast';
 import { useSubmit } from '../../components/useSubmit';
 import { addDays, currencySymbol, fmtDate, todayLocal } from '../../format';
+import type { ApiResponse } from '../../lib/api-types';
 import { invalidateApi, useApiQuery } from '../../lib/query';
 import { useOrg } from '../org/useOrg';
 import { OrgFields } from './OrgFields';
@@ -18,13 +19,14 @@ interface OfferValues extends OrgValues { designation: string; annualCtc: number
 const blank = (): OfferValues => ({ designation: '', legalEntityId: '', branchId: '', departmentId: null, employmentType: 'permanent', annualCtc: '', joiningDate: addDays(todayLocal(), 30), probationMonths: 6, contractEndDate: '', notes: '' });
 
 const fromOffer = (o: Offer): OfferValues => ({
-  designation: o.designation, legalEntityId: o.legal_entity_id ?? '', branchId: o.branch_id ?? '', departmentId: o.department_id ?? null, employmentType: o.employment_type, annualCtc: o.annual_ctc ?? '',
-  joiningDate: o.joining_date, probationMonths: o.probation_months ?? '', contractEndDate: o.contract_end_date ?? '', notes: o.notes ?? '',
+  designation: o.designation, legalEntityId: '', branchId: '', departmentId: null, employmentType: o.employment_type, annualCtc: o.annual_ctc ?? '',
+  joiningDate: o.joining_date, probationMonths: o.probation_months ?? '', contractEndDate: '', notes: o.notes ?? '',
 });
 
 /**
  * Drafts or edits an offer. PUT replaces the whole offer, but the application's offer rows carry only the branch name, not the
- * ids. So the branch is matched by name and the legal entity follows it; the department starts from the requisition.
+ * ids, and no contract end date. So the branch is matched by name and the legal entity follows it; the department starts from
+ * the requisition, and the contract end date is asked for again.
  * A new offer also starts from the requisition, because it nearly always repeats it.
  */
 export function OfferForm({ applicationId, requisitionId, offer, onClose }: { applicationId: string; requisitionId: string; offer?: Offer; onClose: () => void }) {
@@ -39,15 +41,15 @@ export function OfferForm({ applicationId, requisitionId, offer, onClose }: { ap
     filled.current = true;
     const r = req.data;
     if (offer) {
-      const branch = org.data.branches.find((b) => b.id === offer.branch_id || b.name === offer.branch_name);
-      setF((c) => ({ ...c, branchId: c.branchId || branch?.id || '', legalEntityId: c.legalEntityId || branch?.legal_entity_id || '', departmentId: offer.department_id !== undefined ? offer.department_id : r?.department_id ?? null }));
+      const branch = org.data.branches.find((b) => b.name === offer.branch_name);
+      setF((c) => ({ ...c, branchId: c.branchId || branch?.id || '', legalEntityId: c.legalEntityId || branch?.legal_entity_id || '', departmentId: r?.department_id ?? null }));
     } else if (r) {
       setF((c) => ({ ...c, designation: c.designation || (r.designation ?? ''), legalEntityId: c.legalEntityId || r.legal_entity_id, branchId: c.branchId || r.branch_id, departmentId: c.departmentId ?? r.department_id, employmentType: r.employment_type }));
     }
   }, [org.data, req.data, req.isPending, offer]);
   const form = useSubmit(async () => {
     const body = { ...f, annualCtc: Number(f.annualCtc), probationMonths: f.probationMonths === '' ? null : Number(f.probationMonths), contractEndDate: f.contractEndDate || null, notes: f.notes || null };
-    const r = offer ? await api.put<{ aboveBudget: boolean }>(`/api/v1/recruitment/offers/${offer.id}`, body) : await api.post<{ aboveBudget: boolean }>(`/api/v1/recruitment/applications/${applicationId}/offers`, body);
+    const r = offer ? await api.put<ApiResponse<'/api/v1/recruitment/offers/{id}', 'put'>>(`/api/v1/recruitment/offers/${offer.id}`, body) : await api.post<ApiResponse<'/api/v1/recruitment/applications/{id}/offers', 'post'>>(`/api/v1/recruitment/applications/${applicationId}/offers`, body);
     toast(r.aboveBudget ? 'Draft saved — above the requisition budget' : 'Draft saved');
     await invalidateApi('/api/v1/recruitment');
     onClose();
@@ -65,7 +67,7 @@ export function OfferForm({ applicationId, requisitionId, offer, onClose }: { ap
         </div>
         <Textarea label="Notes" error={form.errors['notes']} value={f.notes} onChange={(e) => set({ notes: e.target.value })} />
         {offer?.status === 'rejected' && <Alert tone="warn">This offer was rejected. Saving returns it to draft, and it needs approval again.</Alert>}
-        {offer && offer.department_id === undefined && <p className="text-xs text-3">Check the department and contract end date. They start from the requisition, not from the saved offer.</p>}
+        {offer && <p className="text-xs text-3">Check the department and contract end date. They start from the requisition, not from the saved offer.</p>}
         <p className="text-xs text-3">The approval request shows candidate and designation only. Compensation stays visible only to people with compensation access.</p>
         <FormActions error={form.error} busy={form.busy} submitLabel={offer ? 'Save changes' : 'Save draft'} onCancel={onClose} />
       </form>
@@ -78,7 +80,7 @@ export function HireForm({ offer, onClose }: { offer: Offer; onClose: () => void
   const [code, setCode] = useState('');
   const [email, setEmail] = useState('');
   const form = useSubmit(async () => {
-    const r = await api.post<{ requisitionClosed?: boolean }>(`/api/v1/recruitment/offers/${offer.id}/hire`, { employeeCode: code, workEmail: email || undefined });
+    const r = await api.post<ApiResponse<'/api/v1/recruitment/offers/{id}/hire', 'post'>>(`/api/v1/recruitment/offers/${offer.id}/hire`, { employeeCode: code, workEmail: email || undefined });
     toast(r.requisitionClosed ? 'Employee created (pre-joining); the requisition is now filled and closed' : 'Employee created (pre-joining)');
     await invalidateApi('/api/v1/recruitment', '/api/v1/employees');
     onClose();

@@ -5,13 +5,14 @@ import { EmptyState } from '../../components/EmptyState';
 import { QueryState } from '../../components/QueryState';
 import { Table, type Column } from '../../components/Table';
 import { fmtDateTime } from '../../format';
+import type { ApiResponse } from '../../lib/api-types';
 import { useApiQuery } from '../../lib/query';
 import { KINDS, personName, type MyInterview } from './types';
 
 const feedbackBadge = (i: MyInterview) => (i.submitted_at ? <Badge tone="ok">Submitted</Badge> : new Date(i.scheduled_at) > new Date() ? <Badge>Upcoming</Badge> : <Badge tone="warn">Due</Badge>);
 
 export function MyInterviews({ onOpenApp }: { onOpenApp: (id: string) => void }) {
-  const query = useApiQuery<{ items: MyInterview[] }>('/api/v1/recruitment/interviews/mine');
+  const query = useApiQuery<ApiResponse<'/api/v1/recruitment/interviews/mine'>>('/api/v1/recruitment/interviews/mine');
   const columns: Column<MyInterview>[] = [
     { key: 'candidate', header: 'Candidate', card: 'title', cell: (i) => <Button variant="link" onClick={() => onOpenApp(i.application_id)}>{personName(i)}</Button> },
     { key: 'feedback', header: 'Your feedback', card: 'status', cell: feedbackBadge },

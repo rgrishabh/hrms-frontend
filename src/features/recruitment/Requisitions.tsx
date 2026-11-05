@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { BriefcaseBusiness, UserPlus } from 'lucide-react';
-import { api, qs, type Paged } from '../../api';
+import { api, qs } from '../../api';
 import { useAuth } from '../../auth';
 import { statusLabel, StatusBadge } from '../../components/Badge';
 import { Button } from '../../components/Button';
@@ -24,11 +24,12 @@ import { useToast } from '../../components/Toast';
 import { useAction, useSubmit } from '../../components/useSubmit';
 import { useTableState } from '../../components/useTableState';
 import { currencySymbol, fmtDate } from '../../format';
+import type { ApiResponse } from '../../lib/api-types';
 import { invalidateApi, useApiQuery } from '../../lib/query';
 import { EmployeeField } from '../employees/EmployeeField';
 import { CandidateForm } from './Candidates';
 import { OrgFields } from './OrgFields';
-import { personName, REQ_STATUSES, SOURCES, STAGE_LABEL, years, type CandidateRow, type Requisition, type RequisitionApplication, type RequisitionRow, type RequisitionValues } from './types';
+import { personName, REQ_STATUSES, SOURCES, STAGE_LABEL, years, type CandidatePage, type Requisition, type RequisitionApplication, type RequisitionPage, type RequisitionRow, type RequisitionValues } from './types';
 
 const REQ_URL = '/api/v1/recruitment/requisitions';
 const BLANK: RequisitionValues = { title: '', legalEntityId: '', branchId: '', departmentId: null, designation: '', employmentType: 'permanent', positions: 1, justification: '', budgetCtcMax: '', hiringManagerId: null, targetDate: '' };
@@ -52,7 +53,7 @@ export function Requisitions({ onOpenApp }: { onOpenApp: (id: string) => void })
   ], []);
   const table = useTableState('recruitment.requisitions', columns);
   const status = table.filters['status'] ?? '';
-  const query = useApiQuery<Paged<RequisitionRow>>(`${REQ_URL}${qs({ status, page: table.page, pageSize: 25 })}`, { placeholderData: (p) => p });
+  const query = useApiQuery<RequisitionPage>(`${REQ_URL}${qs({ status, page: table.page, pageSize: 25 })}`, { placeholderData: (p) => p });
   return (
     <div className="stack-4">
       <FilterBar
@@ -83,7 +84,7 @@ function RequisitionForm({ init, onClose, onSaved }: { init: RequisitionValues; 
     };
     let id = f.id;
     if (id) await api.put(`${REQ_URL}/${id}`, { ...body, expectedVersion: f.version });
-    else id = (await api.post<{ id: string }>(REQ_URL, body)).id;
+    else id = (await api.post<ApiResponse<'/api/v1/recruitment/requisitions', 'post'>>(REQ_URL, body)).id;
     toast('Draft saved');
     await invalidateApi(REQ_URL);
     onSaved(id);
@@ -185,7 +186,7 @@ function AddToRequisition({ requisitionId, onClose }: { requisitionId: string; o
   const [search, setSearch] = useState('');
   const [creating, setCreating] = useState(false);
   const debounced = useDebouncedValue(search.trim());
-  const query = useApiQuery<Paged<CandidateRow>>(`/api/v1/recruitment/candidates${qs({ search: debounced, pageSize: 15 })}`, { placeholderData: (p) => p });
+  const query = useApiQuery<CandidatePage>(`/api/v1/recruitment/candidates${qs({ search: debounced, pageSize: 15 })}`, { placeholderData: (p) => p });
   const add = async (candidateId: string) => {
     const ok = await run(candidateId, async () => { await api.post('/api/v1/recruitment/applications', { requisitionId, candidateId }); await invalidateApi(REQ_URL, '/api/v1/recruitment/candidates'); }, 'Added to the pipeline');
     if (ok) onClose();

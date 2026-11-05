@@ -13,10 +13,11 @@ import { SkeletonRows } from '../../components/Skeleton';
 import { useToast } from '../../components/Toast';
 import { useSubmit } from '../../components/useSubmit';
 import { localInputToIso } from '../../format';
+import type { ApiItem, ApiResponse } from '../../lib/api-types';
 import { invalidateApi, useApiQuery } from '../../lib/query';
 import { KINDS, options, RECOMMENDATION, type Interview } from './types';
 
-interface PanelUser { id: string; display_name: string; designation?: string | null }
+type PanelUser = ApiItem<'/api/v1/recruitment/panel-users'>;
 
 export function ScheduleInterview({ applicationId, nextRound, onClose }: { applicationId: string; nextRound: number; onClose: () => void }) {
   const toast = useToast();
@@ -24,7 +25,7 @@ export function ScheduleInterview({ applicationId, nextRound, onClose }: { appli
   const [panel, setPanel] = useState<PanelUser[]>([]);
   const [search, setSearch] = useState('');
   const debounced = useDebouncedValue(search.trim());
-  const users = useApiQuery<{ items: PanelUser[] }>(`/api/v1/recruitment/panel-users${qs({ search: debounced })}`, { placeholderData: (p) => p });
+  const users = useApiQuery<ApiResponse<'/api/v1/recruitment/panel-users'>>(`/api/v1/recruitment/panel-users${qs({ search: debounced })}`, { placeholderData: (p) => p });
   const form = useSubmit(async () => {
     await api.post(`/api/v1/recruitment/applications/${applicationId}/interviews`, { round: Number(f.round), kind: f.kind, scheduledAt: localInputToIso(f.at), durationMin: Number(f.durationMin), location: f.location || null, panelUserIds: panel.map((p) => p.id) });
     toast('Interview scheduled; the panel was notified');

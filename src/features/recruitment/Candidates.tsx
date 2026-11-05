@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { Users } from 'lucide-react';
-import { api, ApiError, qs, type Paged } from '../../api';
+import { api, ApiError, qs } from '../../api';
 import { useAuth } from '../../auth';
 import { Alert } from '../../components/Alert';
 import { Badge, StatusBadge } from '../../components/Badge';
@@ -27,7 +27,7 @@ import { useSubmit } from '../../components/useSubmit';
 import { useTableState } from '../../components/useTableState';
 import { currencySymbol, fmtDate, fmtDateTime } from '../../format';
 import { invalidateApi, useApiQuery } from '../../lib/query';
-import { options, personName, SOURCES, years, type Candidate, type CandidateRow } from './types';
+import { options, personName, SOURCES, years, type Candidate, type CandidatePage, type CandidateRow } from './types';
 
 const CANDIDATES = '/api/v1/recruitment/candidates';
 
@@ -47,7 +47,7 @@ export function Candidates({ onOpenApp }: { onOpenApp: (id: string) => void }) {
     { key: 'retain', header: 'Keep until', cell: (c) => fmtDate(c.retain_until) },
   ], []);
   const table = useTableState('recruitment.candidates', columns);
-  const query = useApiQuery<Paged<CandidateRow>>(`${CANDIDATES}${qs({ search: debounced, page: table.page, pageSize: 25 })}`, { placeholderData: (p) => p });
+  const query = useApiQuery<CandidatePage>(`${CANDIDATES}${qs({ search: debounced, page: table.page, pageSize: 25 })}`, { placeholderData: (p) => p });
   return (
     <div className="stack-4">
       <FilterBar
