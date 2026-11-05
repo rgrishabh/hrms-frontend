@@ -223,7 +223,8 @@ function AssignRoster({ pattern, shifts, onClose, onDone }: { pattern: Pattern; 
   const [from, setFrom] = useState(todayLocal());
   const [startDay, setStartDay] = useState(0);
   const code = (id: string | null) => (id ? shifts.find((s) => s.id === id)?.code ?? '?' : 'Off');
-  const preview = Array.from({ length: Math.min(14, Math.max(7, pattern.days.length)) }, (_, i) => ({ date: addDays(from, i), shift: pattern.days[(startDay + i) % pattern.days.length] ?? null }));
+  // The date field is empty while someone retypes it, and there is nothing to preview from then.
+  const preview = !from ? [] : Array.from({ length: Math.min(14, Math.max(7, pattern.days.length)) }, (_, i) => ({ date: addDays(from, i), shift: pattern.days[(startDay + i) % pattern.days.length] ?? null }));
   const f = useSubmit(async () => {
     const r = await api.post<{ assigned: number }>('/api/v1/attendance/roster-assignments', { employeeIds: Object.keys(selected), patternId: pattern.id, effectiveFrom: from, startDay });
     onDone(`${r.assigned} ${r.assigned === 1 ? 'person' : 'people'} on ${pattern.code} from ${fmtDate(from)}`);
