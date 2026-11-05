@@ -34,7 +34,8 @@ const METHOD_LABEL: Record<string, string> = { totp: 'Authenticator app', email:
 type SessionRow = ApiResponse<'/api/v1/auth/sessions'>['items'][number];
 
 /** A rough name for a browser: enough to tell two sessions apart, without a user-agent parsing library. */
-function deviceName(ua: string): string {
+function deviceName(userAgent: string | null): string {
+  const ua = userAgent ?? '';
   const browser = /Edg\//.test(ua) ? 'Edge' : /Chrome\//.test(ua) ? 'Chrome' : /Firefox\//.test(ua) ? 'Firefox' : /Safari\//.test(ua) ? 'Safari' : 'Browser';
   const os = /Android/.test(ua) ? 'Android' : /iPhone|iPad/.test(ua) ? 'iOS' : /Mac OS X/.test(ua) ? 'macOS' : /Windows/.test(ua) ? 'Windows' : /Linux/.test(ua) ? 'Linux' : null;
   return os ? `${browser} on ${os}` : browser;

@@ -5333,7 +5333,11 @@ export interface operations {
                             key: string;
                             label: string;
                         }[];
-                        items: unknown[];
+                        items: {
+                            ledger_name: string;
+                            map_key: string;
+                            updated_at: string;
+                        }[];
                     };
                 };
             };
@@ -5379,6 +5383,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -5416,6 +5431,16 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description A file */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/xml": string;
+                    "text/csv": string;
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -5511,6 +5536,16 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description A file */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/xml": string;
+                    "text/csv": string;
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -5546,6 +5581,29 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        balanced: boolean;
+                        date: string;
+                        entries: {
+                            credit: string;
+                            debit: string;
+                            key: string;
+                            label: string;
+                            ledger: string | null;
+                        }[];
+                        missing: string[];
+                        narration: string;
+                        number: string;
+                        total: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -5593,9 +5651,13 @@ export interface operations {
                             claim_count: number;
                             created_at: string;
                             id: string;
-                            last_export?: unknown;
-                            paid_at?: unknown;
-                            payment_reference?: unknown;
+                            last_export?: {
+                                at: string;
+                                by: string;
+                                format: string;
+                            } | null;
+                            paid_at?: string | null;
+                            payment_reference?: string | null;
                             status: string;
                             total: string;
                         }[];
@@ -5603,11 +5665,13 @@ export interface operations {
                             excluded?: number;
                             id: string;
                             kind: string;
-                            last_export: {
+                            last_export: ({
                                 at: string;
                                 by: string;
                                 format: string;
-                            } | null;
+                            } & {
+                                [key: string]: unknown;
+                            }) | null;
                             legal_entity: string;
                             masked?: boolean;
                             maskedFields?: string[];
@@ -5668,23 +5732,23 @@ export interface operations {
                 content: {
                     "application/json": {
                         created_at: string;
-                        decided_at: string;
+                        decided_at: string | null;
                         entity_id: string;
                         entity_type: string;
                         id: string;
                         requester_id: string;
                         status: string;
                         steps: {
-                            acted_at: string;
+                            acted_at: string | null;
                             acted_by_name: string;
                             acted_for_name: string;
-                            acted_via: string;
+                            acted_via: string | null;
                             approver_kind: string;
                             approver_name: string;
-                            approver_permission?: unknown;
-                            comment?: unknown;
+                            approver_permission?: string | null;
+                            comment?: string | null;
                             escalated_at: string | null;
-                            escalated_permission?: unknown;
+                            escalated_permission?: string | null;
                             escalated_to_name: string | null;
                             status: string;
                             step_index: number;
@@ -5782,6 +5846,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -5825,6 +5900,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -5860,6 +5946,22 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            code: string | null;
+                            designation: string | null;
+                            id: string;
+                            name: string;
+                        }[];
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -5895,6 +5997,62 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        given?: {
+                            created_at: string;
+                            created_by_name: string;
+                            delegate_id: string;
+                            delegate_name: string;
+                            delegator_id: string;
+                            delegator_name: string;
+                            ends_on: string;
+                            id: string;
+                            note: string | null;
+                            revoked_at: string | null;
+                            set_up_by_hr: boolean;
+                            starts_on: string;
+                            state: string;
+                        }[];
+                        items?: {
+                            created_at: string;
+                            created_by_name: string;
+                            delegate_id: string;
+                            delegate_name: string;
+                            delegator_id: string;
+                            delegator_name: string;
+                            ends_on: string;
+                            id: string;
+                            note: string | null;
+                            revoked_at: string | null;
+                            set_up_by_hr: boolean;
+                            starts_on: string;
+                            state: string;
+                        }[];
+                        received?: {
+                            created_at: string;
+                            created_by_name: string;
+                            delegate_id: string;
+                            delegate_name: string;
+                            delegator_id: string;
+                            delegator_name: string;
+                            ends_on: string;
+                            id: string;
+                            note: string | null;
+                            revoked_at: string | null;
+                            set_up_by_hr: boolean;
+                            starts_on: string;
+                            state: string;
+                        }[];
+                        today: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -5940,6 +6098,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -5975,6 +6144,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -6086,7 +6266,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        items: unknown[];
+                        items: {
+                            created_at: string;
+                            decided_at: string | null;
+                            entity_id: string;
+                            entity_type: string;
+                            id: string;
+                            status: string;
+                            summary: string;
+                        }[];
                         page: number;
                         pageSize: number;
                         total: number;
@@ -6129,6 +6317,27 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            created_at: string;
+                            entity_id: string;
+                            entity_type: string;
+                            id: string;
+                            requester_name: string;
+                            summary: string;
+                        }[];
+                        page: number;
+                        pageSize: number;
+                        total: number;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -6169,6 +6378,38 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            acknowledged_at: string | null;
+                            branch_id: string | null;
+                            branch_name: string | null;
+                            calibration_due: string | null;
+                            category: string;
+                            due_back: string | null;
+                            holder_id: string | null;
+                            holder_name: string | null;
+                            id: string;
+                            issued_at: string | null;
+                            name: string;
+                            notes: string | null;
+                            purchase_date: string | null;
+                            serial_number: string | null;
+                            status: string;
+                            tag: string;
+                        }[];
+                        page: number;
+                        pageSize: number;
+                        today: string;
+                        total: number;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -6221,6 +6462,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -6275,6 +6527,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -6310,6 +6573,30 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            acknowledged_at: string | null;
+                            condition_in: string | null;
+                            condition_out: string | null;
+                            due_back: string | null;
+                            employee_code: string;
+                            employee_name: string;
+                            id: string;
+                            issued_at: string;
+                            issued_by_name: string;
+                            outcome: string | null;
+                            received_by_name: string | null;
+                            returned_at: string | null;
+                        }[];
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -6356,6 +6643,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -6400,6 +6698,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -6435,6 +6744,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -6468,6 +6788,27 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            acknowledged_at: string | null;
+                            category: string;
+                            condition_out: string | null;
+                            due_back: string | null;
+                            id: string;
+                            issued_at: string;
+                            name: string;
+                            serial_number: string | null;
+                            tag: string;
+                        }[];
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -6508,6 +6849,40 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            branch_name: string;
+                            early_exit_minutes: number | null;
+                            employee_code: string;
+                            employee_id: string;
+                            exceptions: string[] | null;
+                            first_in: string | null;
+                            last_out: string | null;
+                            late_minutes: number | null;
+                            locked: boolean | null;
+                            name: string;
+                            overtime_minutes: number | null;
+                            selfie_id?: string | null;
+                            shift_code: string | null;
+                            status: string;
+                            worked_minutes: number | null;
+                        }[];
+                        page: number;
+                        pageSize: number;
+                        summary: {
+                            count: number;
+                            status: string;
+                        }[];
+                        total: number;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -6544,6 +6919,29 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            device_name: string;
+                            device_time: string | null;
+                            device_user_id: string | null;
+                            direction: string;
+                            event_time: string;
+                            id: string;
+                            received_at: string;
+                            serial_number: string;
+                        }[];
+                        page: number;
+                        pageSize: number;
+                        total: number;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -6580,6 +6978,25 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            device_user_id: string;
+                            employee_code: string;
+                            employee_id: string;
+                            name: string;
+                        }[];
+                        page: number;
+                        pageSize: number;
+                        total: number;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -6622,6 +7039,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        reprocessedEvents: number;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -6655,6 +7083,30 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            adapter_key: string;
+                            api_key_prefix: string;
+                            branch_id: string;
+                            branch_name: string;
+                            id: string;
+                            last_clock_drift_seconds: number | null;
+                            last_error: string | null;
+                            last_sync_at: string | null;
+                            name: string;
+                            serial_number: string;
+                            status: string;
+                            unmapped_events: number;
+                        }[];
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -6699,6 +7151,18 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        apiKey: string;
+                        id: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -6744,6 +7208,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -6779,6 +7254,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        apiKey: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -6817,6 +7303,44 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        days: {
+                            calc_version: number;
+                            day_type: string;
+                            duty_fraction: string;
+                            early_exit_minutes: number;
+                            exceptions: string[];
+                            first_in: string | null;
+                            last_out: string | null;
+                            late_minutes: number;
+                            leave_fraction: string;
+                            leave_type_code: string | null;
+                            locked: boolean;
+                            overtime_minutes: number;
+                            punch_count: number;
+                            shift_code: string;
+                            status: string;
+                            work_date: string;
+                            worked_minutes: number;
+                        }[];
+                        events: {
+                            device_time: string | null;
+                            direction: string;
+                            event_time: string;
+                            id: string;
+                            source: string;
+                            status: string;
+                        }[];
+                        timezone: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -6850,6 +7374,24 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            branch_id: string;
+                            branch_name: string;
+                            latitude: string;
+                            longitude: string;
+                            radius_m: number;
+                            updated_at: string;
+                        }[];
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -6893,6 +7435,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -6928,6 +7481,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -6963,6 +7527,24 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            branch_id: string | null;
+                            branch_name: string | null;
+                            holiday_date: string;
+                            id: string;
+                            name: string;
+                            optional: boolean;
+                        }[];
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -7006,6 +7588,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -7041,6 +7634,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -7077,6 +7681,26 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            id: string;
+                            locked_at: string;
+                            locked_by: string;
+                            period_end: string;
+                            period_start: string;
+                        }[];
+                        page: number;
+                        pageSize: number;
+                        total: number;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -7117,6 +7741,18 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                        rowsLocked: number;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -7170,7 +7806,7 @@ export interface operations {
                             last_out: string | null;
                             late_minutes: number;
                             leave_fraction: string;
-                            leave_type_code?: unknown;
+                            leave_type_code?: string | null;
                             locked: boolean;
                             overtime_minutes: number;
                             punch_count: number;
@@ -7180,7 +7816,7 @@ export interface operations {
                             worked_minutes: number;
                         }[];
                         events: {
-                            device_time?: unknown;
+                            device_time?: string | null;
                             direction: string;
                             event_time: string;
                             id: string;
@@ -7388,6 +8024,19 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        daysCalculated: number;
+                        employees: number;
+                        lockedDaysSkipped: number;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -7426,6 +8075,32 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            approval_request_id: string;
+                            created_at: string;
+                            decided_at: string | null;
+                            employee_code: string;
+                            id: string;
+                            name: string;
+                            reason: string;
+                            requested_in: string | null;
+                            requested_out: string | null;
+                            status: string;
+                            work_date: string;
+                        }[];
+                        page: number;
+                        pageSize: number;
+                        total: number;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -7470,6 +8145,18 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        approvalRequestId: string;
+                        id: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -7508,6 +8195,42 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        canEdit: boolean;
+                        dates: string[];
+                        from: string;
+                        items: {
+                            code: string;
+                            days: {
+                                date: string;
+                                holiday: string | null;
+                                off: boolean;
+                                pattern: string | null;
+                                reason: string | null;
+                                shiftId: string | null;
+                                source: string;
+                            }[];
+                            department: string;
+                            id: string;
+                            name: string;
+                        }[];
+                        shifts: {
+                            code: string;
+                            end_time: string;
+                            id: string;
+                            name: string;
+                            start_time: string;
+                        }[];
+                        to: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -7553,6 +8276,18 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        assigned: number;
+                        recalculated: number;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -7593,6 +8328,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ended: number;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -7636,6 +8382,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -7672,6 +8429,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -7705,6 +8473,26 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            code: string;
+                            days: (string | null)[];
+                            employees: number;
+                            id: string;
+                            name: string;
+                            status: string;
+                            updated_at: string;
+                            used: boolean;
+                        }[];
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -7746,6 +8534,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -7790,6 +8589,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -7869,6 +8679,15 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description A file */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/*": string;
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -7912,6 +8731,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        assigned: number;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -7948,6 +8778,34 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            break_minutes: number;
+                            code: string;
+                            early_exit_grace_minutes: number;
+                            end_time: string;
+                            full_day_min_minutes: number;
+                            grace_minutes: number;
+                            half_day_min_minutes: number;
+                            id: string;
+                            name: string;
+                            overnight: boolean;
+                            overtime_after_minutes: number | null;
+                            start_time: string;
+                            status: string;
+                        }[];
+                        page: number;
+                        pageSize: number;
+                        total: number;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -8005,6 +8863,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -8064,6 +8933,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -8205,7 +9085,7 @@ export interface operations {
                 content: {
                     "application/json": {
                         capabilities: {
-                            [key: string]: unknown;
+                            [key: string]: boolean;
                         };
                         csrfToken: string;
                         mfa: {
@@ -8382,6 +9262,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        sent: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -8519,7 +9410,7 @@ export interface operations {
                     "application/json": {
                         enabled: boolean;
                         enforced: boolean;
-                        method?: unknown;
+                        method?: string | null;
                         methods: {
                             method: string;
                             reason?: string;
@@ -8568,6 +9459,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        recoveryCodes: string[];
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -8913,10 +9815,10 @@ export interface operations {
                             current: boolean;
                             expires_at: string;
                             id: string;
-                            ip: string;
+                            ip: string | null;
                             last_seen_at: string;
                             mfa_verified: boolean;
-                            user_agent: string;
+                            user_agent: string | null;
                         }[];
                     };
                 };
@@ -9101,6 +10003,35 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            anonymous: boolean;
+                            assignee_name: string | null;
+                            category: string;
+                            closed_at: string | null;
+                            complainant_name: string | null;
+                            id: string;
+                            inquiry_due: string | null;
+                            kind: string;
+                            number: number;
+                            received_at: string;
+                            reference: string;
+                            report_due: string | null;
+                            sla_due: string | null;
+                            status: string;
+                        }[];
+                        page: number;
+                        pageSize: number;
+                        total: number;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -9153,6 +10084,18 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                        reference: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -9188,6 +10131,47 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        allowedMoves: string[];
+                        anonymous: boolean;
+                        assigneeName: string | null;
+                        category: string;
+                        closedAt: string | null;
+                        complainantName: string | null;
+                        description: string;
+                        events: {
+                            actor: string;
+                            at: string;
+                            from_status: string | null;
+                            text: string | null;
+                            to_status: string | null;
+                            type: string;
+                            visible_to_complainant: boolean;
+                        }[];
+                        id: string;
+                        incidentDate: string | null;
+                        inquiryDue: string | null;
+                        kind: string;
+                        lateReason: string | null;
+                        outcome: string | null;
+                        receivedAt: string;
+                        reference: string;
+                        reportDue: string | null;
+                        respondentName?: string | null;
+                        respondentText?: string | null;
+                        role: string;
+                        slaDue: string | null;
+                        status: string;
+                        version: number;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -9230,6 +10214,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -9276,6 +10271,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -9317,6 +10323,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -9350,6 +10367,30 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        external: {
+                            id: string;
+                            name: string;
+                            organization: string;
+                            since: string;
+                            until: string | null;
+                        }[];
+                        members: {
+                            added_at: string;
+                            display_name: string;
+                            role: string;
+                            user_id: string;
+                        }[];
+                        warnings: string[];
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -9399,6 +10440,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -9434,6 +10486,20 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            display_name: string;
+                            id: string;
+                        }[];
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -9469,6 +10535,22 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        disposed: number;
+                        note: string;
+                        pending: number;
+                        pending_over_90: number;
+                        received: number;
+                        year: number;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -9507,6 +10589,36 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            activity: string;
+                            approach: string;
+                            assessed_on: string;
+                            assessor_name: string;
+                            created_at: string;
+                            employee_code: string;
+                            employee_id: string;
+                            employee_name: string;
+                            evidence: string;
+                            id: string;
+                            method_code: string;
+                            method_id: string;
+                            method_name: string;
+                            result: string;
+                            used: boolean;
+                        }[];
+                        page: number;
+                        pageSize: number;
+                        total: number;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -9557,6 +10669,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -9596,6 +10719,40 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            activity: string;
+                            authorized_at: string | null;
+                            authorized_by_name: string;
+                            created_at: string;
+                            employee_code: string;
+                            employee_id: string;
+                            employee_name: string;
+                            end_reason: string | null;
+                            ended_at: string | null;
+                            id: string;
+                            method_code: string;
+                            method_id: string;
+                            method_name: string;
+                            missing_training: number;
+                            requested_by_name: string;
+                            review_due: string;
+                            standard_ref: string | null;
+                            status: string;
+                            valid_from: string;
+                        }[];
+                        page: number;
+                        pageSize: number;
+                        total: number;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -9636,6 +10793,18 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        approvalRequestId: string;
+                        id: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -9671,6 +10840,49 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        activity: string;
+                        assessment: {
+                            approach: string;
+                            assessed_on: string;
+                            assessor_name: string;
+                            evidence: string;
+                            result: string;
+                        };
+                        check: {
+                            authorizationId: string;
+                            authorized: boolean;
+                            date: string;
+                            reasons: string[];
+                            reviewDue: string;
+                            status: string;
+                        } | null;
+                        employee_id: string;
+                        employee_name: string;
+                        events: {
+                            action: string;
+                            actor_name: string | null;
+                            at: string;
+                            reason: string | null;
+                        }[];
+                        id: string;
+                        method_code: string;
+                        method_id: string;
+                        method_name: string;
+                        requested_by: string;
+                        review_due: string | null;
+                        review_months: number;
+                        status: string;
+                        valid_from: string | null;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -9706,6 +10918,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -9747,6 +10970,18 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                        status: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -9788,6 +11023,18 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                        status: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -9829,6 +11076,18 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                        status: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -9868,6 +11127,26 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        activity: string;
+                        authorizationId: string | null;
+                        authorized: boolean;
+                        date: string;
+                        employeeId: string;
+                        methodCode: string;
+                        methodId: string;
+                        reasons: string[];
+                        reviewDue: string | null;
+                        status: string | null;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -9901,6 +11180,26 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            code: string;
+                            description: string | null;
+                            id: string;
+                            kind: string;
+                            name: string;
+                            records: number;
+                            status: string;
+                            validity_months: number | null;
+                        }[];
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -9951,6 +11250,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -10003,6 +11313,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -10039,6 +11360,43 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        activities: string[];
+                        date: string;
+                        methods: {
+                            code: string;
+                            discipline: string | null;
+                            id: string;
+                            matrix: string | null;
+                            name: string;
+                        }[];
+                        rows: {
+                            cells: {
+                                [key: string]: {
+                                    perform: {
+                                        inForce: boolean;
+                                        reviewDue: string;
+                                        status: string;
+                                    } & {
+                                        [key: string]: unknown;
+                                    };
+                                } & {
+                                    [key: string]: unknown;
+                                };
+                            };
+                            employeeCode: string;
+                            employeeId: string;
+                            name: string;
+                        }[];
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -10072,6 +11430,36 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        authorizations: {
+                            activity: string;
+                            id: string;
+                            method_code: string;
+                            method_name: string;
+                            review_due: string;
+                            standard_ref: string | null;
+                            status: string;
+                            valid_from: string | null;
+                        }[];
+                        date: string;
+                        training: {
+                            completed_on: string;
+                            course_code: string;
+                            course_name: string;
+                            expires_on: string | null;
+                            id: string;
+                            result: string;
+                            validity: string;
+                        }[];
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -10105,6 +11493,35 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            branch_id: string | null;
+                            branch_name: string | null;
+                            code: string;
+                            discipline: string | null;
+                            id: string;
+                            matrix: string | null;
+                            name: string;
+                            requirements: ({
+                                code: string;
+                                id: string;
+                                name: string;
+                            } & {
+                                [key: string]: unknown;
+                            })[];
+                            review_months: number;
+                            standard_ref: string | null;
+                            status: string;
+                        }[];
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -10159,6 +11576,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -10215,6 +11643,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -10255,6 +11694,39 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            completed_on: string;
+                            course_code: string;
+                            course_id: string;
+                            course_name: string;
+                            created_at: string;
+                            employee_code: string;
+                            employee_id: string;
+                            employee_name: string;
+                            expires_on: string | null;
+                            hours: string | null;
+                            id: string;
+                            notes: string | null;
+                            provider: string | null;
+                            result: string;
+                            revoked_reason: string | null;
+                            status: string;
+                            trainer: string | null;
+                            validity: string;
+                        }[];
+                        page: number;
+                        pageSize: number;
+                        total: number;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -10305,6 +11777,18 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        expiresOn: string | null;
+                        id: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -10346,6 +11830,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -10390,29 +11885,29 @@ export interface operations {
                             resetByEmail: boolean;
                         };
                         brand: {
-                            accentColor?: unknown;
+                            accentColor?: string | null;
                             country: string;
                             currency: string;
                             dateFormat: string;
                             domain: string;
                             faviconUrl: string | null;
                             financialYearStart: string;
-                            fontFamily?: unknown;
-                            helpUrl?: unknown;
+                            fontFamily?: string | null;
+                            helpUrl?: string | null;
                             legalName: string;
                             locale: string;
-                            loginMessage?: unknown;
+                            loginMessage?: string | null;
                             logoDarkUrl: string | null;
                             logoUrl: string | null;
                             name: string;
                             primaryColor: string;
-                            secondaryColor?: unknown;
+                            secondaryColor?: string | null;
                             supportEmail: string;
-                            supportPhone?: unknown;
+                            supportPhone?: string | null;
                             timezone: string;
                         };
                         features: {
-                            [key: string]: unknown;
+                            [key: string]: boolean;
                         };
                         mfa: {
                             available: boolean;
@@ -10543,6 +12038,22 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        accepted: number;
+                        clockDriftSeconds: number;
+                        duplicates: number;
+                        rejected: number;
+                        unmapped: number;
+                        warning: string | null;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -10599,7 +12110,7 @@ export interface operations {
                             employee_code: string | null;
                             employee_id: string | null;
                             employee_name: string | null;
-                            expires_on?: unknown;
+                            expires_on?: string | null;
                             file_name: string;
                             id: string;
                             restricted: boolean;
@@ -10658,6 +12169,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -10693,6 +12215,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -10728,6 +12261,15 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description A file */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -10843,6 +12385,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -10905,6 +12458,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -10945,6 +12509,52 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            branch_id?: string;
+                            branch_name?: string;
+                            confirmation_date?: string | null;
+                            contract_end_date?: string | null;
+                            created_at?: string;
+                            date_of_birth?: string | null;
+                            date_of_joining?: string;
+                            department_id: string | null;
+                            department_name: string | null;
+                            designation: string | null;
+                            employee_code: string;
+                            employment_type?: string;
+                            exit_date?: string | null;
+                            first_name: string;
+                            grade?: string | null;
+                            id: string;
+                            last_name: string | null;
+                            legal_entity_id?: string;
+                            legal_entity_name?: string;
+                            masked?: boolean;
+                            maskedFields?: string[];
+                            phone?: string | null;
+                            probation_end_date?: string | null;
+                            reporting_manager_id?: string | null;
+                            reporting_manager_name?: string | null;
+                            status?: string;
+                            updated_at?: string;
+                            user_id?: string | null;
+                            version?: number;
+                            work_email: string | null;
+                        }[];
+                        page: number;
+                        pageSize: number;
+                        total: number;
+                        view: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -11015,6 +12625,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -11057,6 +12678,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
+                        branch_id?: string;
+                        branch_name?: string;
+                        confirmation_date?: string | null;
+                        contract_end_date?: string | null;
+                        created_at?: string;
+                        date_of_birth?: string | null;
+                        date_of_joining?: string;
+                        department_id: string | null;
+                        department_name: string | null;
+                        designation: string | null;
+                        employee_code: string;
+                        employment_type?: string;
+                        exit_date?: string | null;
+                        first_name: string;
+                        grade?: string | null;
+                        id: string;
+                        last_name: string | null;
+                        legal_entity_id?: string;
+                        legal_entity_name?: string;
+                        masked?: boolean;
+                        maskedFields?: string[];
+                        phone?: string | null;
+                        probation_end_date?: string | null;
+                        reporting_manager_id?: string | null;
+                        reporting_manager_name?: string | null;
+                        status?: string;
+                        updated_at?: string;
+                        user_id?: string | null;
+                        version?: number;
+                        view: string;
+                        work_email: string | null;
+                    } & {
                         [key: string]: unknown;
                     };
                 };
@@ -11106,6 +12759,19 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        changed: string[];
+                        ok: boolean;
+                        version: number;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -11154,7 +12820,7 @@ export interface operations {
                         accountHolder: string | null;
                         accountNumber: string | null;
                         accountNumberMasked: string;
-                        bankName?: unknown;
+                        bankName?: string | null;
                         ifsc: string | null;
                         masked?: boolean;
                         maskedFields?: string[];
@@ -11206,6 +12872,20 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        approvalRequestId: string;
+                        id: string;
+                        ok: boolean;
+                        pending: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -11254,7 +12934,7 @@ export interface operations {
                         pending: {
                             accountHolder: string;
                             accountNumberMasked: string;
-                            bankName?: unknown;
+                            bankName?: string | null;
                             id: string;
                             ifsc: string;
                             requestedAt: string;
@@ -11298,6 +12978,25 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            action: string;
+                            actor_name: string | null;
+                            change_metadata: {
+                                [key: string]: unknown;
+                            } | null;
+                            created_at: string;
+                            id: string;
+                        }[];
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -11352,16 +13051,18 @@ export interface operations {
                             approval_id: string;
                             created_at: string;
                             id: string;
-                            items: {
-                                address?: unknown;
+                            items: ({
+                                address?: string | null;
                                 dateOfBirth: string;
                                 guardianName: string | null;
                                 name: string;
                                 purpose: string;
                                 relationship: string;
                                 sharePercent: number;
-                            }[];
-                            note?: unknown;
+                            } & {
+                                [key: string]: unknown;
+                            })[];
+                            note?: string | null;
                             requested_by_name: string;
                             section: string;
                         }[];
@@ -11376,21 +13077,28 @@ export interface operations {
                                 state: string;
                             }[];
                             contacts: {
-                                altPhone?: unknown;
+                                altPhone?: string | null;
                                 name: string;
                                 phone: string;
                                 relationship: string;
                             }[];
-                            education: unknown[];
+                            education: {
+                                institution: string;
+                                level: string;
+                                qualification: string;
+                                score: string | null;
+                                university: string | null;
+                                yearOfPassing: number | null;
+                            }[];
                             experience: {
                                 designation: string;
                                 employer: string;
                                 fromDate: string;
-                                reasonForLeaving: string;
+                                reasonForLeaving: string | null;
                                 toDate: string;
                             }[];
                             nominees: {
-                                address?: unknown;
+                                address?: string | null;
                                 dateOfBirth: string | null;
                                 guardianName: string | null;
                                 name: string;
@@ -11445,6 +13153,30 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        applied: boolean;
+                    };
+                };
+            };
+            /** @description Success */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        applied: boolean;
+                        approvalId: string;
+                        changeId: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -11488,6 +13220,29 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        committed: boolean;
+                        report: {
+                            employeeCode: string;
+                            errors: string[];
+                            row: number;
+                            warnings: string[];
+                        }[];
+                        summary: {
+                            errors: number;
+                            total: number;
+                            valid: number;
+                            warnings: number;
+                        };
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -11528,6 +13283,35 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
+                        branch_id: string;
+                        branch_name: string;
+                        confirmation_date?: string | null;
+                        contract_end_date: string | null;
+                        created_at: string;
+                        date_of_birth: string | null;
+                        date_of_joining: string;
+                        department_id: string | null;
+                        department_name: string;
+                        designation: string | null;
+                        employee_code: string;
+                        employment_type: string;
+                        exit_date: string | null;
+                        first_name: string;
+                        grade: string | null;
+                        id: string;
+                        last_name: string | null;
+                        legal_entity_id: string;
+                        legal_entity_name: string;
+                        phone: string | null;
+                        probation_end_date?: string | null;
+                        reporting_manager_id: string | null;
+                        reporting_manager_name: string | null;
+                        status: string;
+                        updated_at: string;
+                        user_id: string;
+                        version: number;
+                        work_email: string | null;
+                    } & {
                         [key: string]: unknown;
                     };
                 };
@@ -11567,6 +13351,39 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        created_at: string;
+                        current: {
+                            [key: string]: unknown;
+                        }[];
+                        decided_at: string | null;
+                        employee_code: string;
+                        employee_id: string;
+                        employee_name: string;
+                        id: string;
+                        items: ({
+                            address: string | null;
+                            dateOfBirth: string;
+                            guardianName: string | null;
+                            name: string;
+                            purpose: string;
+                            relationship: string;
+                            sharePercent: number;
+                        } & {
+                            [key: string]: unknown;
+                        })[];
+                        note: string | null;
+                        section: string;
+                        status: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -11602,6 +13419,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -11643,6 +13471,20 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        amount?: string;
+                        gradeSpecific?: boolean;
+                        quantity?: number;
+                        rate: string | null;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -11676,6 +13518,36 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        canManage: boolean;
+                        items: {
+                            created_at: string;
+                            created_by_name: string;
+                            effective_from: string;
+                            grade: string | null;
+                            id: string;
+                            kind: string;
+                            note: string | null;
+                            rate: string;
+                            state: string;
+                            tier: string | null;
+                            vehicle: string | null;
+                        }[];
+                        tiers: string[];
+                        today: string;
+                        vehicles: {
+                            car: string;
+                            two_wheeler: string;
+                        };
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -11729,6 +13601,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -11764,6 +13647,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -11797,6 +13691,33 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            approved_at: string | null;
+                            approved_by: string | null;
+                            approved_by_name: string | null;
+                            claim_count: number;
+                            created_at: string;
+                            id: string;
+                            paid_at: string | null;
+                            paid_by: string | null;
+                            paid_by_name: string | null;
+                            payment_reference: string | null;
+                            prepared_by: string;
+                            prepared_by_name: string;
+                            status: string;
+                            tenant_id: string;
+                            total: string;
+                        }[];
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -11836,6 +13757,18 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                        total: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -11871,6 +13804,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -11906,6 +13850,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -11991,6 +13946,18 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        claimsPaid: number;
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -12024,6 +13991,27 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            calc: string | null;
+                            code: string;
+                            description: string | null;
+                            gst_applicable: boolean;
+                            id: string;
+                            max_amount: string | null;
+                            name: string;
+                            requires_receipt: boolean;
+                            status: string;
+                        }[];
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -12078,6 +14066,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -12134,6 +14133,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -12179,7 +14189,25 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        items: unknown[];
+                        items: {
+                            advance_adjusted: string;
+                            approved_at: string | null;
+                            created_at: string;
+                            currency: string;
+                            employee_code: string;
+                            employee_id: string;
+                            employee_name: string;
+                            flagged: number;
+                            id: string;
+                            items: number;
+                            paid_at: string | null;
+                            payment_reference: string | null;
+                            status: string;
+                            submitted_at: string | null;
+                            title: string;
+                            total: string;
+                            travel_request_id: string | null;
+                        }[];
                         page: number;
                         pageSize: number;
                         total: number;
@@ -12227,6 +14255,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -12287,13 +14326,13 @@ export interface operations {
                             category_code: string;
                             category_name: string;
                             description: string;
-                            duplicate_of?: unknown;
+                            duplicate_of?: string | null;
                             expense_date: string;
-                            gstin?: unknown;
+                            gstin?: string | null;
                             has_receipt: boolean;
                             id: string;
-                            invoice_number?: unknown;
-                            merchant?: unknown;
+                            invoice_number?: string | null;
+                            merchant?: string | null;
                             quantity: string | null;
                             rate: string | null;
                             receipt_name: string | null;
@@ -12309,7 +14348,7 @@ export interface operations {
                         tenant_id: string;
                         title: string;
                         total: string;
-                        travel_request_id?: unknown;
+                        travel_request_id?: string | null;
                         updated_at: string;
                         version: number;
                     };
@@ -12358,6 +14397,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -12393,6 +14443,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -12459,6 +14520,21 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        allowance?: string;
+                        amount?: string;
+                        id: string;
+                        possibleDuplicate: boolean;
+                        rate?: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -12495,6 +14571,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -12530,6 +14617,18 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        approvalRequestId: string;
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -12565,6 +14664,15 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description A file */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -12598,6 +14706,27 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            advance_adjusted: string;
+                            age_days: number;
+                            approved_at: string | null;
+                            employee_code: string;
+                            employee_name: string;
+                            id: string;
+                            payable: string;
+                            title: string;
+                            total: string;
+                        }[];
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -12631,6 +14760,31 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        approvedUnpaidByAge: {
+                            amount: string;
+                            bucket: string;
+                            claims: number;
+                        }[];
+                        last3MonthsByCategory: {
+                            amount: string;
+                            items: number;
+                            name: string;
+                        }[];
+                        pipeline: {
+                            amount: string;
+                            claims: number;
+                            status: string;
+                        }[];
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -12681,7 +14835,7 @@ export interface operations {
                     "application/json": {
                         items: {
                             approval_request_id: string | null;
-                            cancel_reason?: unknown;
+                            cancel_reason?: string | null;
                             client_name: string | null;
                             created_at: string;
                             day_part: string;
@@ -12765,6 +14919,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -12808,7 +14973,7 @@ export interface operations {
                 content: {
                     "application/json": {
                         approval_request_id: string | null;
-                        cancel_reason?: unknown;
+                        cancel_reason?: string | null;
                         client_name: string | null;
                         created_at: string;
                         day_part: string;
@@ -12875,6 +15040,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -12918,6 +15094,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -12953,6 +15140,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -12994,6 +15192,22 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        alreadyCredited: number;
+                        credited: number;
+                        employees: number;
+                        leaveYear: number;
+                        throughMonth: number;
+                        types: number;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -13044,6 +15258,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -13207,6 +15432,25 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            created_at: string;
+                            created_by_name: string;
+                            days: string;
+                            entry_type: string;
+                            id: string;
+                            note: string | null;
+                            request_id: string | null;
+                        }[];
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -13253,7 +15497,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        items: unknown[];
+                        items: {
+                            approval_request_id: string | null;
+                            created_at: string;
+                            days: string;
+                            decided_at: string | null;
+                            employee_code: string;
+                            employee_id: string;
+                            end_date: string;
+                            end_half: string;
+                            id: string;
+                            masked?: boolean;
+                            maskedFields?: string[];
+                            name: string;
+                            reason: string | null;
+                            start_date: string;
+                            start_half: string;
+                            status: string;
+                            type_code: string;
+                            type_name: string;
+                        }[];
                         page: number;
                         pageSize: number;
                         total: number;
@@ -13502,15 +15765,15 @@ export interface operations {
                             accrual_method: string;
                             allow_half_day: boolean;
                             annual_entitlement: string;
-                            applicable_employment_types: unknown[];
+                            applicable_employment_types: string[];
                             carry_forward_max: string;
                             code: string;
                             count_non_working_days: boolean;
-                            description?: unknown;
+                            description?: string | null;
                             eligible_after_days: number;
                             id: string;
                             max_balance: string | null;
-                            max_consecutive_days?: unknown;
+                            max_consecutive_days?: string | null;
                             min_notice_days: number;
                             name: string;
                             paid: boolean;
@@ -13594,6 +15857,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -13669,6 +15943,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -13708,6 +15993,22 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        balancesProcessed: number;
+                        daysCarried: string;
+                        daysLapsed: string;
+                        leaveYear: number;
+                        overspent: number;
+                        repaired: number;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -13746,6 +16047,32 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            anchor_date: string;
+                            created_at: string;
+                            done: number;
+                            employee_code: string;
+                            employee_id: string;
+                            employee_name: string;
+                            id: string;
+                            kind: string;
+                            overdue: number;
+                            status: string;
+                            tasks: number;
+                        }[];
+                        page: number;
+                        pageSize: number;
+                        total: number;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -13788,6 +16115,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -13823,6 +16161,40 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        anchor_date: string;
+                        employee: {
+                            id: string;
+                            name: string;
+                            status: string;
+                        };
+                        employee_id: string;
+                        id: string;
+                        kind: string;
+                        separation_id: string | null;
+                        status: string;
+                        tasks: {
+                            canAct: boolean;
+                            description: string | null;
+                            done_at: string | null;
+                            done_by_name: string | null;
+                            due_date: string;
+                            id: string;
+                            note: string | null;
+                            owner: string;
+                            position: number;
+                            status: string;
+                            title: string;
+                        }[];
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -13864,6 +16236,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -13899,6 +16282,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -14068,6 +16462,32 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            comments: string | null;
+                            date_of_joining: string;
+                            decided_at: string | null;
+                            designation: string | null;
+                            employee_code: string;
+                            employee_id: string;
+                            employee_name: string;
+                            extend_months: number | null;
+                            id: string;
+                            probation_end: string;
+                            recommendation: string | null;
+                            status: string;
+                            submitted_at: string | null;
+                            submitted_by_name: string | null;
+                        }[];
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -14113,6 +16533,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -14151,6 +16582,35 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            approved_lwd: string | null;
+                            created_at: string;
+                            designation: string | null;
+                            employee_code: string;
+                            employee_id: string;
+                            employee_name: string;
+                            fnf_status: string;
+                            id: string;
+                            kind: string;
+                            notice_date: string;
+                            requested_lwd: string;
+                            shortfall_days: number;
+                            status: string;
+                            waive_shortfall: boolean;
+                        }[];
+                        page: number;
+                        pageSize: number;
+                        total: number;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -14196,6 +16656,19 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                        noticeDaysRequired: number;
+                        shortfallDays: number;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -14231,6 +16704,80 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        approved_lwd: string | null;
+                        checklist: {
+                            anchor_date: string;
+                            employee: {
+                                id: string;
+                                name: string;
+                                status: string;
+                            };
+                            employee_id: string;
+                            id: string;
+                            kind: string;
+                            separation_id: string | null;
+                            status: string;
+                            tasks: {
+                                canAct: boolean;
+                                description: string | null;
+                                done_at: string | null;
+                                done_by_name: string | null;
+                                due_date: string;
+                                id: string;
+                                note: string | null;
+                                owner: string;
+                                position: number;
+                                status: string;
+                                title: string;
+                            }[];
+                        } | null;
+                        completed_at: string | null;
+                        created_at: string;
+                        employee: {
+                            id: string;
+                            name: string;
+                            status: string;
+                        };
+                        employee_id: string;
+                        exit_interview?: {
+                            _at: string;
+                            _recorded_by: string;
+                            reason: string;
+                            wouldReturn: string;
+                        } | null;
+                        fnf_note: string | null;
+                        fnf_status: string;
+                        id: string;
+                        initiated_by: string;
+                        initiated_by_name: string;
+                        kind: string;
+                        leaveBalances: {
+                            balance: string;
+                            code: string;
+                            name: string;
+                            paid: boolean;
+                        }[];
+                        masked?: boolean;
+                        maskedFields?: string[];
+                        notice_date: string;
+                        notice_days_required: number;
+                        reason: string | null;
+                        rehire_eligible: boolean | null;
+                        requested_lwd: string;
+                        shortfall_days: number;
+                        status: string;
+                        tenant_id: string;
+                        waive_shortfall: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -14272,6 +16819,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -14313,6 +16871,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -14356,6 +16925,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -14399,6 +16979,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -14442,6 +17033,18 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                        shortfallDays: number;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -14477,6 +17080,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -14517,6 +17131,19 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                        noticeDaysRequired: number;
+                        shortfallDays: number;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -14558,6 +17185,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -14599,6 +17237,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -14640,6 +17289,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -14673,6 +17333,28 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        date: string;
+                        items: {
+                            checklist_id: string;
+                            description: string | null;
+                            due_date: string;
+                            employee_id: string;
+                            employee_name: string;
+                            id: string;
+                            kind: string;
+                            owner: string;
+                            title: string;
+                        }[];
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -14708,6 +17390,31 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            id: string;
+                            is_default: boolean;
+                            kind: string;
+                            name: string;
+                            status: string;
+                            tasks: ({
+                                description: string | null;
+                                offsetDays: number;
+                                owner: string;
+                                title: string;
+                            } & {
+                                [key: string]: unknown;
+                            })[];
+                        }[];
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -14764,6 +17471,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -14822,6 +17540,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -14872,9 +17601,9 @@ export interface operations {
                     "application/json": {
                         items: {
                             amount: string | null;
-                            approval_request_id?: unknown;
-                            cancel_reason?: unknown;
-                            closed_at?: unknown;
+                            approval_request_id?: string | null;
+                            cancel_reason?: string | null;
+                            closed_at?: string | null;
                             created_at: string;
                             decided_at: string | null;
                             department: string | null;
@@ -14893,7 +17622,7 @@ export interface operations {
                             outstanding: string | null;
                             purpose: string | null;
                             recorded_by_other: boolean | null;
-                            skip_periods: unknown[] | null;
+                            skip_periods: string[] | null;
                             status: string;
                         }[];
                         page: number;
@@ -14948,6 +17677,18 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                        installmentAmount: number;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -14993,6 +17734,57 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
+                        amount: string | null;
+                        approval_request_id: string | null;
+                        balance: ({
+                            amount: string;
+                            inProgress: string;
+                            outstanding: string;
+                            recovered: string;
+                        } & {
+                            [key: string]: unknown;
+                        }) | null;
+                        cancel_reason: string | null;
+                        closed_at: string | null;
+                        created_at: string;
+                        decided_at: string | null;
+                        department: string | null;
+                        disbursed_at: string | null;
+                        disbursement_reference: string | null;
+                        employee_code: string;
+                        employee_id: string;
+                        first_period: string | null;
+                        id: string;
+                        installment_amount: string | null;
+                        installments: number | null;
+                        kind: string;
+                        masked?: boolean;
+                        maskedFields?: string[];
+                        name: string;
+                        outstanding: string | null;
+                        purpose: string | null;
+                        recorded_by_other: boolean;
+                        recoveries: ({
+                            amount: string;
+                            created_at: string;
+                            id: string;
+                            period: string | null;
+                            reference: string | null;
+                            run_kind: string | null;
+                            run_status: string | null;
+                            source: string;
+                        } & {
+                            [key: string]: unknown;
+                        })[] | null;
+                        schedule: ({
+                            amount: string;
+                            period: string | null;
+                        } & {
+                            [key: string]: unknown;
+                        })[] | null;
+                        skip_periods: string[] | null;
+                        status: string;
+                    } & {
                         [key: string]: unknown;
                     };
                 };
@@ -15038,6 +17830,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -15080,6 +17883,18 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                        recomputePayroll: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -15121,6 +17936,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -15163,6 +17989,18 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        closed: boolean;
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -15198,6 +18036,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -15441,6 +18290,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -15562,6 +18422,52 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        branches: {
+                            city: string | null;
+                            code: string;
+                            id: string;
+                            legal_entity_id: string;
+                            name: string;
+                            state: string;
+                            status: string;
+                        }[];
+                        departments: {
+                            code: string;
+                            id: string;
+                            name: string;
+                            parent_id: string | null;
+                            status: string;
+                        }[];
+                        designations: {
+                            code: string;
+                            id: string;
+                            name: string;
+                            status: string;
+                        }[];
+                        grades: {
+                            code: string;
+                            id: string;
+                            name: string;
+                            status: string;
+                        }[];
+                        legalEntities: {
+                            cin: string | null;
+                            gstin: string | null;
+                            id: string;
+                            name: string;
+                            state_code: string | null;
+                            status: string;
+                        }[];
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -15611,6 +18517,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -15662,6 +18579,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -15708,6 +18636,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -15756,6 +18695,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -15801,6 +18751,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -15848,6 +18809,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -15893,6 +18865,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -15940,6 +18923,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -15987,6 +18981,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -16036,6 +19041,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -16084,7 +19100,7 @@ export interface operations {
                     "application/json": {
                         items: {
                             approval_request_id: string | null;
-                            cancel_reason?: unknown;
+                            cancel_reason?: string | null;
                             comp_off_days: string | null;
                             created_at: string;
                             decided_at: string | null;
@@ -16158,6 +19174,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -16201,7 +19228,7 @@ export interface operations {
                 content: {
                     "application/json": {
                         approval_request_id: string | null;
-                        cancel_reason?: unknown;
+                        cancel_reason?: string | null;
                         comp_off_days: string | null;
                         created_at: string;
                         decided_at: string | null;
@@ -16213,9 +19240,9 @@ export interface operations {
                         minutes: number;
                         name: string;
                         payout: string;
-                        payroll_period?: unknown;
-                        payroll_run_id?: unknown;
-                        payroll_status?: unknown;
+                        payroll_period?: string | null;
+                        payroll_run_id?: string | null;
+                        payroll_status?: string | null;
                         reason: string | null;
                         recorded_minutes: number;
                         status: string;
@@ -16265,6 +19292,18 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                        payrollRunToRecompute: string | null;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -16300,6 +19339,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -16333,6 +19383,35 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            first_in: string | null;
+                            last_out: string | null;
+                            overtime_minutes: number;
+                            shift_code: string | null;
+                            work_date: string;
+                            worked_minutes: number;
+                        }[];
+                        minMinutes: number;
+                        payout: {
+                            compOff: {
+                                code: string;
+                                dayMinutes: number;
+                                name: string;
+                            } | null;
+                            pay: boolean;
+                            payBlocker: string | null;
+                        };
+                        windowDays: number;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -16369,6 +19448,33 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            base_codes: string[];
+                            calc: string;
+                            code: string;
+                            esi_wage: boolean;
+                            id: string;
+                            kind: string;
+                            name: string;
+                            pf_wage: boolean;
+                            position: number;
+                            prorate: boolean;
+                            status: string;
+                            taxable: boolean;
+                        }[];
+                        page: number;
+                        pageSize: number;
+                        total: number;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -16433,6 +19539,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -16499,6 +19616,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -16551,7 +19679,7 @@ export interface operations {
                                 [key: string]: number;
                             } | null;
                             annual_ctc: string | null;
-                            approved_at: string;
+                            approved_at: string | null;
                             created_at: string;
                             created_by_name: string;
                             effective_from: string;
@@ -16863,7 +19991,7 @@ export interface operations {
                             dateFormat: string;
                             legalName: string;
                             locale: string;
-                            logoUrl?: unknown;
+                            logoUrl?: string | null;
                             name: string;
                             primaryColor: string;
                             productName: string;
@@ -17045,7 +20173,7 @@ export interface operations {
                         items: {
                             computed_at: string | null;
                             created_by_name: string | null;
-                            employee_name?: unknown;
+                            employee_name?: string | null;
                             excluded?: number;
                             finalized_at: string | null;
                             id: string;
@@ -17054,7 +20182,7 @@ export interface operations {
                             masked?: boolean;
                             maskedFields?: string[];
                             paid_at: string | null;
-                            payment_reference?: unknown;
+                            payment_reference?: string | null;
                             period: string;
                             released_count: number | null;
                             status: string;
@@ -17123,6 +20251,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -17177,7 +20316,7 @@ export interface operations {
                             id: string;
                             kind: string;
                             label: string | null;
-                            note?: unknown;
+                            note?: string | null;
                             taxable: boolean | null;
                         }[];
                         approved_at: string | null;
@@ -17223,7 +20362,7 @@ export interface operations {
                         page: number;
                         pageSize: number;
                         paid_at: string | null;
-                        payment_reference?: unknown;
+                        payment_reference?: string | null;
                         period: string;
                         released_count: number | null;
                         status: string;
@@ -17283,6 +20422,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -17332,6 +20482,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -17368,6 +20529,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -17491,6 +20663,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -17630,6 +20813,18 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                        payslips: number;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -17673,6 +20868,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -17715,6 +20921,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -17756,6 +20973,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -17923,6 +21151,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -17958,6 +21197,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -17991,6 +21241,40 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            created_at: string;
+                            created_by: string;
+                            created_by_name: string;
+                            effective_from: string;
+                            effective_to: string | null;
+                            id: string;
+                            kind: string;
+                            params: {
+                                slabs: ({
+                                    amount: number;
+                                    upTo: unknown;
+                                } & {
+                                    [key: string]: unknown;
+                                })[];
+                            } & {
+                                [key: string]: unknown;
+                            };
+                            scope: string;
+                            source_reference: string;
+                            status: string;
+                            verified_at: string | null;
+                            verified_by_name: string | null;
+                        }[];
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -18037,6 +21321,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -18085,6 +21380,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -18120,6 +21426,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -18155,6 +21472,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -18188,6 +21516,26 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            finalized: number;
+                            id: string;
+                            name: string;
+                            period_end: string;
+                            period_start: string;
+                            reviews: number;
+                            self_review: boolean;
+                            status: string;
+                        }[];
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -18231,6 +21579,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -18266,6 +21625,18 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                        reviews: number;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -18301,6 +21672,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -18337,6 +21719,26 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            description: string | null;
+                            id: string;
+                            measure: string | null;
+                            progress: number;
+                            status: string;
+                            title: string;
+                            weight: number;
+                        }[];
+                        totalWeight: number;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -18384,6 +21786,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -18426,6 +21839,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -18462,6 +21886,28 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            designation: string | null;
+                            employee_code: string;
+                            employee_id: string;
+                            employee_name: string;
+                            final_rating: number | null;
+                            id: string;
+                            manager_rating: number | null;
+                            reviewer_name: string | null;
+                            self_rating: number | null;
+                            status: string;
+                        }[];
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -18497,6 +21943,48 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        cycle_id: string;
+                        cycle_name: string;
+                        employee_ack_at: string | null;
+                        employee_ack_note: string | null;
+                        employee_id: string;
+                        employee_name: string;
+                        final_comments: string | null;
+                        final_rating: number | null;
+                        finalized_by: string | null;
+                        goal_ratings: {
+                            [key: string]: unknown;
+                        };
+                        goals: {
+                            id: string;
+                            measure: string | null;
+                            progress: number;
+                            status: string;
+                            title: string;
+                            weight: number;
+                        }[];
+                        id: string;
+                        manager_comments: string | null;
+                        manager_rating: number | null;
+                        period_end: string;
+                        period_start: string;
+                        reviewer_id: string | null;
+                        role: string;
+                        self_comments: string | null;
+                        self_rating: number | null;
+                        status: string;
+                        tenant_id: string;
+                        version: number;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -18544,6 +22032,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -18595,8 +22094,8 @@ export interface operations {
                             drafts: number;
                             effective_from: string;
                             id: string;
-                            owner: string;
-                            published_at: string;
+                            owner: string | null;
+                            published_at: string | null;
                             published_version: number;
                             published_version_id: string;
                             requires_ack: boolean;
@@ -18649,6 +22148,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -18684,6 +22194,42 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        category: string;
+                        code: string;
+                        created_at: string;
+                        id: string;
+                        owner: string | null;
+                        status: string;
+                        title: string;
+                        versions: {
+                            ack_due_days: number;
+                            acknowledgements: number;
+                            audience_branch_ids: string[];
+                            audience_department_ids: string[];
+                            change_summary: string;
+                            created_at: string;
+                            created_by: string;
+                            created_by_name: string;
+                            effective_from: string;
+                            file_name: string | null;
+                            has_body: boolean;
+                            id: string;
+                            published_at: string | null;
+                            published_by_name: string | null;
+                            requires_ack: boolean;
+                            status: string;
+                            version_no: number;
+                        }[];
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -18728,6 +22274,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -18769,6 +22326,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -18821,6 +22389,18 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                        versionNo: number;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -18870,7 +22450,7 @@ export interface operations {
                             due_on: string;
                             effective_from: string;
                             id: string;
-                            published_at: string;
+                            published_at: string | null;
                             requires_ack: boolean;
                             title: string;
                             version_no: number;
@@ -18915,6 +22495,31 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        acknowledgedAt: string | null;
+                        body: string | null;
+                        changeSummary: string;
+                        code: string;
+                        contentSha256: string;
+                        effectiveFrom: string;
+                        fileName: string | null;
+                        hasFile: boolean;
+                        id: string;
+                        policyId: string;
+                        publishedAt: string | null;
+                        requiresAck: boolean;
+                        status: string;
+                        title: string;
+                        versionNo: number;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -18956,6 +22561,19 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        acknowledgedAt: string;
+                        alreadyAcknowledged: boolean;
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -18995,6 +22613,28 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            acknowledged_at: string | null;
+                            branch: string;
+                            content_sha256: string | null;
+                            department: string;
+                            employee_code: string;
+                            employee_id: string;
+                            name: string;
+                        }[];
+                        page: number;
+                        pageSize: number;
+                        total: number;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -19118,6 +22758,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -19155,6 +22806,15 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description A file */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": string;
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -19190,6 +22850,18 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        notified: number;
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -19231,6 +22903,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -19274,6 +22957,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -19309,6 +23003,86 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        access: string;
+                        allowedMoves: string[];
+                        candidate: {
+                            current_company: string | null;
+                            current_designation: string | null;
+                            email: string | null;
+                            experience_months: number | null;
+                            first_name: string;
+                            has_resume: boolean;
+                            id: string;
+                            last_name: string | null;
+                            location: string | null;
+                            notice_days: number | null;
+                            phone: string | null;
+                            qualification: string | null;
+                            status: string;
+                        };
+                        events: {
+                            actor_name: string;
+                            at: string;
+                            from_stage: string | null;
+                            note: string | null;
+                            to_stage: string;
+                        }[];
+                        id: string;
+                        interviews: {
+                            duration_min: number;
+                            id: string;
+                            kind: string;
+                            location: string | null;
+                            panel: {
+                                hidden?: boolean;
+                                name: string;
+                                notes: string | null;
+                                rating: number | null;
+                                recommendation: string | null;
+                                submitted_at: string | null;
+                                user_id: string;
+                            }[];
+                            round: number;
+                            scheduled_at: string;
+                            status: string;
+                        }[];
+                        offers: {
+                            above_budget: boolean;
+                            annual_ctc: string | null;
+                            approved_at: string | null;
+                            branch_name: string;
+                            created_at: string;
+                            designation: string;
+                            employee_id: string | null;
+                            employment_type: string;
+                            id: string;
+                            joining_date: string;
+                            masked?: boolean;
+                            maskedFields?: string[];
+                            notes: string | null;
+                            probation_months: number | null;
+                            responded_at: string | null;
+                            sent_at: string | null;
+                            status: string;
+                        }[];
+                        requisition: {
+                            code: string;
+                            id: string;
+                            status: string;
+                            title: string;
+                        };
+                        stage: string;
+                        version: number;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -19358,6 +23132,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -19403,6 +23188,18 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                        stage: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -19459,6 +23256,18 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        aboveBudget: boolean;
+                        id: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -19496,6 +23305,37 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            applications: number;
+                            created_at: string;
+                            current_company: string | null;
+                            current_designation: string | null;
+                            email: string | null;
+                            employee_id: string | null;
+                            experience_months: number | null;
+                            first_name: string;
+                            has_resume: boolean;
+                            id: string;
+                            last_name: string | null;
+                            location: string | null;
+                            phone: string | null;
+                            qualification: string | null;
+                            retain_until: string;
+                            source: string;
+                        }[];
+                        page: number;
+                        pageSize: number;
+                        total: number;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -19556,6 +23396,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -19591,6 +23442,49 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        applications: {
+                            id: string;
+                            number: number;
+                            requisition_code: string;
+                            requisition_id: string;
+                            stage: string;
+                            title: string;
+                            updated_at: string;
+                        }[];
+                        consent_at: string;
+                        consent_note: string;
+                        created_at: string;
+                        current_company: string | null;
+                        current_designation: string | null;
+                        email: string | null;
+                        employee_id: string | null;
+                        expected_ctc: string | null;
+                        experience_months: number | null;
+                        first_name: string;
+                        has_resume: boolean;
+                        id: string;
+                        last_name: string | null;
+                        location: string | null;
+                        masked?: boolean;
+                        maskedFields?: string[];
+                        notice_days: number | null;
+                        phone: string | null;
+                        qualification: string | null;
+                        referred_by_name: string | null;
+                        resume_name: string | null;
+                        retain_until: string;
+                        source: string;
+                        status: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -19632,6 +23526,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -19667,6 +23572,15 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description A file */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -19702,6 +23616,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -19746,6 +23671,18 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        interviewCompleted: boolean;
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -19779,6 +23716,32 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            application_id: string;
+                            duration_min: number;
+                            first_name: string;
+                            id: string;
+                            kind: string;
+                            last_name: string | null;
+                            location: string | null;
+                            number: number;
+                            requisition_code: string;
+                            requisition_title: string;
+                            round: number;
+                            scheduled_at: string;
+                            status: string;
+                            submitted_at: string | null;
+                        }[];
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -19835,6 +23798,18 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        aboveBudget: boolean;
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -19877,6 +23852,18 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                        status: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -19921,6 +23908,19 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        employeeId: string;
+                        onboardingChecklistId: string | null;
+                        requisitionClosed: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -19956,6 +23956,18 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        approvalRequestId: string;
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -19991,6 +24003,21 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            designation: string | null;
+                            display_name: string;
+                            id: string;
+                        }[];
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -20029,6 +24056,45 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            branch_name: string;
+                            budget_ctc_max: string | null;
+                            code: string;
+                            created_at: string;
+                            department_name: string | null;
+                            designation: string | null;
+                            employment_type: string;
+                            filled: number;
+                            hiring_manager_name: string | null;
+                            id: string;
+                            masked?: boolean;
+                            maskedFields?: string[];
+                            number: number;
+                            pipeline: {
+                                applied?: number;
+                                interview?: number;
+                                offer?: number;
+                                rejected?: number;
+                                screening?: number;
+                            } | null;
+                            positions: number;
+                            status: string;
+                            target_date: string | null;
+                            title: string;
+                        }[];
+                        page: number;
+                        pageSize: number;
+                        total: number;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -20089,6 +24155,18 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: string;
+                        id: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -20124,6 +24202,59 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        applications: {
+                            avg_rating: string | null;
+                            candidate_id: string;
+                            candidate_status: string;
+                            current_company: string | null;
+                            experience_months: number | null;
+                            first_name: string;
+                            id: string;
+                            last_name: string | null;
+                            rejection_reason: string | null;
+                            source: string;
+                            stage: string;
+                            updated_at: string;
+                        }[];
+                        approved_at: string | null;
+                        branch_id: string;
+                        branch_name: string;
+                        budget_ctc_max: string | null;
+                        closed_at: string | null;
+                        code: string;
+                        created_at: string;
+                        created_by: string;
+                        created_by_name: string;
+                        department_id: string | null;
+                        department_name: string | null;
+                        designation: string | null;
+                        employment_type: string;
+                        filled: number;
+                        hiring_manager_id: string | null;
+                        hiring_manager_name: string | null;
+                        id: string;
+                        justification: string;
+                        legal_entity_id: string;
+                        legal_entity_name: string;
+                        masked?: boolean;
+                        maskedFields?: string[];
+                        number: number;
+                        positions: number;
+                        status: string;
+                        target_date: string | null;
+                        tenant_id: string;
+                        title: string;
+                        version: number;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -20187,6 +24318,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -20229,6 +24371,18 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                        status: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -20264,6 +24418,18 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        approvalRequestId: string;
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -20297,6 +24463,37 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        advanced: boolean;
+                        items: {
+                            category: string;
+                            description: string;
+                            key: string;
+                            name: string;
+                            params: {
+                                default: string | number;
+                                key: string;
+                                label: string;
+                                max?: number;
+                                min?: number;
+                                options?: {
+                                    label: string;
+                                    value: string;
+                                }[];
+                                type: string;
+                            }[];
+                            scope: string;
+                        }[];
+                        today: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -20335,6 +24532,46 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        columns: {
+                            key: string;
+                            label: string;
+                            type: string;
+                        }[];
+                        excluded?: number;
+                        generatedAt: string;
+                        key: string;
+                        name: string;
+                        notes: string[];
+                        params: {
+                            asOf?: string;
+                            event?: string;
+                            from?: string;
+                            groupBy?: string;
+                            show?: string;
+                            status?: string;
+                            to?: string;
+                            withinDays?: number;
+                            year?: number;
+                        };
+                        rows: {
+                            [key: string]: unknown;
+                        }[];
+                        scope: string;
+                        today: string;
+                        totals: {
+                            [key: string]: unknown;
+                        } | null;
+                        truncated: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -20509,6 +24746,42 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            created_at: string;
+                            id: string;
+                            name: string;
+                            params: {
+                                groupBy?: string;
+                            } & {
+                                [key: string]: unknown;
+                            };
+                            report_key: string;
+                            reportName: string;
+                            schedule: ({
+                                dayOfMonth: unknown;
+                                enabled: boolean;
+                                frequency: string;
+                                id: string;
+                                lastResult: unknown;
+                                lastRunAt: unknown;
+                                nextRunOn: string;
+                                period: string;
+                                recipientIds: string[];
+                                weekday: unknown;
+                            } & {
+                                [key: string]: unknown;
+                            }) | null;
+                        }[];
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -20553,6 +24826,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -20588,6 +24872,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -20623,6 +24918,21 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            email: string;
+                            id: string;
+                            name: string;
+                        }[];
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -20676,6 +24986,18 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        nextRunOn: string;
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -20711,6 +25033,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -20762,6 +25095,8 @@ export interface operations {
                                 from?: string;
                                 groupBy?: string;
                                 to?: string;
+                            } & {
+                                [key: string]: unknown;
                             };
                             report_key: string;
                             row_count: number;
@@ -20812,11 +25147,13 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        columns: {
+                        columns: ({
                             key: string;
                             label: string;
                             type: string;
-                        }[];
+                        } & {
+                            [key: string]: unknown;
+                        })[];
                         generatedAt: string;
                         id: string;
                         key: string;
@@ -20827,13 +25164,15 @@ export interface operations {
                             from?: string;
                             groupBy?: string;
                             to?: string;
+                        } & {
+                            [key: string]: unknown;
                         };
                         rows: {
-                            [key: string]: unknown;
+                            [key: string]: number | string;
                         }[];
                         scope: string;
                         totals: {
-                            [key: string]: unknown;
+                            [key: string]: number | string | null;
                         } | null;
                     };
                 };
@@ -21010,6 +25349,34 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            action: string;
+                            actor_name: string | null;
+                            actor_type: string;
+                            category: string;
+                            change_metadata: {
+                                [key: string]: unknown;
+                            };
+                            created_at: string;
+                            id: string;
+                            ip: string | null;
+                            setting_key: string | null;
+                            target_id: string | null;
+                            target_type: string | null;
+                        }[];
+                        page: number;
+                        pageSize: number;
+                        total: number;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -21046,6 +25413,37 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            action: string;
+                            actor_id: string | null;
+                            actor_type: string;
+                            category: string;
+                            chain_seq: string | null;
+                            change_metadata: {
+                                [key: string]: unknown;
+                            };
+                            created_at: string;
+                            id: string;
+                            ip: string | null;
+                            prev_hash: string | null;
+                            row_hash: string | null;
+                            target_id: string | null;
+                            target_type: string | null;
+                            user_agent: string | null;
+                        }[];
+                        page: number;
+                        pageSize: number;
+                        total: number;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -21079,6 +25477,20 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        brokenAt: number | null;
+                        checked: number;
+                        ok: boolean;
+                        reason: string | null;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -21133,7 +25545,7 @@ export interface operations {
                         gstin: string | null;
                         hasSignature: boolean;
                         hasStamp: boolean;
-                        legalName: string;
+                        legalName: string | null;
                         masked?: boolean;
                         maskedFields?: string[];
                         panMasked: string | null;
@@ -21207,6 +25619,19 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        changed: string[];
+                        ok: boolean;
+                        version: number;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -21242,6 +25667,15 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description A file */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/*": string;
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -21277,6 +25711,19 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        contentType: string;
+                        kind: string;
+                        sha256: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -21312,6 +25759,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -21347,6 +25805,50 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        applications: {
+                            created_at: string;
+                            id: string;
+                            rejection_reason: string | null;
+                            stage: string;
+                            title: string;
+                        }[];
+                        candidate: {
+                            consent_at: string;
+                            consent_note: string;
+                            created_at: string;
+                            current_company: string | null;
+                            current_designation: string | null;
+                            email: string | null;
+                            expected_ctc?: string | null;
+                            experience_months: number | null;
+                            first_name: string;
+                            id: string;
+                            last_name: string | null;
+                            location: string | null;
+                            notice_days: number | null;
+                            phone: string | null;
+                            qualification: string | null;
+                            resume_name: string | null;
+                            retain_until: string;
+                            source: string;
+                            status: string;
+                        };
+                        complete: boolean;
+                        generatedAt: string;
+                        subject: {
+                            id: string;
+                            type: string;
+                        };
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -21386,6 +25888,34 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        complete: boolean;
+                        generatedAt: string;
+                        l4Included: boolean;
+                        note: string;
+                        sections: {
+                            key: string;
+                            maskedColumns?: string[];
+                            nextOffset: number | null;
+                            rows: {
+                                [key: string]: unknown;
+                            }[];
+                            total: number;
+                            withheld?: boolean;
+                        }[];
+                        subject: {
+                            id: string;
+                            type: string;
+                        };
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -21423,6 +25953,36 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            completedAt: string | null;
+                            createdAt: string;
+                            decidedAt: string | null;
+                            decidedBy: string | null;
+                            decisionNote: string | null;
+                            id: string;
+                            reason: string | null;
+                            report: {
+                                [key: string]: unknown;
+                            } | null;
+                            requestedBy: string;
+                            retainedUntil: string | null;
+                            status: string;
+                            subjectId: string;
+                            subjectType: string;
+                        }[];
+                        page: number;
+                        pageSize: number;
+                        total: number;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -21466,6 +26026,56 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        completedAt: string | null;
+                        createdAt: string;
+                        decidedAt: string | null;
+                        decidedBy: string | null;
+                        decisionNote: string | null;
+                        id: string;
+                        reason: string | null;
+                        report: {
+                            [key: string]: unknown;
+                        } | null;
+                        requestedBy: string;
+                        retainedUntil: string | null;
+                        status: string;
+                        subjectId: string;
+                        subjectType: string;
+                    };
+                };
+            };
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        completedAt: string | null;
+                        createdAt: string;
+                        decidedAt: string | null;
+                        decidedBy: string | null;
+                        decisionNote: string | null;
+                        id: string;
+                        reason: string | null;
+                        report: {
+                            [key: string]: unknown;
+                        } | null;
+                        requestedBy: string;
+                        retainedUntil: string | null;
+                        status: string;
+                        subjectId: string;
+                        subjectType: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -21501,6 +26111,31 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        completedAt: string | null;
+                        createdAt: string;
+                        decidedAt: string | null;
+                        decidedBy: string | null;
+                        decisionNote: string | null;
+                        id: string;
+                        reason: string | null;
+                        report: {
+                            [key: string]: unknown;
+                        } | null;
+                        requestedBy: string;
+                        retainedUntil: string | null;
+                        status: string;
+                        subjectId: string;
+                        subjectType: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -21542,6 +26177,50 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        alreadyDone: boolean;
+                        completedAt: string | null;
+                        createdAt: string;
+                        decidedAt: string | null;
+                        decidedBy: string | null;
+                        decisionNote: string | null;
+                        id: string;
+                        reason: string | null;
+                        report: {
+                            auditLog: string;
+                            erased: {
+                                [key: string]: unknown;
+                            };
+                            filesDeleted: number;
+                            filesPending: number;
+                            notLegalAdvice: string;
+                            retained: ({
+                                basis: string;
+                                category: string;
+                                label: string;
+                                rows: number;
+                                tables: string[];
+                                until: string;
+                            } & {
+                                [key: string]: unknown;
+                            })[];
+                        } & {
+                            [key: string]: unknown;
+                        };
+                        requestedBy: string;
+                        retainedUntil: string | null;
+                        status: string;
+                        subjectId: string;
+                        subjectType: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -21583,6 +26262,31 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        completedAt: string | null;
+                        createdAt: string;
+                        decidedAt: string | null;
+                        decidedBy: string | null;
+                        decisionNote: string | null;
+                        id: string;
+                        reason: string | null;
+                        report: {
+                            [key: string]: unknown;
+                        } | null;
+                        requestedBy: string;
+                        retainedUntil: string | null;
+                        status: string;
+                        subjectId: string;
+                        subjectType: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -21616,6 +26320,25 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        auditLog: string;
+                        carveOuts: {
+                            basis: string;
+                            category: string;
+                            label: string;
+                            setting: string;
+                            years: number;
+                        }[];
+                        notLegalAdvice: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -21649,6 +26372,76 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        auth: {
+                            resetByEmail: boolean;
+                        };
+                        brand: {
+                            accentColor: string | null;
+                            country: string;
+                            currency: string;
+                            dateFormat: string;
+                            domain: string;
+                            faviconUrl: string | null;
+                            financialYearStart: string;
+                            fontFamily: string | null;
+                            helpUrl: string | null;
+                            legalName: string;
+                            locale: string;
+                            loginMessage: string | null;
+                            logoDarkUrl: string | null;
+                            logoUrl: string | null;
+                            name: string;
+                            primaryColor: string;
+                            secondaryColor: string | null;
+                            supportEmail: string;
+                            supportPhone: string | null;
+                            timezone: string;
+                        };
+                        domains: {
+                            activation_status: string;
+                            hostname: string;
+                            is_primary: boolean;
+                        }[];
+                        features: {
+                            [key: string]: boolean;
+                        };
+                        managedBy: string;
+                        mfa: {
+                            available: boolean;
+                            enforced: boolean;
+                            methods: string[];
+                        };
+                        mode: string;
+                        modules: {
+                            availability: string;
+                            blockers: string[];
+                            category: string;
+                            configured: boolean;
+                            core: boolean;
+                            dependencies: string[];
+                            dependenciesMet: boolean;
+                            dependents: string[];
+                            description: string;
+                            enabled: boolean;
+                            key: string;
+                            name: string;
+                            operational: string;
+                            supported: boolean;
+                            usable: boolean;
+                        }[];
+                        product: {
+                            name: string;
+                        };
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -21685,6 +26478,61 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            active: boolean;
+                            canRun: boolean;
+                            description: string;
+                            feature: (string | string[]) | null;
+                            key: string;
+                            name: string;
+                            nextRun: string;
+                            recentRuns: {
+                                attempts: number;
+                                error: string | null;
+                                finished_at: string | null;
+                                id: string;
+                                job_key: string;
+                                next_retry_at: string | null;
+                                period_key: string;
+                                result: {
+                                    alreadyCredited: number;
+                                    credited: number;
+                                    durationMs: number;
+                                    employees: number;
+                                    leaveYear: number;
+                                    throughMonth: number;
+                                    types: number;
+                                } & {
+                                    [key: string]: unknown;
+                                };
+                                started_at: string;
+                                status: string;
+                                trigger: string;
+                                triggered_by_name: string;
+                            }[];
+                            schedule: {
+                                at: string;
+                                day?: number;
+                                kind: string;
+                            };
+                        }[];
+                        maxAttempts: number;
+                        runsPage: {
+                            page: number;
+                            pageSize: number;
+                            total: number;
+                        };
+                        timezone: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -21720,6 +26568,18 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        runId: string;
+                        status: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -21753,6 +26613,40 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        canManage: boolean;
+                        custom: {
+                            description: string | null;
+                            grantable: boolean;
+                            key: string;
+                            name: string;
+                            permissions: string[];
+                            updated_at: string;
+                            updated_by_name: string | null;
+                            users: number;
+                        }[];
+                        maxPermissions: string[] | null;
+                        permissions: {
+                            key: string;
+                            label: string;
+                        }[];
+                        system: {
+                            grantable: boolean;
+                            group: string;
+                            key: string;
+                            name: string;
+                            permissions: string[];
+                            users: number;
+                        }[];
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -21794,6 +26688,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        key: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -21829,6 +26734,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -21872,6 +26788,18 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        holdersSignedOut: number;
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -21907,6 +26835,38 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            branchValue: number[] | null;
+                            control: string;
+                            defaultValue: (string | number[] | number | boolean) | null;
+                            description: string;
+                            editable: boolean;
+                            editPermission: string;
+                            effective: (string | number[] | number | boolean) | null;
+                            feature: (string | string[]) | null;
+                            group: string;
+                            key: string;
+                            label: string;
+                            options: {
+                                label: string;
+                                value: string;
+                            }[] | null;
+                            platformValue: unknown;
+                            scopes: string[];
+                            source: string;
+                            tenantValue: (number | boolean | string | number[]) | null;
+                            version: number | null;
+                        }[];
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -21956,6 +26916,18 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        key: string;
+                        value: number | boolean | string | number[];
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -21994,6 +26966,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -22031,6 +27014,34 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            display_name: string;
+                            effective_salary_level: number;
+                            email: string;
+                            employee_code: string | null;
+                            employee_id: string | null;
+                            id: string;
+                            invite_pending: boolean;
+                            last_login_at: string | null;
+                            locked: boolean;
+                            mfa_enabled: boolean;
+                            roles: string[];
+                            salary_access_level: number;
+                            status: string;
+                        }[];
+                        page: number;
+                        pageSize: number;
+                        total: number;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -22074,6 +27085,18 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                        inviteSent: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -22119,6 +27142,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -22154,6 +27188,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -22189,6 +27234,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -22230,6 +27286,19 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        effectiveLevel: number;
+                        level: number;
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -22278,7 +27347,7 @@ export interface operations {
                 content: {
                     "application/json": {
                         items: {
-                            [key: string]: unknown;
+                            [key: string]: boolean | string | null;
                         }[];
                         page: number;
                         pageSize: number;
@@ -22356,6 +27425,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -22398,6 +27478,64 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
+                        accommodation: boolean;
+                        advance_paid_amount: string | null;
+                        advance_paid_at: string | null;
+                        advance_reference: string | null;
+                        advance_requested: string;
+                        approval_request_id: string | null;
+                        cancel_reason: string | null;
+                        closed_at: string | null;
+                        completed_at: string | null;
+                        created_at: string;
+                        decided_at: string | null;
+                        department: string;
+                        destination: string;
+                        employee_code: string;
+                        employee_id: string;
+                        end_date: string;
+                        estimate_local: string;
+                        estimate_meals: string;
+                        estimate_other: string;
+                        estimate_stay: string;
+                        estimate_total: string | null;
+                        estimate_travel: string;
+                        field_duty_id: string | null;
+                        id: string;
+                        mark_on_duty: boolean;
+                        name: string;
+                        on_duty_note: string | null;
+                        origin: string;
+                        project: string | null;
+                        purpose: string;
+                        recovered_amount: string;
+                        recovered_note: string | null;
+                        settlement: {
+                            advanceAdjusted: string;
+                            advancePaid: string;
+                            claimed: string;
+                            claims: ({
+                                advance_adjusted: string;
+                                id: string;
+                                paid_at: string | null;
+                                status: string;
+                                title: string;
+                                total: string;
+                            } & {
+                                [key: string]: unknown;
+                            })[];
+                            openClaims: number;
+                            outstanding: string;
+                            recovered: string;
+                            reimbursable: string;
+                        } & {
+                            [key: string]: unknown;
+                        };
+                        start_date: string;
+                        status: string;
+                        travel_mode: string;
+                        trip_type: string;
+                    } & {
                         [key: string]: unknown;
                     };
                 };
@@ -22443,6 +27581,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -22485,6 +27634,18 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                        outstanding: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -22526,6 +27687,18 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        advanceOutstanding: string | null;
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -22561,6 +27734,18 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        existing: boolean;
+                        id: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -22596,6 +27781,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -22631,6 +27827,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -22702,6 +27909,17 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -22737,6 +27955,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -22770,6 +27999,19 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        status: "ok";
+                        version: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -22803,6 +28045,19 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        status: "ok";
+                        version: string;
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -22836,6 +28091,30 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        status: "ready";
+                    };
+                };
+            };
+            /** @description Not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        status: "unavailable";
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
@@ -22869,6 +28148,30 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        status: "ready";
+                    };
+                };
+            };
+            /** @description Not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        status: "unavailable";
+                    };
+                };
+            };
             /** @description An RFC 7807 problem */
             default: {
                 headers: {
