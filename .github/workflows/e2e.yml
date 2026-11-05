@@ -38,6 +38,12 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: npm run build
       - run: npm run e2e:mock
+      # In the image the Linux baselines were made in, as fonts render differently elsewhere.
+      - name: Visual baselines
+        run: |
+          docker run --rm -v "$PWD":/w -v /w/node_modules -v /w/test-results -w /w \
+            mcr.microsoft.com/playwright:v1.64.1-noble \
+            sh -c 'npm ci --no-audit --no-fund && npm run e2e:visual'
       - if: ${{ failure() }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
