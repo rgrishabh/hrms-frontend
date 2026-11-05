@@ -19,7 +19,7 @@ const show = (route = '/leave', unread = 0) => {
   return f;
 };
 
-afterEach(() => { resetViewport(); vi.restoreAllMocks(); localStorage.clear(); });
+afterEach(() => { resetViewport(); vi.restoreAllMocks(); });
 
 describe('on a desktop', () => {
   it('shows the icon rail, the crumbs and the page, and titles the tab after the page', async () => {
@@ -32,16 +32,30 @@ describe('on a desktop', () => {
     expect(screen.getByRole('button', { name: 'Open menu' })).toBeTruthy();
     expect(screen.queryByRole('navigation', { name: 'Quick navigation' })).toBeNull();
   });
-  it('the menu button expands the rail in place, closes it again, and the choice is remembered', async () => {
+  it('the menu button opens the full menu over the page, and it closes again by the button, Esc or a click outside', async () => {
     show();
-    await userEvent.click(await screen.findByRole('button', { name: 'Open menu' }));
+    const open = await screen.findByRole('button', { name: 'Open menu' });
+    await userEvent.click(open);
     expect(screen.queryByRole('dialog')).toBeNull();
     const nav = screen.getByRole('navigation', { name: 'Main navigation' });
     expect(within(nav).getByRole('link', { name: 'Leave' }).getAttribute('title')).toBeNull();
-    expect(localStorage.getItem('hrms.nav.expanded')).toBe('1');
     await userEvent.click(screen.getByRole('button', { name: 'Close menu' }));
     expect(screen.getByRole('button', { name: 'Open menu' }).getAttribute('aria-expanded')).toBe('false');
-    expect(localStorage.getItem('hrms.nav.expanded')).toBe('0');
+    await userEvent.click(screen.getByRole('button', { name: 'Open menu' }));
+    await userEvent.keyboard('{Escape}');
+    expect(screen.getByRole('button', { name: 'Open menu' })).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: 'Open menu' }));
+    await userEvent.click(screen.getByText('Page body'));
+    expect(screen.getByRole('button', { name: 'Open menu' })).toBeTruthy();
+  });
+  it('choosing a page closes the full menu', async () => {
+    vi.stubGlobal('scrollTo', vi.fn());
+    show();
+    await userEvent.click(await screen.findByRole('button', { name: 'Open menu' }));
+    await userEvent.click(within(screen.getByRole('navigation', { name: 'Main navigation' })).getByRole('link', { name: 'Payslips' }));
+    await waitFor(() => expect(document.title).toBe('Payslips · Acme HR'));
+    expect(screen.getByRole('button', { name: 'Open menu' })).toBeTruthy();
+    vi.unstubAllGlobals();
   });
   it('an unknown address titles the tab with the product only', async () => {
     show('/nowhere');

@@ -79,6 +79,7 @@ export function Picker({ label, hint, error, required, placeholder, queryKey, se
           value={text}
           onChange={(e) => { setText(e.target.value); setOpen(true); setActive(0); }}
           onFocus={() => setOpen(true)}
+          onClick={() => setOpen(true)}
           onBlur={() => setOpen(false)}
           onKeyDown={onKeyDown}
         />

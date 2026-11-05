@@ -4,28 +4,25 @@ import { api, qs } from '../../api';
 import { Button } from '../../components/Button';
 import { DatePicker } from '../../components/DatePicker';
 import { FormActions } from '../../components/FormActions';
-import { useDebouncedValue } from '../../components/hooks';
 import { Input, Textarea } from '../../components/Input';
 import { Modal } from '../../components/Modal';
-import { QueryState } from '../../components/QueryState';
+import { Picker, type PickerItem } from '../../components/Picker';
 import { Select } from '../../components/Select';
-import { SkeletonRows } from '../../components/Skeleton';
 import { useToast } from '../../components/Toast';
 import { useSubmit } from '../../components/useSubmit';
 import { localInputToIso } from '../../format';
-import type { ApiItem, ApiResponse } from '../../lib/api-types';
-import { invalidateApi, useApiQuery } from '../../lib/query';
+import type { ApiResponse } from '../../lib/api-types';
+import { invalidateApi } from '../../lib/query';
 import { KINDS, options, RECOMMENDATION, type Interview } from './types';
-
-type PanelUser = ApiItem<'/api/v1/recruitment/panel-users'>;
 
 export function ScheduleInterview({ applicationId, nextRound, onClose }: { applicationId: string; nextRound: number; onClose: () => void }) {
   const toast = useToast();
   const [f, setF] = useState({ round: nextRound as number | string, kind: 'technical', at: '', durationMin: 45 as number | string, location: '' });
-  const [panel, setPanel] = useState<PanelUser[]>([]);
-  const [search, setSearch] = useState('');
-  const debounced = useDebouncedValue(search.trim());
-  const users = useApiQuery<ApiResponse<'/api/v1/recruitment/panel-users'>>(`/api/v1/recruitment/panel-users${qs({ search: debounced })}`, { placeholderData: (p) => p });
+  const [panel, setPanel] = useState<{ id: string; display_name: string }[]>([]);
+  const searchPeople = async (text: string): Promise<PickerItem[]> => {
+    const d = await api.get<ApiResponse<'/api/v1/recruitment/panel-users'>>(`/api/v1/recruitment/panel-users${qs({ search: text })}`);
+    return d.items.filter((u) => !panel.some((p) => p.id === u.id)).map((u) => ({ id: u.id, label: u.display_name, description: u.designation ?? undefined }));
+  };
   const form = useSubmit(async () => {
     await api.post(`/api/v1/recruitment/applications/${applicationId}/interviews`, { round: Number(f.round), kind: f.kind, scheduledAt: localInputToIso(f.at), durationMin: Number(f.durationMin), location: f.location || null, panelUserIds: panel.map((p) => p.id) });
     toast('Interview scheduled; the panel was notified');
@@ -48,14 +45,7 @@ export function ScheduleInterview({ applicationId, nextRound, onClose }: { appli
               {panel.map((p) => <li key={p.id}><Button size="sm" icon={<X aria-hidden="true" />} aria-label={`Remove ${p.display_name}`} onClick={() => setPanel(panel.filter((x) => x.id !== p.id))}>{p.display_name}</Button></li>)}
             </ul>
           )}
-          <Input label="Panel" placeholder="Search people" error={form.errors['panel'] ?? form.errors['panelUserIds']} value={search} onChange={(e) => setSearch(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }} />
-          <QueryState query={users} compact loading={<SkeletonRows rows={2} />}>
-            {(d) => (
-              <div className="recruit-panel-results" role="group" aria-label="People to add">
-                {d.items.filter((u) => !panel.some((p) => p.id === u.id)).map((u) => <Button key={u.id} size="sm" onClick={() => setPanel([...panel, u])}>+ {u.display_name}{u.designation ? ` · ${u.designation}` : ''}</Button>)}
-              </div>
-            )}
-          </QueryState>
+          <Picker label="Panel" placeholder="Search people" error={form.errors['panel'] ?? form.errors['panelUserIds']} queryKey={`panel-users:${panel.map((p) => p.id).join()}`} search={searchPeople} value={null} onChange={(p) => { if (p) setPanel([...panel, { id: p.id, display_name: p.label }]); }} />
         </div>
         <FormActions error={form.error} busy={form.busy} submitLabel="Schedule" onCancel={onClose} />
       </form>
