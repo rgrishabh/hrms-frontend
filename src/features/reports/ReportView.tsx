@@ -10,10 +10,12 @@ import { FilterBar } from '../../components/FilterBar';
 import { Input } from '../../components/Input';
 import { Money } from '../../components/Money';
 import { QueryState } from '../../components/QueryState';
+import { RevealToggle } from '../../components/RevealToggle';
 import { Select } from '../../components/Select';
 import { Table, type Column, type SortState } from '../../components/Table';
 import { fmtDate, fmtDateTime, fmtNumber } from '../../format';
 import { qs } from '../../api';
+import { useRevealable } from '../../lib/masking';
 import { useApiQuery } from '../../lib/query';
 import { SaveReportButton } from './SavedReports';
 import type { ColType, ReportColumn, ReportData, ReportInfo, ReportRow } from './types';
@@ -22,7 +24,8 @@ const NUMERIC: ColType[] = ['int', 'number', 'percent', 'money'];
 const CODE_COLUMNS = new Set(['employee_code', 'code', 'course_code', 'method_code']);
 const PAGE_SIZE = 100;
 
-function Cell({ column, value }: { column: ReportColumn; value: unknown }) {
+function Cell({ column, value, masked }: { column: ReportColumn; value: unknown; masked?: boolean }) {
+  if (masked && column.type === 'money' && (value === null || value === undefined)) return <Money value={null} masked />;
   if (value === null || value === undefined || value === '') return <>—</>;
   switch (column.type) {
     case 'money': return <Money value={value as number | string} />;
@@ -41,7 +44,7 @@ export function ReportView({ def, advanced }: { def: ReportInfo; advanced: boole
   const [params, setParams] = useSearchParams();
   const current = useMemo(() => Object.fromEntries(def.params.map((p) => [p.key, params.get(p.key) ?? String(p.default)])), [def, params]);
   const query = qs(current);
-  const report = useApiQuery<ReportData>(`/api/v1/reports/${def.key}${query}`, { placeholderData: (previous) => previous, staleTime: 0 });
+  const { query: report, revealed, setRevealed } = useRevealable<ReportData>(`/api/v1/reports/${def.key}${query}`, { keepPrevious: true });
   const run = (values: Record<string, string>) => {
     if (qs(values) === query) void report.refetch(); // the same options still mean "get me the latest"
     else setParams({ r: def.key, ...values });
@@ -56,7 +59,12 @@ export function ReportView({ def, advanced }: { def: ReportInfo; advanced: boole
       <p className="text-2">{def.description}</p>
       <ParamForm key={query} def={def} initial={current} busy={report.isFetching} onRun={run} />
       <QueryState query={report}>
-        {(d) => <Result data={d} exportBase={`/api/v1/reports/${def.key}/export`} exportQuery={query} fileBase={def.key} refreshing={report.isPlaceholderData} />}
+        {(d) => (
+          <>
+            {(d.masked || revealed) && <div><RevealToggle revealed={revealed} loading={report.isFetching} onChange={setRevealed} /></div>}
+            <Result data={d} exportBase={`/api/v1/reports/${def.key}/export`} exportQuery={query} fileBase={def.key} refreshing={report.isPlaceholderData} />
+          </>
+        )}
       </QueryState>
     </div>
   );
@@ -127,14 +135,14 @@ function Result({ data, exportBase, exportQuery, fileBase, refreshing }: { data:
     align: NUMERIC.includes(c.type) ? 'right' : 'left',
     card: i === 0 ? 'title' : undefined,
     className: c.type !== 'text' || CODE_COLUMNS.has(c.key) ? 'nowrap' : undefined,
-    cell: (r) => <Cell column={c} value={r[c.key]} />,
+    cell: (r) => <Cell column={c} value={r[c.key]} masked={data.masked} />,
   }));
   const foot = data.totals && !filter.trim()
     ? (c: Column<ReportRow>, i: number) => {
       if (i === 0) return 'Total';
       const column = data.columns.find((x) => x.key === c.key);
       const value = data.totals?.[c.key];
-      return !column || column.type === 'text' || value === undefined ? null : <Cell column={column} value={value} />;
+      return !column || column.type === 'text' || value === undefined ? null : <Cell column={column} value={value} masked={data.masked} />;
     }
     : undefined;
   return (
@@ -144,8 +152,10 @@ function Result({ data, exportBase, exportQuery, fileBase, refreshing }: { data:
         <div className="cluster">
           <DownloadButton url={`${exportBase}.xlsx${exportQuery}`} fileName={`${fileBase}.xlsx`}>Download Excel</DownloadButton>
           <DownloadButton url={`${exportBase}.csv${exportQuery}`} fileName={`${fileBase}.csv`}>Download CSV</DownloadButton>
+          <DownloadButton url={`${exportBase}.pdf${exportQuery}`} fileName={`${fileBase}.pdf`}>Download PDF</DownloadButton>
         </div>
       </div>
+      {(data.excluded ?? 0) > 0 && !data.notes.length && <Alert>{data.excluded} {data.excluded === 1 ? 'person is' : 'people are'} above your salary level and left out.</Alert>}
       {data.notes.map((n) => <Alert key={n}>{n}</Alert>)}
       {data.rows.length > 10 && textColumns.length > 0 && <FilterBar search={{ label: 'Filter rows', placeholder: 'Filter rows', value: filter, onChange: (v) => { setFilter(v); setPage(1); } }} />}
       {!data.rows.length

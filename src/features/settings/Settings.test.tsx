@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { Route, Routes } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { SettingsCenter } from '../../pages/Settings';
-import { mockPageApi, problem, reads, renderPage, writes } from '../../test/pageHarness';
+import { mockPageApi, problem, reads, renderPage, writes } from '../../test/page';
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -25,7 +25,7 @@ describe('settings: organization', () => {
     const f = mockPageApi(['org.read'], (url) => (url.endsWith('/org') ? ORG : { items: [] }));
     show('/settings');
     await screen.findByRole('region', { name: 'Branches' });
-    expect(screen.getAllByRole('link').map((a) => a.textContent)).toEqual(['Legal entities & branches']);
+    expect(screen.getAllByRole('link').map((a) => a.textContent)).toEqual(['Organization']);
     expect(reads(f, '/tenant/')).toHaveLength(0);
     expect(screen.queryByRole('button', { name: 'Add' })).toBeNull();
   });

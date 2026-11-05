@@ -1,6 +1,6 @@
 import { screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { mockPageApi, renderPage } from '../../test/pageHarness';
+import { mockPageApi, renderPage } from '../../test/page';
 import { LedgerDrawer } from './LedgerDrawer';
 import type { LeaveBalance } from './types';
 

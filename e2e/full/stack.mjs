@@ -137,7 +137,25 @@ async function waitFor(url, what, ms = 60_000) {
   throw new Error(`${what} did not answer at ${url}`);
 }
 
+/** The bootstrap password must be changed before anything else works. Tests sign in with the changed one. */
+async function finishAdminSetup() {
+  const { adminPassword } = secrets();
+  const creds = JSON.parse(readFileSync(join(stateDir, 'creds.json'), 'utf8'));
+  const api = `http://localhost:${ports.api}/api/v1/auth`;
+  const headers = { 'content-type': 'application/json' };
+  const login = await fetch(`${api}/login`, { method: 'POST', headers, body: JSON.stringify({ email: 'admin@example.test', password: adminPassword }) });
+  if (!login.ok) throw new Error(`admin sign-in failed: ${await login.text()}`);
+  const { csrfToken } = await login.json();
+  const cookie = login.headers.getSetCookie().map((c) => c.split(';')[0]).join('; ');
+  const changed = `E2E-${randomBytes(12).toString('base64url')}`;
+  const change = await fetch(`${api}/password`, { method: 'POST', headers: { ...headers, cookie, 'x-csrf-token': csrfToken }, body: JSON.stringify({ currentPassword: adminPassword, newPassword: changed }) });
+  if (!change.ok) throw new Error(`admin password change failed: ${await change.text()}`);
+  writeFileSync(join(stateDir, 'creds.json'), JSON.stringify({ ...creds, adminPassword: changed }), { mode: 0o600 });
+}
+
 async function main() {
+  mkdirSync(stateDir, { recursive: true });
+  writeFileSync(join(stateDir, 'stack.pid'), String(process.pid));
   const reset = process.argv.includes('--reset') || !existsSync(join(stateDir, 'creds.json'));
   if (reset) await seed();
   mailSink();
@@ -151,6 +169,7 @@ async function main() {
   children.forEach((c) => c.on('exit', (code) => { if (code) { process.stderr.write(`stack process exited with ${code}\n`); stop(); } }));
   await waitFor(`http://127.0.0.1:${ports.api}/ready`, 'API');
   await waitFor(`http://127.0.0.1:${ports.web}/`, 'web');
+  if (reset) await finishAdminSetup();
   process.stdout.write(`stack ready: profile=${profile} http://127.0.0.1:${ports.web}\n`);
 }
 

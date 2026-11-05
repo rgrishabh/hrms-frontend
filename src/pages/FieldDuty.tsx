@@ -12,6 +12,7 @@ import { FormActions } from '../components/FormActions';
 import { Input, Textarea } from '../components/Input';
 import { Modal } from '../components/Modal';
 import { PageHeader } from '../components/PageHeader';
+import { MaskableText } from '../components/RevealToggle';
 import type { PickerItem } from '../components/Picker';
 import { QueryState } from '../components/QueryState';
 import { Select } from '../components/Select';
@@ -212,7 +213,7 @@ function Everyone({ scope }: { scope: 'team' | 'all' }) {
     { key: 'when', header: 'When', card: 'subtitle', cell: (d) => <span className="tnum">{when(d)}</span> },
     { key: 'purpose', header: 'Purpose', cell: (d) => purposes[d.purpose] ?? d.purpose },
     { key: 'place', header: 'Place', cell: (d) => <Place d={d} /> },
-    { key: 'reason', header: 'Reason', cell: (d) => <div className="cell-wrap">{d.reason}</div> },
+    { key: 'reason', header: 'Reason', cell: (d) => <div className="cell-wrap"><MaskableText row={d} field="reason" /></div> },
     { key: 'status', header: 'Status', card: 'status', cell: (d) => <StatusBadge status={d.status} /> },
     { key: 'report', header: 'Report', cell: (d) => <ReportCell d={d} /> },
     { key: 'actions', header: 'Actions', card: 'actions', cell: (d) => (manage && d.status === 'approved' && d.employee_id !== me?.user.employeeId ? <div className="table__actions"><Button size="sm" variant="danger-ghost" onClick={() => setCancel(d)}>Cancel</Button></div> : null) },

@@ -12,6 +12,8 @@ import { InlineError } from '../components/ErrorState';
 import { Input } from '../components/Input';
 import { Modal } from '../components/Modal';
 import { Money } from '../components/Money';
+import { RevealToggle } from '../components/RevealToggle';
+import { isMaskedField, useRevealable, type Maskable } from '../lib/masking';
 import { PageHeader } from '../components/PageHeader';
 import { QueryState } from '../components/QueryState';
 import { Table, type Column } from '../components/Table';
@@ -25,7 +27,7 @@ type Tab = 'exports' | 'ledgers';
 type SourceKind = 'payroll-runs' | 'reimbursement-batches';
 
 interface LastExport { at: string; format: string; by: string }
-interface RunSource { id: string; period: string; kind: string; status: string; totals: { gross?: number | string } | null; legal_entity: string; last_export: LastExport | null }
+interface RunSource extends Maskable { id: string; period: string; kind: string; status: string; totals: { gross?: number | string } | null; legal_entity: string; last_export: LastExport | null }
 interface BatchSource { id: string; status: string; total: number | string; claim_count: number; created_at: string; payment_reference: string | null; last_export: LastExport | null }
 interface Sources { runs: RunSource[]; batches: BatchSource[] }
 interface JournalEntry { key: string; label: string; ledger: string | null; debit: number | string; credit: number | string }
@@ -62,12 +64,12 @@ const lastExport = (x: { last_export: LastExport | null }) => (x.last_export
 
 function Journals() {
   const { hasFeature } = useAuth();
-  const sources = useApiQuery<Sources>(SOURCES_URL);
+  const { query: sources, revealed, setRevealed } = useRevealable<Sources>(SOURCES_URL);
   const [preview, setPreview] = useState<Preview | null>(null);
   const runColumns: Column<RunSource>[] = [
     { key: 'month', header: 'Month', card: 'title', cell: (r) => <span className="tnum">{r.period}{r.kind === 'fnf' ? ' · full and final' : ''}</span> },
     { key: 'entity', header: 'Entity', card: 'subtitle', cell: (r) => r.legal_entity },
-    { key: 'gross', header: 'Gross', align: 'right', cell: (r) => <Money value={r.totals?.gross ?? 0} /> },
+    { key: 'gross', header: 'Gross', align: 'right', cell: (r) => <Money value={r.totals?.gross} masked={isMaskedField(r, 'totals')} /> },
     { key: 'status', header: 'Status', card: 'status', cell: (r) => <StatusBadge status={r.status} /> },
     { key: 'last', header: 'Last export', cell: lastExport },
     { key: 'actions', header: 'Actions', card: 'actions', cell: (r) => <div className="table__actions"><Button size="sm" variant="primary" aria-label={`Journal for payroll ${r.period}, ${r.legal_entity}`} onClick={() => setPreview({ kind: 'payroll-runs', id: r.id, title: `Payroll ${r.period}${r.kind === 'fnf' ? ' (F&F)' : ''}` })}>Journal</Button></div> },
@@ -86,7 +88,7 @@ function Journals() {
       {(d) => (
         <div className="stack-4">
           <section className="stack-2">
-            <h2>Payroll runs</h2>
+            <div className="cluster-between"><h2>Payroll runs</h2><RevealToggle revealed={revealed} loading={sources.isFetching} onChange={setRevealed} /></div>
             {d.runs.length ? <Table label="Payroll runs" columns={runColumns} rows={d.runs} rowKey={(r) => r.id} /> : <EmptyState compact title="No finalized payroll runs yet" />}
           </section>
           {hasFeature('FEATURE_EXPENSE_CLAIMS') && (

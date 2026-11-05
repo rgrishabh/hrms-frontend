@@ -2,7 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Expenses } from '../../pages/Expenses';
-import { mockPageApi, problem, showPage, writes } from '../../test/pageApi';
+import { mockPageApi, problem, showPage, writes } from '../../test/page';
 
 const FLAG = ['FEATURE_EXPENSE_CLAIMS'];
 const CLAIM = { id: 'c1', title: 'Client visit', status: 'submitted', employee_id: 'e2', employee_name: 'Rohan Iyer', items: [], total: '500', purpose: 'Visit', project: null, editable: false, flagged: 0, created_at: '2026-03-01T10:00:00Z' };

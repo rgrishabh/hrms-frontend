@@ -9,6 +9,8 @@ import { DownloadButton } from '../../components/DownloadButton';
 import { EmptyState } from '../../components/EmptyState';
 import { Modal } from '../../components/Modal';
 import { Money } from '../../components/Money';
+import { RevealToggle } from '../../components/RevealToggle';
+import { isMaskedField, useRevealable } from '../../lib/masking';
 import { QueryState } from '../../components/QueryState';
 import { SkeletonRows } from '../../components/Skeleton';
 import { useToast } from '../../components/Toast';
@@ -59,7 +61,7 @@ function OfferCard({ o, canEdit, onEdit, onHire, onConfirm }: { o: Offer; canEdi
   const { run, isBusy } = useAction();
   const act = (action: string, done: string) => void run(action, async () => { await api.post(`/api/v1/recruitment/offers/${o.id}/${action}`, {}); await reload(); }, done);
   return (
-    <Card headingLevel={3} title={<span className="cluster">{o.designation}<StatusBadge status={o.status} />{o.above_budget && <Badge tone="warn">Above budget</Badge>}</span>} actions={o.annual_ctc !== null && <strong><Money value={o.annual_ctc} /> / yr</strong>}>
+    <Card headingLevel={3} title={<span className="cluster">{o.designation}<StatusBadge status={o.status} />{o.above_budget && <Badge tone="warn">Above budget</Badge>}</span>} actions={(o.annual_ctc !== null || isMaskedField(o, 'annual_ctc')) && <strong><Money value={o.annual_ctc} masked={isMaskedField(o, 'annual_ctc')} /> / yr</strong>}>
       <div className="stack-3">
         <p className="text-sm text-2">{o.branch_name} · {statusLabel(o.employment_type)} · joins {fmtDate(o.joining_date)}{o.probation_months ? ` · ${o.probation_months} months probation` : ''}</p>
         {o.notes && <p className="text-sm pre-wrap">{o.notes}</p>}
@@ -85,7 +87,7 @@ const LIVE_OFFER = ['draft', 'pending', 'approved', 'sent', 'accepted'];
 export function ApplicationDetail({ id, onClose }: { id: string; onClose: () => void }) {
   const { can } = useAuth();
   const toast = useToast();
-  const query = useApiQuery<Application>(`/api/v1/recruitment/applications/${id}`, { staleTime: 0 });
+  const { query, revealed, setRevealed } = useRevealable<Application>(`/api/v1/recruitment/applications/${id}`);
   const a = query.data;
   const [moving, setMoving] = useState<string | null>(null);
   const [scheduling, setScheduling] = useState(false);
@@ -114,7 +116,7 @@ export function ApplicationDetail({ id, onClose }: { id: string; onClose: () => 
             {d.access !== 'panel' && (
               <section className="stack-3" aria-label="Offer">
                 <div className="cluster-between">
-                  <h3>Offer</h3>
+                  <span className="cluster"><h3>Offer</h3>{d.offers.some((o) => isMaskedField(o, 'annual_ctc')) || revealed ? <RevealToggle revealed={revealed} loading={query.isFetching} onChange={setRevealed} /> : null}</span>
                   {compensation && d.stage === 'offer' && !d.offers.some((o) => LIVE_OFFER.includes(o.status)) && <Button size="sm" variant="primary" onClick={() => setOfferForm({})}>Draft offer</Button>}
                 </div>
                 {d.offers.length

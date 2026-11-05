@@ -10,6 +10,7 @@ import { Checkbox } from '../components/Input';
 import { PageHeader } from '../components/PageHeader';
 import { QueryState } from '../components/QueryState';
 import { Select } from '../components/Select';
+import { DownloadButton } from '../components/DownloadButton';
 import { Table, type Column } from '../components/Table';
 import { useToast } from '../components/Toast';
 import { useAction } from '../components/useSubmit';
@@ -25,6 +26,8 @@ const ATTENDANCE_STATUSES = ['present', 'half_day', 'absent', 'missing_punch', '
 interface DailyRow {
   employee_id: string; employee_code: string; name: string; branch_name: string; status: string; first_in: string | null; last_out: string | null; worked_minutes: number | null; late_minutes: number | null;
   exceptions: string[] | null; locked: boolean | null; shift_code: string | null;
+  /** The clock-in photo, with the selfie feature on. */
+  selfie_id?: string | null;
 }
 type DailyResponse = Paged<DailyRow> & { summary: { status: string; count: number }[] };
 
@@ -33,7 +36,7 @@ const columns: Column<DailyRow>[] = [
   { key: 'branch', header: 'Branch', cell: (r) => r.branch_name },
   { key: 'shift', header: 'Shift', cell: (r) => r.shift_code ?? '—' },
   { key: 'status', header: 'Status', card: 'status', cell: (r) => <span className="cluster"><StatusBadge status={r.status} />{r.locked && <Badge tone="info">Locked</Badge>}</span> },
-  { key: 'in', header: 'In', cell: (r) => <span className="nowrap">{fmtTime(r.first_in)}</span> },
+  { key: 'in', header: 'In', cell: (r) => <span className="cluster nowrap">{fmtTime(r.first_in)}{r.selfie_id && <DownloadButton url={`/api/v1/attendance/selfies/${r.selfie_id}`} fileName={`selfie-${r.employee_code}.jpg`} aria-label={`Clock-in selfie of ${r.name}`}>Selfie</DownloadButton>}</span> },
   { key: 'out', header: 'Out', cell: (r) => <span className="nowrap">{fmtTime(r.last_out)}</span> },
   { key: 'worked', header: 'Worked', cell: (r) => <span className="nowrap">{r.worked_minutes != null ? fmtMinutes(r.worked_minutes) : '—'}</span> },
   { key: 'late', header: 'Late', cell: (r) => (r.late_minutes ? `${r.late_minutes}m` : '—') },

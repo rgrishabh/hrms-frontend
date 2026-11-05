@@ -13,7 +13,9 @@ import { useDebouncedValue } from '../../components/hooks';
 import { Input, Textarea } from '../../components/Input';
 import { KeyValue } from '../../components/KeyValue';
 import { Modal } from '../../components/Modal';
-import { formatMoney } from '../../components/Money';
+import { Money, formatMoney } from '../../components/Money';
+import { RevealToggle } from '../../components/RevealToggle';
+import { isMaskedField, useRevealable } from '../../lib/masking';
 import { QueryState } from '../../components/QueryState';
 import { Select } from '../../components/Select';
 import { SkeletonRows } from '../../components/Skeleton';
@@ -115,7 +117,7 @@ function RequisitionDetail({ id, onClose, onEdit, onOpenApp }: { id: string; onC
   const { can, me } = useAuth();
   const toast = useToast();
   const { run, isBusy } = useAction();
-  const query = useApiQuery<Requisition>(`${REQ_URL}/${id}`, { staleTime: 0 });
+  const { query, revealed, setRevealed } = useRevealable<Requisition>(`${REQ_URL}/${id}`);
   const r = query.data;
   const [confirm, setConfirm] = useState<ReqAction | null>(null);
   const [adding, setAdding] = useState(false);
@@ -149,7 +151,7 @@ function RequisitionDetail({ id, onClose, onEdit, onOpenApp }: { id: string; onC
             </div>
             <KeyValue items={[
               { label: 'Legal entity', value: d.legal_entity_name }, { label: 'Branch', value: `${d.branch_name}${d.department_name ? ` · ${d.department_name}` : ''}` }, { label: 'Hiring manager', value: d.hiring_manager_name },
-              { label: 'Requested by', value: d.created_by_name }, { label: 'Target joining', value: d.target_date ? fmtDate(d.target_date) : null }, ...(d.budget_ctc_max ? [{ label: 'Budget per position', value: formatMoney(d.budget_ctc_max) }] : []),
+              { label: 'Requested by', value: d.created_by_name }, { label: 'Target joining', value: d.target_date ? fmtDate(d.target_date) : null }, ...(d.budget_ctc_max || isMaskedField(d, 'budget_ctc_max') ? [{ label: 'Budget per position', value: <span className="cluster"><Money value={d.budget_ctc_max} masked={isMaskedField(d, 'budget_ctc_max')} /><RevealToggle revealed={revealed} loading={query.isFetching} onChange={setRevealed} what="amount" /></span> }] : []),
             ]} />
             <p className="recruit-justification">{d.justification}</p>
             <div className="cluster-between">

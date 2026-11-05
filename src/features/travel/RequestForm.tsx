@@ -41,7 +41,8 @@ function PerDiemHelper({ from, to, onUse }: { from: string; to: string; onUse: (
   );
 }
 
-export function RequestForm({ from, onClose }: { from?: Trip; onClose: () => void }) {
+/** `from` copies an earlier trip into a new request. `resubmit` is that trip, sent back for correction: the same request goes back to its approver. */
+export function RequestForm({ from, resubmit, onClose }: { from?: Trip; resubmit?: boolean; onClose: () => void }) {
   const toast = useToast();
   const today = todayLocal();
   const [f, setF] = useState({ purpose: from?.purpose ?? '', tripType: from?.trip_type ?? 'domestic', origin: from?.origin ?? '', destination: from?.destination ?? '', startDate: from && from.start_date > today ? from.start_date : today, endDate: from && from.end_date > today ? from.end_date : today, travelMode: from?.travel_mode ?? 'rail', accommodation: false, project: from?.project ?? '', markOnDuty: true });
@@ -51,13 +52,13 @@ export function RequestForm({ from, onClose }: { from?: Trip; onClose: () => voi
   const total = Object.values(est).reduce((s, v) => s + (Number(v) || 0), 0);
   const symbol = currencySymbol();
   const form = useSubmit(async () => {
-    await api.post(TRIPS_URL, { ...f, project: f.project || undefined, estimate: Object.fromEntries(Object.entries(est).map(([k, v]) => [k, v || 0])), advance: advance || 0 });
-    toast('Travel requested; sent for approval');
+    await api.post(resubmit && from ? `${TRIPS_URL}/${from.id}/resubmit` : TRIPS_URL, { ...f, project: f.project || undefined, estimate: Object.fromEntries(Object.entries(est).map(([k, v]) => [k, v || 0])), advance: advance || 0 });
+    toast(resubmit ? 'Sent back for approval' : 'Travel requested; sent for approval');
     await invalidateApi(TRIPS_URL, '/api/v1/approvals', '/api/v1/dashboard');
     onClose();
   });
   return (
-    <Modal title="Request travel" size="lg" onClose={onClose}>
+    <Modal title={resubmit ? 'Correct and resubmit' : 'Request travel'} size="lg" onClose={onClose}>
       <form className="stack-3" onSubmit={form.submit}>
         <Textarea label="Purpose" hint="The client, work order, or what the trip is for" required minLength={3} maxLength={1000} error={form.errors['purpose']} value={f.purpose} onChange={(e) => set({ purpose: e.target.value })} />
         <div className="columns-form">

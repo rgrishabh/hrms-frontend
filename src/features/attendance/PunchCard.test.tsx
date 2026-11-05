@@ -1,7 +1,7 @@
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { problem, mockPageApi, renderPage } from '../../test/pageHarness';
+import { problem, mockPageApi, renderPage } from '../../test/page';
 import { PunchCard } from './PunchCard';
 
 const TODAY = { linked: true, today: '2026-11-05', timezone: 'Asia/Kolkata', nextDirection: 'in', locationMode: 'off', channels: { web: true, mobile: false }, events: [], daily: null };

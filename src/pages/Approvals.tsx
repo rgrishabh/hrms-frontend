@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Inbox, Send } from 'lucide-react';
-import { api } from '../api';
+import { api, qs, type Paged } from '../api';
 import { useAuth } from '../auth';
 import { StatusBadge } from '../components/Badge';
 import { Button } from '../components/Button';
@@ -62,16 +62,30 @@ function Detail({ id, onClose }: { id: string; onClose: () => void }) {
   );
 }
 
-const TABS = ['inbox', 'mine', 'away'] as const;
+const TABS = ['inbox', 'mine', 'away', 'stuck'] as const;
+const PAGE_SIZE = 25;
+interface StuckItem { id: string; entity_type: string; summary: string; created_at: string; requester_name: string }
 
 export function Approvals() {
   const toast = useToast();
-  const { canAny } = useAuth();
+  const { can, canAny } = useAuth();
   const canReassign = canAny('approvals.escalations', 'users.manage');
   const [reassign, setReassign] = useState<{ id: string; summary: string } | null>(null);
   const [tab, setTab] = useTabParam(TABS);
-  const inbox = useApiQuery<{ items: InboxItem[] }>('/api/v1/approvals/inbox');
-  const mine = useApiQuery<{ items: MineItem[] }>('/api/v1/approvals/mine');
+  const [inboxPage, setInboxPage] = useState(1);
+  const [minePage, setMinePage] = useState(1);
+  const [stuckPage, setStuckPage] = useState(1);
+  const showStuck = can('users.manage');
+  const inbox = useApiQuery<Paged<InboxItem>>(`/api/v1/approvals/inbox${qs({ page: inboxPage, pageSize: PAGE_SIZE })}`, { placeholderData: (p) => p });
+  const mine = useApiQuery<Paged<MineItem>>(`/api/v1/approvals/mine${qs({ page: minePage, pageSize: PAGE_SIZE })}`, { placeholderData: (p) => p });
+  const stuck = useApiQuery<Paged<StuckItem>>(showStuck && tab === 'stuck' ? `/api/v1/approvals/stuck${qs({ page: stuckPage, pageSize: PAGE_SIZE })}` : null, { placeholderData: (p) => p });
+  const stuckColumns: Column<StuckItem>[] = [
+    { key: 'summary', header: 'Request', card: 'title', cell: (r) => <span className="cell-wrap">{r.summary}</span> },
+    { key: 'type', header: 'Type', card: 'subtitle', cell: (r) => ENTITY_LABEL[r.entity_type] ?? r.entity_type },
+    { key: 'by', header: 'Requested by', cell: (r) => r.requester_name },
+    { key: 'when', header: 'Waiting since', cell: (r) => <span className="nowrap">{fmtDateTime(r.created_at)}</span> },
+    { key: 'actions', header: 'Actions', card: 'actions', cell: (r) => <div className="table__actions"><Button size="sm" variant="primary" aria-label={`Reassign ${r.summary}`} onClick={() => setReassign({ id: r.id, summary: r.summary })}>Reassign</Button></div> },
+  ];
   const [action, setAction] = useState<Action | null>(null);
   const [cancelId, setCancelId] = useState<string | null>(null);
   const [detail, setDetail] = useState<string | null>(null);
@@ -116,20 +130,28 @@ export function Approvals() {
         idBase="approvals"
         value={tab}
         onChange={setTab}
-        tabs={[{ key: 'inbox', label: 'Awaiting me', count: inbox.data?.items.length }, { key: 'mine', label: 'My requests' }, { key: 'away', label: "While I'm away" }]}
+        tabs={[{ key: 'inbox', label: 'Awaiting me', count: inbox.data?.total }, { key: 'mine', label: 'My requests' }, { key: 'away', label: "While I'm away" }, ...(showStuck ? [{ key: 'stuck' as const, label: 'Stuck' }] : [])]}
       />
       <TabPanel idBase="approvals" tab={tab}>
         {tab === 'inbox' && (
           <QueryState query={inbox} isEmpty={(d) => !d.items.length} empty={<EmptyState icon={<Inbox />} title="Nothing waiting for you" />}>
-            {(d) => <Table label="Awaiting my approval" columns={inboxColumns} rows={d.items} rowKey={(r) => r.id} />}
+            {(d) => <Table label="Awaiting my approval" columns={inboxColumns} rows={d.items} rowKey={(r) => r.id} refreshing={inbox.isPlaceholderData} pagination={{ page: d.page, pageSize: d.pageSize, total: d.total, onPage: setInboxPage }} />}
           </QueryState>
         )}
         {tab === 'mine' && (
           <QueryState query={mine} isEmpty={(d) => !d.items.length} empty={<EmptyState icon={<Send />} title="You have not submitted any requests" />}>
-            {(d) => <Table label="My requests" columns={mineColumns} rows={d.items} rowKey={(r) => r.id} />}
+            {(d) => <Table label="My requests" columns={mineColumns} rows={d.items} rowKey={(r) => r.id} refreshing={mine.isPlaceholderData} pagination={{ page: d.page, pageSize: d.pageSize, total: d.total, onPage: setMinePage }} />}
           </QueryState>
         )}
         {tab === 'away' && <Delegations />}
+        {tab === 'stuck' && showStuck && (
+          <div className="stack-3">
+            <p className="text-sm text-2">Requests nobody can decide, because the person they wait for has gone or cannot act. Reassign them to someone who can.</p>
+            <QueryState query={stuck} isEmpty={(d) => !d.items.length} empty={<EmptyState icon={<Inbox />} title="Nothing is stuck" />}>
+              {(d) => <Table label="Stuck requests" columns={stuckColumns} rows={d.items} rowKey={(r) => r.id} refreshing={stuck.isPlaceholderData} pagination={{ page: d.page, pageSize: d.pageSize, total: d.total, onPage: setStuckPage }} />}
+            </QueryState>
+          </div>
+        )}
       </TabPanel>
       {action && (
         <ConfirmDialog

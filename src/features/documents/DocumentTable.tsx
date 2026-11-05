@@ -18,7 +18,7 @@ export interface DocumentRow {
   expires_on: string | null; created_at: string; uploaded_by_name: string | null; status: string;
 }
 export interface DocumentCategory {
-  id: string; code: string; name: string; scope: 'employee' | 'company'; status: string; restricted: boolean; requires_expiry: boolean; employee_visible: boolean; employee_upload: boolean;
+  id: string; code: string; name: string; scope: 'employee' | 'company'; status: string; restricted: boolean; requires_expiry: boolean; employee_visible: boolean; employee_upload: boolean; payroll_related?: boolean;
 }
 
 const kb = (n: number) => (n > 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} MB` : `${Math.ceil(n / 1024)} KB`);

@@ -9,7 +9,8 @@ export function lastMonth(): string {
 }
 
 /** A salary's components, as a percentage or an amount depending on how each is calculated. */
-export function SalaryAmounts({ amounts, components }: { amounts: Record<string, number | string>; components: readonly PayComponent[] }) {
+export function SalaryAmounts({ amounts, components }: { amounts: Record<string, number | string> | null; components: readonly PayComponent[] }) {
+  if (!amounts) return <Money value={null} masked />;
   return (
     <ul className="list-plain text-sm">
       {Object.entries(amounts).map(([code, value]) => (

@@ -14,6 +14,7 @@ import { FormActions } from '../components/FormActions';
 import { Input, Textarea } from '../components/Input';
 import { Modal } from '../components/Modal';
 import { PageHeader } from '../components/PageHeader';
+import { MaskableText } from '../components/RevealToggle';
 import { QueryState } from '../components/QueryState';
 import { Select } from '../components/Select';
 import { StatGrid, StatTile } from '../components/StatTile';
@@ -173,7 +174,7 @@ function Claims({ scope }: { scope: 'team' | 'all' }) {
     { key: 'hours', header: 'Hours', cell: (c) => <span className="nowrap">{hours(c.minutes)}</span> },
     { key: 'recorded', header: 'Recorded', cell: (c) => <span className="nowrap">{fmtMinutes(c.recorded_minutes)}</span> },
     { key: 'as', header: 'Taken as', cell: (c) => PAYOUT[c.payout] },
-    { key: 'reason', header: 'Reason', cell: (c) => <div className="cell-wrap">{c.reason}</div> },
+    { key: 'reason', header: 'Reason', cell: (c) => <div className="cell-wrap"><MaskableText row={c} field="reason" /></div> },
     { key: 'status', header: 'Status', card: 'status', cell: (c) => <StatusBadge status={c.status} /> },
     { key: 'outcome', header: 'Outcome', cell: (c) => <div className={`text-sm text-2${c.cancel_reason ? ' cell-wrap' : ''}`}>{outcome(c)}</div> },
     { key: 'actions', header: 'Actions', card: 'actions', cell: (c) => (manage && c.status === 'approved' && !['pending', 'approved', 'finalized', 'paid'].includes(c.payroll_status ?? '') ? <div className="table__actions"><Button size="sm" variant="danger-ghost" onClick={() => setCancel(c)}>Cancel</Button></div> : null) },

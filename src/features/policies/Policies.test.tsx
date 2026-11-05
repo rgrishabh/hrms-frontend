@@ -2,7 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Policies } from '../../pages/Policies';
-import { mockPageApi, problem, reads, renderPage, writes } from '../../test/pageHarness';
+import { mockPageApi, problem, reads, renderPage, writes } from '../../test/page';
 
 afterEach(() => vi.restoreAllMocks());
 

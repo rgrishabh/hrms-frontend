@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Reports } from '../../pages/Reports';
 import { formatMoney } from '../../components/Money';
-import { mockPageApi, problem, reads, renderPage } from '../../test/pageHarness';
+import { mockPageApi, problem, reads, renderPage } from '../../test/page';
 
 afterEach(() => { vi.restoreAllMocks(); window.__testViewportWidth = undefined; });
 

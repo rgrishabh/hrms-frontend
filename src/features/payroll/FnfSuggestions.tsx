@@ -2,8 +2,10 @@ import { Alert } from '../../components/Alert';
 import { statusLabel } from '../../components/Badge';
 import { KeyValue } from '../../components/KeyValue';
 import { QueryState } from '../../components/QueryState';
+import { RevealToggle } from '../../components/RevealToggle';
 import { SkeletonRows } from '../../components/Skeleton';
 import { fmtDate, fmtNumber } from '../../format';
+import { isMaskedField, useRevealable } from '../../lib/masking';
 import { useApiQuery } from '../../lib/query';
 import { SalaryAmounts } from './parts';
 import { COMPONENTS_URL, type FnfSuggestion, type PayComponent } from './types';
@@ -12,7 +14,7 @@ export const fnfUrl = (employeeId: string) => `/api/v1/payroll/fnf-suggestions/$
 
 /** What the system knows about a leaver. HR confirms each figure and enters it as an adjustment. */
 export function FnfSuggestions({ employeeId }: { employeeId: string }) {
-  const query = useApiQuery<FnfSuggestion>(fnfUrl(employeeId));
+  const { query, revealed, setRevealed } = useRevealable<FnfSuggestion>(fnfUrl(employeeId));
   const components = useApiQuery<{ items: PayComponent[] }>(COMPONENTS_URL);
   return (
     <QueryState query={query} compact loading={<SkeletonRows rows={3} />}>
@@ -29,9 +31,9 @@ export function FnfSuggestions({ employeeId }: { employeeId: string }) {
               ? <ul className="list-plain text-sm">{s.leaveBalances.map((b) => <li key={b.code}>{b.name}: <span className="tnum">{fmtNumber(b.balance)}</span> day(s){b.paid ? '' : ', unpaid'}</li>)}</ul>
               : <p className="text-sm text-2">No leave balances.</p>}
           </div>
-          {s.salary && (
+          {(s.salary || isMaskedField(s, 'salary')) && (
             <div className="stack-1">
-              <h4 className="text-sm">Current salary</h4>
+              <div className="cluster-between"><h4 className="text-sm">Current salary</h4><RevealToggle revealed={revealed} loading={query.isFetching} onChange={setRevealed} what="salary" /></div>
               <SalaryAmounts amounts={s.salary} components={components.data?.items ?? []} />
             </div>
           )}

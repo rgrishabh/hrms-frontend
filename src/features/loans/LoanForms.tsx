@@ -7,6 +7,8 @@ import { FormActions } from '../../components/FormActions';
 import { Input, Textarea } from '../../components/Input';
 import { Modal } from '../../components/Modal';
 import { Money, formatMoney } from '../../components/Money';
+import { RevealToggle } from '../../components/RevealToggle';
+import { isMaskedField, useRevealable } from '../../lib/masking';
 import type { PickerItem } from '../../components/Picker';
 import { QueryState } from '../../components/QueryState';
 import { Select } from '../../components/Select';
@@ -15,7 +17,6 @@ import { Table, type Column } from '../../components/Table';
 import { useToast } from '../../components/Toast';
 import { useSubmit, type FieldErrors } from '../../components/useSubmit';
 import { currencySymbol, fmtDateTime, fmtMonth, todayLocal } from '../../format';
-import { useApiQuery } from '../../lib/query';
 import { EmployeeField } from '../employees/EmployeeField';
 import { KIND_LABEL, loanKinds, loansNoun, reloadLoans, terms, type Loan, type LoanDetailData, type LoanKind } from './types';
 
@@ -66,7 +67,7 @@ export function DisburseForm({ loan, onClose }: { loan: Loan; onClose: () => voi
   return (
     <Modal title="Disburse" onClose={onClose}>
       <form className="stack-3" onSubmit={form.submit}>
-        <p>Pay {formatMoney(loan.amount)} to {loan.name}. Recovery: {terms(loan)}.</p>
+        <p>Pay {loan.amount === null ? 'the approved amount' : formatMoney(loan.amount)} to {loan.name}. Recovery: {terms(loan)}.</p>
         <Input label="Payment reference" hint="Transfer number or cash voucher" required minLength={3} maxLength={100} error={form.errors['reference']} value={reference} onChange={(e) => setReference(e.target.value)} />
         <FormActions error={form.error} busy={form.busy} submitLabel="Disburse" onCancel={onClose} />
       </form>
@@ -78,15 +79,15 @@ export function RepaymentForm({ loan, onClose }: { loan: Loan; onClose: () => vo
   const toast = useToast();
   const [f, setF] = useState({ amount: '', reference: '' });
   const form = useSubmit(async () => {
-    const r = await api.post<{ closed: boolean; outstanding: string }>(`${URL_BASE}/${loan.id}/repayment`, { amount: Number(f.amount), reference: f.reference });
-    toast(r.closed ? 'Repaid in full; closed' : `Recorded. Outstanding ${formatMoney(r.outstanding)}`);
+    const r = await api.post<{ closed: boolean }>(`${URL_BASE}/${loan.id}/repayment`, { amount: Number(f.amount), reference: f.reference });
+    toast(r.closed ? 'Repaid in full; closed' : 'Repayment recorded');
     await reloadLoans();
     onClose();
-  }, { validate: (): FieldErrors => (Number(f.amount) > Number(loan.outstanding) ? { amount: `Only ${formatMoney(loan.outstanding)} is outstanding` } : {}) });
+  }, { validate: (): FieldErrors => (loan.outstanding !== null && Number(f.amount) > Number(loan.outstanding) ? { amount: `Only ${formatMoney(loan.outstanding)} is outstanding` } : {}) });
   return (
     <Modal title="Record a repayment" onClose={onClose}>
       <form className="stack-3" onSubmit={form.submit}>
-        <p>{loan.name} has {formatMoney(loan.outstanding)} outstanding.</p>
+        {loan.outstanding !== null && <p>{loan.name} has {formatMoney(loan.outstanding)} outstanding.</p>}
         <Input label={`Amount (${currencySymbol()})`} type="number" inputMode="numeric" required min={1} step={1} error={form.errors['amount']} value={f.amount} onChange={(e) => setF({ ...f, amount: e.target.value })} />
         <Input label="Reference" hint="Receipt or transfer reference" required minLength={3} maxLength={100} error={form.errors['reference']} value={f.reference} onChange={(e) => setF({ ...f, reference: e.target.value })} />
         <FormActions error={form.error} busy={form.busy} submitLabel="Record a repayment" onCancel={onClose} />
@@ -117,8 +118,8 @@ export function DeferForm({ loan, onClose }: { loan: Loan; onClose: () => void }
   );
 }
 
-type ScheduleRow = LoanDetailData['schedule'][number];
-type RecoveryRow = LoanDetailData['recoveries'][number];
+type ScheduleRow = NonNullable<LoanDetailData['schedule']>[number];
+type RecoveryRow = NonNullable<LoanDetailData['recoveries']>[number];
 const scheduleColumns: Column<ScheduleRow>[] = [
   { key: 'month', header: 'Month', card: 'title', cell: (s) => fmtMonth(s.period) },
   { key: 'amount', header: 'Instalment', align: 'right', cell: (s) => <Money value={s.amount} /> },
@@ -130,23 +131,24 @@ const recoveryColumns: Column<RecoveryRow>[] = [
 ];
 
 export function LoanDetail({ id, onClose }: { id: string; onClose: () => void }) {
-  const query = useApiQuery<LoanDetailData>(`${URL_BASE}/${id}`);
+  const { query, revealed, setRevealed } = useRevealable<LoanDetailData>(`${URL_BASE}/${id}`);
   const l = query.data;
   return (
-    <Modal title={l ? `${KIND_LABEL[l.kind]} — ${formatMoney(l.amount)}` : 'Advance or loan'} onClose={onClose}>
+    <Modal title={l ? `${KIND_LABEL[l.kind]}${l.amount === null ? '' : ` — ${formatMoney(l.amount)}`}` : 'Advance or loan'} onClose={onClose}>
       <QueryState query={query}>
         {(d) => (
           <div className="stack-4">
             <div className="cluster"><StatusBadge status={d.status} /><span className="text-sm text-2">{d.name} · {terms(d)}</span></div>
-            <p>{d.purpose}</p>
+            <RevealToggle revealed={revealed} loading={query.isFetching} onChange={setRevealed} what="details" />
+            {d.purpose && <p>{d.purpose}</p>}
             {d.disbursement_reference && <p className="text-sm text-2">Paid {fmtDateTime(d.disbursed_at)} · {d.disbursement_reference}</p>}
             <StatGrid label="Balance">
-              <StatTile label="Outstanding" value={<Money value={d.balance.outstanding} />} />
-              <StatTile label="In payroll being processed" value={<Money value={d.balance.inProgress} />} />
-              <StatTile label="Recovered" value={<Money value={d.balance.recovered} />} />
+              <StatTile label="Outstanding" value={<Money value={d.balance?.outstanding} masked={isMaskedField(d, 'balance')} />} />
+              <StatTile label="In payroll being processed" value={<Money value={d.balance?.inProgress} masked={isMaskedField(d, 'balance')} />} />
+              <StatTile label="Recovered" value={<Money value={d.balance?.recovered} masked={isMaskedField(d, 'balance')} />} />
             </StatGrid>
-            <section className="stack-2"><h3>Schedule</h3><Table label="Schedule" columns={scheduleColumns} rows={d.schedule} rowKey={(s) => s.period} /></section>
-            {d.recoveries.length > 0 && <section className="stack-2"><h3>Recovered</h3><Table label="Recoveries" columns={recoveryColumns} rows={d.recoveries} rowKey={(r) => r.id} /></section>}
+            <section className="stack-2"><h3>Schedule</h3>{d.schedule ? <Table label="Schedule" columns={scheduleColumns} rows={d.schedule} rowKey={(s) => s.period} /> : <p className="text-sm text-2">Hidden until you ask to see the details.</p>}</section>
+            {!!d.recoveries?.length && <section className="stack-2"><h3>Recovered</h3><Table label="Recoveries" columns={recoveryColumns} rows={d.recoveries} rowKey={(r) => r.id} /></section>}
           </div>
         )}
       </QueryState>

@@ -7,6 +7,7 @@ import { Button } from '../components/Button';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { EmptyState } from '../components/EmptyState';
 import { PageHeader } from '../components/PageHeader';
+import { MaskableText } from '../components/RevealToggle';
 import { QueryState } from '../components/QueryState';
 import { Skeleton } from '../components/Skeleton';
 import { StatGrid, StatTile } from '../components/StatTile';
@@ -61,7 +62,7 @@ function MyLeave() {
     { key: 'status', header: 'Status', card: 'status', cell: (r) => <StatusBadge status={r.status} /> },
     { key: 'dates', header: 'Dates', card: 'subtitle', cell: (r) => <span className="tnum">{dates(r)}</span> },
     { key: 'days', header: 'Days', align: 'right', cell: (r) => fmtNumber(r.days) },
-    { key: 'reason', header: 'Reason', cell: (r) => r.reason },
+    { key: 'reason', header: 'Reason', cell: (r) => <MaskableText row={r} field="reason" /> },
     { key: 'actions', header: 'Actions', card: 'actions', cell: (r) => ((r.status === 'pending' || (r.status === 'approved' && r.start_date > today)) ? <div className="table__actions"><Button size="sm" onClick={() => setCancel(r)}>Cancel</Button></div> : null) },
   ];
   return (

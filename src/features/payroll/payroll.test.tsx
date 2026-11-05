@@ -129,7 +129,19 @@ describe('run actions', () => {
     await userEvent.click(within(dlg).getByRole('button', { name: 'Release pay' }));
     await waitFor(() => expect(writes(f, '/runs/p1/items/e9/release')).toHaveLength(1));
     expect(bodyOf(writes(f, '/release')[0]!)).toEqual({ reason: 'Bank details confirmed' });
-    expect(await screen.findByText('Bank file for released pay')).toBeTruthy();
+  });
+  it('offers the released-pay bank file only once something has been released, and says how many', async () => {
+    mockPageApi(MANAGE, FLAGS, api({ ...RUN, status: 'finalized', released_count: 0 }));
+    showPage(<Payroll />, '/payroll?tab=runs');
+    await openRun();
+    await screen.findByRole('button', { name: 'Bank CSV' });
+    expect(screen.queryByRole('button', { name: /Bank file for released pay/ })).toBeNull();
+  });
+  it('counts released pay on the bank file button', async () => {
+    mockPageApi(MANAGE, FLAGS, api({ ...RUN, status: 'finalized', released_count: 2 }));
+    showPage(<Payroll />, '/payroll?tab=runs');
+    await openRun();
+    expect(await screen.findByRole('button', { name: 'Bank file for released pay (2)' })).toBeTruthy();
   });
   it('no release for the person who computed the run, or for their own pay', async () => {
     mockPageApi(MANAGE, FLAGS, api({ ...RUN, computed_by: 'u1', items: [item({ hold: true })] }));

@@ -81,8 +81,8 @@ export function Documents() {
   );
 }
 
-interface CategoryForm { id?: string; code: string; name: string; scope: 'employee' | 'company'; employeeVisible: boolean; employeeUpload: boolean; restricted: boolean; requiresExpiry: boolean; status: string }
-const BLANK: CategoryForm = { code: '', name: '', scope: 'employee', employeeVisible: true, employeeUpload: false, restricted: false, requiresExpiry: false, status: 'active' };
+interface CategoryForm { id?: string; code: string; name: string; scope: 'employee' | 'company'; employeeVisible: boolean; employeeUpload: boolean; restricted: boolean; requiresExpiry: boolean; payrollRelated: boolean; status: string }
+const BLANK: CategoryForm = { code: '', name: '', scope: 'employee', employeeVisible: true, employeeUpload: false, restricted: false, requiresExpiry: false, payrollRelated: false, status: 'active' };
 
 function Categories() {
   const query = useApiQuery<{ items: DocumentCategory[] }>(CATEGORIES_URL);
@@ -92,8 +92,8 @@ function Categories() {
     { key: 'code', header: 'Code', card: 'subtitle', cell: (c) => <span className="mono">{c.code}</span> },
     { key: 'status', header: 'Status', card: 'status', cell: (c) => <StatusBadge status={c.status} /> },
     { key: 'scope', header: 'Scope', cell: (c) => (c.scope === 'company' ? 'Company' : 'Employee') },
-    { key: 'rules', header: 'Rules', cell: (c) => <span className="text-sm text-2">{[c.employee_visible ? 'Visible to employee' : 'HR only', c.employee_upload && 'employee can upload', c.restricted && 'restricted', c.requires_expiry && 'expiry required'].filter(Boolean).join(' · ')}</span> },
-    { key: 'actions', header: 'Actions', card: 'actions', cell: (c) => <div className="table__actions"><Button size="sm" onClick={() => setEdit({ id: c.id, code: c.code, name: c.name, scope: c.scope, employeeVisible: c.employee_visible, employeeUpload: c.employee_upload, restricted: c.restricted, requiresExpiry: c.requires_expiry, status: c.status })}>Edit</Button></div> },
+    { key: 'rules', header: 'Rules', cell: (c) => <span className="text-sm text-2">{[c.employee_visible ? 'Visible to employee' : 'HR only', c.employee_upload && 'employee can upload', c.payroll_related && 'payroll-related', c.restricted && 'restricted', c.requires_expiry && 'expiry required'].filter(Boolean).join(' · ')}</span> },
+    { key: 'actions', header: 'Actions', card: 'actions', cell: (c) => <div className="table__actions"><Button size="sm" onClick={() => setEdit({ id: c.id, code: c.code, name: c.name, scope: c.scope, employeeVisible: c.employee_visible, employeeUpload: c.employee_upload, restricted: c.restricted, requiresExpiry: c.requires_expiry, status: c.status , payrollRelated: !!c.payroll_related })}>Edit</Button></div> },
   ];
   return (
     <div className="stack-3">
@@ -136,6 +136,7 @@ function CategoryDialog({ initial, onClose }: { initial: CategoryForm; onClose: 
         <Checkbox label="Employee can upload their own" disabled={f.scope === 'company'} checked={f.employeeUpload} onChange={(e) => setF({ ...f, employeeUpload: e.target.checked })} />
         <Checkbox label="Restricted, such as medical or identity: only HR with restricted access" checked={f.restricted} onChange={(e) => setF({ ...f, restricted: e.target.checked })} />
         <Checkbox label="Expiry date required, with reminders at 30 and 7 days" checked={f.requiresExpiry} onChange={(e) => setF({ ...f, requiresExpiry: e.target.checked })} />
+        <Checkbox label="Payroll-related: payroll staff and auditors can read these" hint="Under the same salary level check as everything else." checked={f.payrollRelated} onChange={(e) => setF({ ...f, payrollRelated: e.target.checked })} />
         <InlineError error={error} />
         <div className="cluster-between"><span /><div className="cluster"><Button onClick={onClose}>Cancel</Button><Button type="submit" variant="primary" loading={busy}>Save</Button></div></div>
       </form>

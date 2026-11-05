@@ -31,7 +31,7 @@ export function MyTrips() {
   const { run, isBusy } = useAction();
   const [page, setPage] = useState(1);
   const query = useApiQuery<Paged<Trip> & { today?: string }>(`${TRIPS_URL}${qs({ scope: 'mine', page, pageSize: 25 })}`, { placeholderData: (p) => p });
-  const [form, setForm] = useState<{ from?: Trip } | null>(null);
+  const [form, setForm] = useState<{ from?: Trip; resubmit?: boolean } | null>(null);
   const [detail, setDetail] = useState<string | null>(null);
   const [act, setAct] = useState<Act | null>(null);
   const today = query.data?.today ?? todayLocal();
@@ -49,7 +49,7 @@ export function MyTrips() {
         <div className="table__actions">
           <Button size="sm" onClick={() => setDetail(t.id)}>Details</Button>
           {t.status === 'pending' && <Button size="sm" onClick={() => setAct({ kind: 'withdraw', trip: t })}>Withdraw</Button>}
-          {t.status === 'returned' && <Button size="sm" onClick={() => setForm({ from: t })}>Request again</Button>}
+          {t.status === 'returned' && <Button size="sm" variant="primary" onClick={() => setForm({ from: t, resubmit: true })}>Correct and resubmit</Button>}
           {t.status === 'approved' && t.start_date > today && <Button size="sm" onClick={() => setAct({ kind: 'cancel', trip: t })}>Cancel</Button>}
           {t.status === 'approved' && t.start_date <= today && <Button size="sm" onClick={() => setAct({ kind: 'complete', trip: t })}>Back from trip</Button>}
           {claims && ['approved', 'completed'].includes(t.status) && <Button size="sm" variant="primary" loading={isBusy(t.id)} onClick={() => void claim(t)}>Claim expenses</Button>}
@@ -61,12 +61,12 @@ export function MyTrips() {
     <div className="stack-3">
       <div className="cluster-between"><h2>My trips</h2><Button variant="primary" onClick={() => setForm({})}>Request travel</Button></div>
       {query.data?.items.some((t) => t.status === 'returned') && (
-        <Alert tone="warn">A trip returned for correction cannot be edited. Read the approver's comment, then make a new request with the changes: Request again copies the details. <Link to="/approvals?tab=mine">See the comment in Approvals</Link></Alert>
+        <Alert tone="warn">A trip was returned for correction. Read the approver's comment, then press Correct and resubmit. <Link to="/approvals?tab=mine">See the comment in Approvals</Link></Alert>
       )}
       <QueryState query={query} isEmpty={(d) => !d.items.length} empty={<Card><EmptyState icon={<Plane />} title="No trips yet" description="Request travel to get approval and, if you need it, an advance." /></Card>}>
         {(d) => <Table label="My trips" columns={columns} rows={d.items} rowKey={(t) => t.id} refreshing={query.isPlaceholderData} pagination={{ page: d.page, pageSize: d.pageSize, total: d.total, onPage: setPage }} />}
       </QueryState>
-      {form && <RequestForm from={form.from} onClose={() => setForm(null)} />}
+      {form && <RequestForm from={form.from} resubmit={form.resubmit} onClose={() => setForm(null)} />}
       {detail && <TripDetail id={detail} onClose={() => setDetail(null)} />}
       {act?.kind === 'withdraw' && (
         <ConfirmDialog

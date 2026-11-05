@@ -2,7 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Travel } from '../../pages/Travel';
-import { mockPageApi, problem, showPage } from '../../test/pageApi';
+import { mockPageApi, problem, showPage, writes } from '../../test/page';
 
 const FLAG = ['FEATURE_TRAVEL'];
 const TRIP = { id: 't1', employee_id: 'e2', name: 'Rohan Iyer', employee_code: 'E5', department: 'Ops', start_date: '2026-03-01', end_date: '2026-03-03', origin: 'Pune', destination: 'Mumbai', purpose: 'Client audit', travel_mode: 'rail', trip_type: 'domestic', estimate_total: '5000', advance_requested: '3000', advance_paid_at: '2026-02-20T10:00:00Z', advance_reference: 'NEFT1', status: 'approved' };
@@ -23,10 +23,15 @@ describe('Travel', () => {
     await waitFor(() => expect(f.mock.calls.some(([u]) => /scope=mine.*page=2/.test(String(u)))).toBe(true));
   });
 
-  it('a returned trip tells the traveller what to do, since it cannot be edited', async () => {
-    mockPageApi(['travel.self'], FLAG, () => ({ items: [{ ...TRIP, employee_id: 'e1', status: 'returned' }], page: 1, pageSize: 25, total: 1, today: '2026-03-02' }));
+  it('a returned trip goes back through resubmit, not a new request', async () => {
+    const f = mockPageApi(['travel.self'], FLAG, () => ({ items: [{ ...TRIP, employee_id: 'e1', status: 'returned' }], page: 1, pageSize: 25, total: 1, today: '2026-03-02' }));
     showPage(<Travel />, '/travel');
-    expect(await screen.findByText(/cannot be edited.*new request/i)).toBeTruthy();
+    await userEvent.click(await screen.findByRole('button', { name: 'Correct and resubmit' }));
+    const dlg = await screen.findByRole('dialog', { name: 'Correct and resubmit' });
+    expect(within(dlg).getByRole('textbox', { name: /Purpose/ })).toBeTruthy();
+    await userEvent.click(within(dlg).getByRole('button', { name: /Submit|Send/ }));
+    await waitFor(() => expect(writes(f, '/requests/t1/resubmit')).toHaveLength(1));
+    expect(writes(f, '/travel/requests').filter(([u]) => String(u).endsWith('/requests'))).toHaveLength(0);
   });
 
   it('if the outstanding advance cannot be loaded, it says so rather than showing zero', async () => {

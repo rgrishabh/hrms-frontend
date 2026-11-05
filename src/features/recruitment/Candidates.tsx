@@ -15,7 +15,9 @@ import { useDebouncedValue } from '../../components/hooks';
 import { Checkbox, Input } from '../../components/Input';
 import { KeyValue } from '../../components/KeyValue';
 import { Modal } from '../../components/Modal';
-import { formatMoney } from '../../components/Money';
+import { Money } from '../../components/Money';
+import { RevealToggle } from '../../components/RevealToggle';
+import { isMaskedField, useRevealable } from '../../lib/masking';
 import { QueryState } from '../../components/QueryState';
 import { Select } from '../../components/Select';
 import { SkeletonRows } from '../../components/Skeleton';
@@ -136,7 +138,7 @@ export function CandidateForm({ onClose, onSaved }: { onClose: () => void; onSav
 function CandidateDetail({ id, onClose, onOpenApp }: { id: string; onClose: () => void; onOpenApp: (id: string) => void }) {
   const { can } = useAuth();
   const toast = useToast();
-  const query = useApiQuery<Candidate>(`${CANDIDATES}/${id}`, { staleTime: 0 });
+  const { query, revealed, setRevealed } = useRevealable<Candidate>(`${CANDIDATES}/${id}`);
   const [erase, setErase] = useState(false);
   type App = Candidate['applications'][number];
   const columns: Column<App>[] = [
@@ -155,7 +157,7 @@ function CandidateDetail({ id, onClose, onOpenApp }: { id: string; onClose: () =
               { label: 'Experience', value: `${years(c.experience_months)} · notice ${c.notice_days ?? '—'} days` },
               { label: 'Qualification', value: c.qualification },
               { label: 'Source', value: `${SOURCES[c.source] ?? c.source}${c.referred_by_name ? ` (${c.referred_by_name})` : ''}` },
-              ...(c.expected_ctc ? [{ label: 'Expected CTC', value: formatMoney(c.expected_ctc) }] : []),
+              ...(c.expected_ctc || isMaskedField(c, 'expected_ctc') ? [{ label: 'Expected CTC', value: <span className="cluster"><Money value={c.expected_ctc} masked={isMaskedField(c, 'expected_ctc')} /><RevealToggle revealed={revealed} loading={query.isFetching} onChange={setRevealed} what="amount" /></span> }] : []),
               { label: 'Consent', value: [fmtDateTime(c.consent_at), c.consent_note].filter(Boolean).join(': ') },
               { label: 'Kept until', value: fmtDate(c.retain_until) },
             ]} />

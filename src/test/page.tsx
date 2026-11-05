@@ -7,13 +7,47 @@ import { AuthProvider, useAuth } from '../auth';
 import { ToastProvider } from '../components/Toast';
 import { newTestClient } from './render';
 
-type Handler = (url: string, init: RequestInit) => unknown;
+/** The one harness for whole pages: real auth, toast and query providers, against a fake API. */
+export type Handler = (url: string, init: RequestInit) => unknown;
+export interface PageOptions { mode?: 'single' | 'single_hr' | 'multi'; mfa?: Partial<{ enabled: boolean; pending: boolean; enrollmentRequired: boolean; method: string | null; suggested: boolean }>; salaryLevel?: number; roles?: { key: string; name: string; group: string }[]; views?: { key: string; label: string }[]; resetByEmail?: boolean }
 
-/** A whole page against a fake API: signed in with these permissions and flags. Other calls go to the handler. */
-export function mockPageApi(perms: readonly string[], flags: readonly string[], handler: Handler, employeeId = 'e1'): Mock {
-  const config = { brand: { name: 'Acme', productName: 'Acme HR', primaryColor: '#14532d' }, features: Object.fromEntries(flags.map((f) => [f, true])), mode: 'multi', mfa: { available: true } };
-  const me = { user: { id: 'u1', email: 'a@x.test', displayName: 'A', employeeId }, passwordChangeRequired: false, mfa: { enabled: false, pending: false, enrollmentRequired: false }, roles: [], permissions: perms, csrfToken: 't', organization: { id: 'o', name: 'Acme' }, preferences: { timezone: 'Asia/Kolkata', dateFormat: 'DD/MM/YYYY', emailNotifications: true } };
-  const json = (v: unknown) => new Response(JSON.stringify(v), { headers: { 'content-type': 'application/json' } });
+const json = (body: unknown, status = 200, type = 'application/json') => new Response(JSON.stringify(body), { status, headers: { 'content-type': type } });
+
+export const problem = (status: number, title: string, extra: object = {}) => json({ type: 'about:blank', title, status, ...extra }, status, 'application/problem+json');
+export const problemResponse = problem;
+
+const flagsToFeatures = (flags: readonly string[]) => Object.fromEntries(flags.map((f) => [f, true]));
+
+/**
+ * A signed-in user with these permissions and flags; every other request goes to the handler, which may return a
+ * Response, or data to send as JSON. Flags are a list or a map, before or after the handler, as a page reads best.
+ */
+export function mockPageApi(permissions: readonly string[], flags: readonly string[], handler: Handler, employeeId?: string | null, options?: PageOptions): Mock;
+export function mockPageApi(permissions: readonly string[], handler: Handler, features?: Record<string, boolean>, employeeId?: string | null, options?: PageOptions): Mock;
+export function mockPageApi(permissions: readonly string[], second: readonly string[] | Handler, third?: Handler | Record<string, boolean>, employeeId: string | null = 'e1', options: PageOptions = {}): Mock {
+  const handler = (typeof second === 'function' ? second : third) as Handler;
+  const features = typeof second === 'function' ? ((third ?? {}) as Record<string, boolean>) : flagsToFeatures(second);
+  const config = {
+    product: { name: 'HR' },
+    brand: { name: 'Acme', productName: 'Acme HR', primaryColor: '#14532d', currency: 'INR', locale: 'en-IN', timezone: 'Asia/Kolkata', dateFormat: 'DD/MM/YYYY' },
+    features,
+    mode: options.mode ?? 'multi',
+    mfa: { available: true, enforced: false, methods: [] },
+    auth: { resetByEmail: options.resetByEmail ?? false },
+  };
+  const me = {
+    user: { id: 'u1', email: 'a@x.test', displayName: 'A', employeeId },
+    passwordChangeRequired: false,
+    mfa: { enabled: false, pending: false, enrollmentRequired: false, method: null, suggested: false, ...options.mfa },
+    roles: options.roles ?? [],
+    views: options.views ?? [],
+    mode: options.mode ?? 'multi',
+    salaryLevel: options.salaryLevel ?? 0,
+    permissions,
+    csrfToken: 't',
+    organization: { id: 'o', name: 'Acme' },
+    preferences: { timezone: 'Asia/Kolkata', dateFormat: 'DD/MM/YYYY', emailNotifications: true },
+  };
   return vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
     const url = String(input);
     if (url.endsWith('/config/public')) return json(config);
@@ -23,14 +57,21 @@ export function mockPageApi(perms: readonly string[], flags: readonly string[], 
   }) as unknown as Mock;
 }
 
-export const problemResponse = (status: number, title: string, extra: Record<string, unknown> = {}) => new Response(JSON.stringify({ type: 'about:blank', title, status, ...extra }), { status, headers: { 'content-type': 'application/problem+json' } });
+function Gate({ children }: { children: ReactNode }) {
+  const { me } = useAuth();
+  return me ? <>{children}</> : null;
+}
 
-/** Calls to a URL containing `part`, other than reads. */
-export const writes = (f: Mock, part: string) => f.mock.calls.filter(([u, i]) => String(u).includes(part) && !['GET', undefined].includes((i as RequestInit | undefined)?.method));
-export const bodyOf = (call: unknown[]) => JSON.parse(String((call[1] as RequestInit).body)) as Record<string, unknown>;
-
-function Gate({ children }: { children: ReactNode }) { const { me } = useAuth(); return me ? <>{children}</> : null; }
-
-export const showPage = (ui: ReactNode, route = '/') => render(
-  <QueryClientProvider client={newTestClient()}><MemoryRouter initialEntries={[route]}><ToastProvider><AuthProvider><Gate>{ui}</Gate></AuthProvider></ToastProvider></MemoryRouter></QueryClientProvider>,
+/** A page with the providers, waiting for the session like the shell does. */
+export const renderPage = (ui: ReactNode, route = '/') => render(
+  <QueryClientProvider client={newTestClient()}>
+    <MemoryRouter initialEntries={[route]}><ToastProvider><AuthProvider><Gate>{ui}</Gate></AuthProvider></ToastProvider></MemoryRouter>
+  </QueryClientProvider>,
 );
+export const showPage = renderPage;
+
+const method = (call: unknown[]) => (call[1] as RequestInit | undefined)?.method ?? 'GET';
+/** Calls that are not GET, whose URL contains the text. */
+export const writes = (f: Mock, part: string) => f.mock.calls.filter((c) => String(c[0]).includes(part) && method(c) !== 'GET');
+export const reads = (f: Mock, part: string) => f.mock.calls.filter((c) => String(c[0]).includes(part) && method(c) === 'GET');
+export const bodyOf = (call: unknown[]) => JSON.parse(String((call[1] as RequestInit).body)) as Record<string, unknown>;

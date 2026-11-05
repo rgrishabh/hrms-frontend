@@ -14,7 +14,8 @@ import { InlineError } from '../components/ErrorState';
 import { FileUpload } from '../components/FileUpload';
 import { FilterBar } from '../components/FilterBar';
 import { useDebouncedValue } from '../components/hooks';
-import { Input } from '../components/Input';
+import { DownloadButton } from '../components/DownloadButton';
+import { Checkbox, Input } from '../components/Input';
 import { KeyValue } from '../components/KeyValue';
 import { Modal } from '../components/Modal';
 import { PageHeader } from '../components/PageHeader';
@@ -22,6 +23,7 @@ import { Picker, type PickerItem } from '../components/Picker';
 import { QueryState } from '../components/QueryState';
 import { Select } from '../components/Select';
 import { SkeletonPage, SkeletonRows } from '../components/Skeleton';
+import { RevealToggle, Restricted } from '../components/RevealToggle';
 import { Table, type Column } from '../components/Table';
 import { TabPanel, Tabs, useTabParam, type TabItem } from '../components/Tabs';
 import { useToast } from '../components/Toast';
@@ -31,24 +33,28 @@ import { EmployeeDocuments } from '../features/documents/EmployeeDocuments';
 import { employeeName, searchEmployees } from '../features/employees/searchEmployees';
 import { PersonalDetails } from '../features/profile/PersonalDetails';
 import { fmtDate, fmtDateTime } from '../format';
+import { isMaskedField, useRevealable, withReveal, type Maskable } from '../lib/masking';
 import { invalidateApi, useApiQuery } from '../lib/query';
 
 const EMPLOYMENT_TYPES = ['permanent', 'probation', 'contract', 'trainee', 'intern', 'consultant'];
 const STATUSES = ['pre_joining', 'active', 'on_notice', 'exited', 'inactive'];
 const label = (s: string) => s.replace(/_/g, ' ').replace(/^\w/, (c) => c.toUpperCase());
+/** Active entries by name, keeping a value the record already holds even if it has since been retired. */
+const masterOptions = (rows: readonly { name: string; status: string }[], current: string) => [...new Set([...rows.filter((r) => r.status === 'active').map((r) => r.name), ...(current ? [current] : [])])].map((n) => ({ value: n, label: n }));
 const asOptions = (values: string[]) => values.map((v) => ({ value: v, label: label(v) }));
 
 interface OrgUnit { id: string; name: string; legal_entity_id?: string }
-interface Org { branches: OrgUnit[]; departments: OrgUnit[]; legalEntities: OrgUnit[] }
+interface Org { branches: OrgUnit[]; departments: OrgUnit[]; legalEntities: OrgUnit[]; grades?: (OrgUnit & { status: string })[]; designations?: (OrgUnit & { status: string })[] }
+/** A directory reader gets only name, code, email, designation and department. `status`, branch and joining date are L2. */
 interface EmployeeRow {
   id: string; employee_code: string; first_name: string; last_name: string | null; work_email: string | null; designation: string | null;
-  department_name: string | null; branch_name: string; date_of_joining: string; status: string;
+  department_name: string | null; branch_name?: string; date_of_joining?: string; status?: string;
 }
-interface Employee extends EmployeeRow {
-  view: 'full' | 'directory'; version: number; phone: string | null; date_of_birth: string | null; legal_entity_id: string; legal_entity_name: string; branch_id: string; department_id: string | null;
+interface Employee extends EmployeeRow, Maskable {
+  view: 'full' | 'team' | 'directory'; version: number; phone: string | null; date_of_birth: string | null; legal_entity_id: string; legal_entity_name: string; branch_id: string; department_id: string | null;
   grade: string | null; employment_type: string; reporting_manager_id: string | null; reporting_manager_name: string | null; probation_end_date: string | null; confirmation_date: string | null; contract_end_date: string | null; exit_date: string | null;
 }
-type EmployeeList = Paged<EmployeeRow> & { view: 'full' | 'directory' };
+type EmployeeList = Paged<EmployeeRow> & { view: 'full' | 'team' | 'directory' };
 
 export function Employees() {
   const { can } = useAuth();
@@ -62,18 +68,19 @@ export function Employees() {
   const baseColumns = useMemo<Column<EmployeeRow>[]>(() => [
     { key: 'name', header: 'Name', required: true, sortable: true, card: 'title', cell: (e) => <span className="emp-cell"><Avatar name={employeeName(e)} size="sm" /><span><Link to={`/employees/${e.id}`}>{employeeName(e)}</Link><div className="table__cell-sub">{e.work_email}</div></span></span> },
     { key: 'code', header: 'Code', card: 'subtitle', cell: (e) => <span className="mono">{e.employee_code}</span> },
-    { key: 'status', header: 'Status', card: 'status', cell: (e) => <StatusBadge status={e.status} /> },
+    { key: 'status', header: 'Status', card: 'status', cell: (e) => (e.status ? <StatusBadge status={e.status} /> : null) },
     { key: 'designation', header: 'Designation', cell: (e) => e.designation ?? '—' },
     { key: 'department', header: 'Department', cell: (e) => e.department_name ?? '—' },
-    { key: 'branch', header: 'Branch', cell: (e) => e.branch_name },
-    { key: 'joined', header: 'Joined', cell: (e) => fmtDate(e.date_of_joining) },
+    { key: 'branch', header: 'Branch', cell: (e) => e.branch_name ?? '—' },
+    { key: 'joined', header: 'Joined', cell: (e) => (e.date_of_joining ? fmtDate(e.date_of_joining) : '—') },
   ], []);
   const table = useTableState('employees', baseColumns);
   const { branchId = '', departmentId = '', status = '' } = table.filters;
   const url = `/api/v1/employees${qs({ search: debounced, branchId, departmentId, status, page: table.page, pageSize: 25 })}`;
   const query = useApiQuery<EmployeeList>(url, { placeholderData: (previous) => previous });
   const full = query.data?.view === 'full';
-  const columns = full ? baseColumns : baseColumns.filter((c) => c.key !== 'joined');
+  // The directory has no status, branch or joining date, so those columns would only ever be empty.
+  const columns = full ? baseColumns : baseColumns.filter((c) => !['status', 'branch', 'joined'].includes(c.key));
   const onSearch = (v: string) => { setSearch(v); table.setPage(1); };
 
   return (
@@ -88,7 +95,7 @@ export function Employees() {
         activeCount={table.activeFilterCount}
         onClear={table.clearFilters}
       >
-        <Select label="Branch" hideLabel placeholder="All branches" value={branchId} options={org.data?.branches.map((b) => ({ value: b.id, label: b.name }))} onChange={(e) => table.setFilter('branchId', e.target.value)} />
+        {full && <Select label="Branch" hideLabel placeholder="All branches" value={branchId} options={org.data?.branches.map((b) => ({ value: b.id, label: b.name }))} onChange={(e) => table.setFilter('branchId', e.target.value)} />}
         <Select label="Department" hideLabel placeholder="All departments" value={departmentId} options={org.data?.departments.map((d) => ({ value: d.id, label: d.name }))} onChange={(e) => table.setFilter('departmentId', e.target.value)} />
         {full && <Select label="Status" hideLabel placeholder="Any status" value={status} options={asOptions(STATUSES)} onChange={(e) => table.setFilter('status', e.target.value)} />}
       </FilterBar>
@@ -186,8 +193,9 @@ function EmployeeForm({ org, existing, onClose, onSaved }: { org: Org; existing?
           <Select label="Legal entity" required value={v('legalEntityId')} options={org.legalEntities.map((l) => ({ value: l.id, label: l.name }))} onChange={(e) => setF({ ...f, legalEntityId: e.target.value, branchId: '' })} />
           <Select label="Branch" required placeholder="Select…" error={errors['branchId']} value={v('branchId')} options={branches.map((b) => ({ value: b.id, label: b.name }))} onChange={set('branchId')} />
           <Select label="Department" placeholder="None" value={v('departmentId')} options={org.departments.map((d) => ({ value: d.id, label: d.name }))} onChange={set('departmentId')} />
-          <Input label="Designation" value={v('designation')} onChange={set('designation')} />
-          <Input label="Grade" value={v('grade')} onChange={set('grade')} />
+          {/* Once a list has entries, the server accepts only what is on it. */}
+          {org.designations?.length ? <Select label="Designation" placeholder="None" error={errors['designation']} value={v('designation')} options={masterOptions(org.designations, v('designation'))} onChange={set('designation')} /> : <Input label="Designation" error={errors['designation']} value={v('designation')} onChange={set('designation')} />}
+          {org.grades?.length ? <Select label="Grade" placeholder="None" error={errors['grade']} value={v('grade')} options={masterOptions(org.grades, v('grade'))} onChange={set('grade')} /> : <Input label="Grade" error={errors['grade']} value={v('grade')} onChange={set('grade')} />}
           <Select label="Employment type" value={v('employmentType')} options={asOptions(EMPLOYMENT_TYPES)} onChange={set('employmentType')} />
           <Select label="Status" value={v('status')} options={asOptions(STATUSES)} onChange={set('status')} />
           {exiting && <DatePicker label="Exit date" required min={v('dateOfJoining') || undefined} error={errors['exitDate']} value={exitDate} onChange={(e) => setExitDate(e.target.value)} />}
@@ -311,45 +319,73 @@ function ImportDialog({ onClose }: { onClose: () => void }) {
   );
 }
 
+/** Letters as PDF. Salary on an appointment letter is a choice, and reading it is recorded. */
+function LettersCard({ employeeId, self }: { employeeId: string; self: boolean }) {
+  const { can, hasFeature } = useAuth();
+  const [includePay, setIncludePay] = useState(false);
+  const manage = can('employees.manage');
+  const onboarding = hasFeature('FEATURE_ONBOARDING') && manage;
+  const offboarding = hasFeature('FEATURE_OFFBOARDING') && (manage || (self && can('lifecycle.self')));
+  const base = `/api/v1/lifecycle/employees/${employeeId}/letters`;
+  if (!onboarding && !offboarding && !self) return null;
+  return (
+    <Card title="Letters and records">
+      <div className="stack-3">
+        {onboarding && (
+          <div className="cluster">
+            <DownloadButton url={`${base}/appointment.pdf${includePay ? '?includePay=true' : ''}`} fileName="appointment.pdf">Appointment letter</DownloadButton>
+            <Checkbox label="Include salary" hint="Recorded in the audit log." checked={includePay} onChange={(e) => setIncludePay(e.target.checked)} />
+          </div>
+        )}
+        {offboarding && (
+          <div className="cluster">
+            <DownloadButton url={`${base}/experience.pdf`} fileName="experience.pdf">Experience letter</DownloadButton>
+            <DownloadButton url={`${base}/relieving.pdf`} fileName="relieving.pdf">Relieving letter</DownloadButton>
+          </div>
+        )}
+        {self && <div><DownloadButton url={`/api/v1/tenant/data-rights/employees/${employeeId}/export`} fileName="my-data.json">Export my data</DownloadButton></div>}
+      </div>
+    </Card>
+  );
+}
+
 const BLANK_BANK = { accountHolder: '', accountNumber: '', ifsc: '', bankName: '' };
 
-interface BankAccount { accountHolder: string; accountNumberMasked: string; ifsc: string; bankName: string | null }
+interface BankAccount extends Maskable { accountHolder: string | null; accountNumberMasked: string; accountNumber?: string | null; ifsc: string | null; bankName: string | null }
 interface PendingBankChange extends BankAccount { id: string; requestedAt: string; requestedBy: string }
 
 function BankPanel({ employeeId }: { employeeId: string }) {
   const { can, canAny, me } = useAuth();
-  const [show, setShow] = useState(false);
   const [edit, setEdit] = useState(false);
   const url = `/api/v1/employees/${employeeId}/bank-account`;
   const canRead = can('employees.bank.read') || me?.user.employeeId === employeeId;
-  const bank = useApiQuery<BankAccount | null>(show && canRead ? url : null, { gcTime: 0, staleTime: 0 });
-  // Reading either one is recorded in the audit log, so neither loads until asked for.
-  const pending = useApiQuery<{ pending: PendingBankChange | null }>(show && canAny('employees.bank.read', 'employees.bank.approve') ? `${url}/pending` : null, { gcTime: 0, staleTime: 0 });
+  // A masked answer carries no figure and writes no audit row, so it loads at once. Only showing the details is recorded.
+  const { query: bank, revealed, setRevealed } = useRevealable<BankAccount | null>(canRead ? url : null);
+  const pendingUrl = canAny('employees.bank.read', 'employees.bank.approve') ? `${url}/pending` : null;
+  const pending = useApiQuery<{ pending: PendingBankChange | null }>(pendingUrl && revealed ? withReveal(pendingUrl) : pendingUrl, { gcTime: 0, staleTime: 0 });
   const canChange = can('employees.bank.manage') && me?.user.employeeId !== employeeId;
   return (
-    <Card title={<span className="cluster">Bank details<Badge tone="info">Restricted</Badge></span>} actions={canChange && <Button size="sm" onClick={() => setEdit(true)}>Update</Button>}>
-      {!show
-        ? <div className="cluster"><Button size="sm" onClick={() => setShow(true)}>Show masked details</Button><span className="text-sm text-2">Viewing is recorded in the audit log.</span></div>
-        : (
+    <Card title={<span className="cluster">Bank details<Badge tone="info">Restricted</Badge></span>} actions={<div className="cluster">{bank.data?.masked && !revealed && <span className="text-sm text-2">Showing is recorded in the audit log.</span>}{canRead && bank.data && <RevealToggle revealed={revealed} loading={bank.isFetching} onChange={setRevealed} what="details" />}{canChange && <Button size="sm" onClick={() => setEdit(true)}>Update</Button>}</div>}>
+        {(
           <div className="stack-3">
             {pending.data?.pending && (
               <Alert tone="warn">
                 <div className="stack-2">
                   <strong>A change is waiting for approval</strong>
                   <span>Requested by {pending.data.pending.requestedBy} on {fmtDateTime(pending.data.pending.requestedAt)}. Salary keeps going to the current account until someone approves it.</span>
-                  <KeyValue items={[{ label: 'Account holder', value: pending.data.pending.accountHolder }, { label: 'Account number', value: <span className="mono">{pending.data.pending.accountNumberMasked}</span> }, { label: 'IFSC', value: <span className="mono">{pending.data.pending.ifsc}</span> }]} />
+                  <KeyValue items={[{ label: 'Account holder', value: pending.data.pending.accountHolder ?? 'Hidden' }, { label: 'Account number', value: <span className="mono">{pending.data.pending.accountNumberMasked}</span> }, { label: 'IFSC', value: <span className="mono">{pending.data.pending.ifsc ?? 'Hidden'}</span> }]} />
                 </div>
               </Alert>
             )}
             {canRead && (
               <QueryState query={bank} loading={<SkeletonRows rows={2} />} isEmpty={(d) => !d} empty={<EmptyState compact title="No bank account on file." />}>
-                {(d) => d && <KeyValue items={[{ label: 'Account holder', value: d.accountHolder }, { label: 'Account number', value: <span className="mono">{d.accountNumberMasked}</span> }, { label: 'IFSC', value: <span className="mono">{d.ifsc}</span> }, { label: 'Bank', value: d.bankName }]} />}
+                {(d) => d && <KeyValue items={[{ label: 'Account holder', value: isMaskedField(d, 'accountHolder') ? 'Hidden' : d.accountHolder }, { label: 'Account number', value: <span className="mono">{d.accountNumber ?? d.accountNumberMasked}</span> }, { label: 'IFSC', value: isMaskedField(d, 'ifsc') ? 'Hidden' : <span className="mono">{d.ifsc}</span> }, { label: 'Bank', value: isMaskedField(d, 'bankName') ? 'Hidden' : d.bankName }]} />}
               </QueryState>
             )}
           </div>
         )}
       {/* Mounted only while open, so the typed account number leaves memory when the dialog closes. */}
-      {edit && <BankForm employeeId={employeeId} onClose={() => setEdit(false)} onSaved={() => { setShow(true); void invalidateApi(url); }} />}
+      {edit && <BankForm employeeId={employeeId} onClose={() => setEdit(false)} onSaved={() => void invalidateApi(url)} />}
     </Card>
   );
 }
@@ -433,7 +469,7 @@ function ProfileBody({ employee: e, id }: { employee: Employee; id: string }) {
     <div className="stack-4">
       <PageHeader
         title={employeeName(e)}
-        meta={<><span className="mono">{e.employee_code}</span><span>{e.designation ?? 'No designation'}</span><StatusBadge status={e.status} /></>}
+        meta={<><span className="mono">{e.employee_code}</span><span>{e.designation ?? 'No designation'}</span>{e.status && <StatusBadge status={e.status} />}</>}
         actions={can('employees.manage') && full && <Button onClick={() => setEditing(true)}>Edit</Button>}
       />
       <Tabs label="Employee record" idBase="employee" tabs={tabs} value={tab} onChange={setTab} />
@@ -442,17 +478,22 @@ function ProfileBody({ employee: e, id }: { employee: Employee; id: string }) {
           <div className="stack-4">
             <Card>
               <KeyValue items={[
-                { label: 'Work email', value: e.work_email }, { label: 'Branch', value: e.branch_name }, { label: 'Department', value: e.department_name },
+                { label: 'Work email', value: e.work_email }, ...(e.branch_name ? [{ label: 'Branch', value: e.branch_name }] : []), { label: 'Department', value: e.department_name },
+                ...(e.view === 'team' ? [
+                  { label: 'Reporting manager', value: e.reporting_manager_id ? <Link to={`/employees/${e.reporting_manager_id}`}>{e.reporting_manager_name}</Link> : null },
+                  { label: 'Date of joining', value: fmtDate(e.date_of_joining ?? null) },
+                ] : []),
                 ...(full ? [
-                  { label: 'Phone', value: e.phone }, { label: 'Date of birth', value: fmtDate(e.date_of_birth) }, { label: 'Legal entity', value: e.legal_entity_name }, { label: 'Grade', value: e.grade },
+                  { label: 'Phone', value: isMaskedField(e, 'phone') ? <Restricted /> : e.phone }, { label: 'Date of birth', value: isMaskedField(e, 'date_of_birth') ? <Restricted /> : fmtDate(e.date_of_birth) }, { label: 'Legal entity', value: e.legal_entity_name }, { label: 'Grade', value: e.grade },
                   { label: 'Employment type', value: label(e.employment_type) },
                   { label: 'Reporting manager', value: e.reporting_manager_id ? <Link to={`/employees/${e.reporting_manager_id}`}>{e.reporting_manager_name}</Link> : null },
-                  { label: 'Date of joining', value: fmtDate(e.date_of_joining) }, { label: 'Probation end', value: fmtDate(e.probation_end_date) }, { label: 'Confirmation date', value: fmtDate(e.confirmation_date) },
+                  { label: 'Date of joining', value: fmtDate(e.date_of_joining ?? null) }, { label: 'Probation end', value: fmtDate(e.probation_end_date) }, { label: 'Confirmation date', value: fmtDate(e.confirmation_date) },
                   { label: 'Contract end', value: fmtDate(e.contract_end_date) }, { label: 'Exit date', value: fmtDate(e.exit_date) },
                 ] : []),
               ]} />
             </Card>
             {full && (self || canAny('employees.bank.read', 'employees.bank.approve')) && <BankPanel employeeId={id} />}
+            {full && <LettersCard employeeId={id} self={self} />}
           </div>
         )}
         {tab === 'personal' && <PersonalDetails employeeId={id} />}

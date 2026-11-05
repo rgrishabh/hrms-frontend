@@ -4,6 +4,7 @@ import { StatusBadge } from '../components/Badge';
 import { Card } from '../components/Card';
 import { EmptyState } from '../components/EmptyState';
 import { PageHeader } from '../components/PageHeader';
+import { MaskableText } from '../components/RevealToggle';
 import { QueryState } from '../components/QueryState';
 import { Table, type Column } from '../components/Table';
 import { AttendanceCalendar } from '../features/attendance/AttendanceCalendar';
@@ -17,7 +18,7 @@ const columns: Column<Regularization>[] = [
   { key: 'status', header: 'Status', card: 'status', cell: (r) => <StatusBadge status={r.status} /> },
   { key: 'in', header: 'In', cell: (r) => fmtTime(r.requested_in) },
   { key: 'out', header: 'Out', cell: (r) => fmtTime(r.requested_out) },
-  { key: 'reason', header: 'Reason', cell: (r) => r.reason },
+  { key: 'reason', header: 'Reason', cell: (r) => <MaskableText row={r} field="reason" /> },
 ];
 
 export function MyAttendance() {

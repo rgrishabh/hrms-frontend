@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { Route, Routes } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { EmployeeProfile } from '../../pages/Employees';
-import { mockPageApi, renderPage, writes } from '../../test/pageHarness';
+import { mockPageApi, renderPage, writes } from '../../test/page';
 
 const EMP = { id: 'e2', view: 'full', version: 3, employee_code: 'E2', first_name: 'Asha', last_name: 'Rao', work_email: null, phone: null, date_of_birth: null, legal_entity_id: 'l1', legal_entity_name: 'Co', branch_id: 'b1', branch_name: 'HQ', department_id: null, department_name: null, designation: null, grade: null, employment_type: 'permanent', status: 'active', reporting_manager_id: null, reporting_manager_name: null, date_of_joining: '2020-01-15', probation_end_date: null, confirmation_date: null, contract_end_date: null, exit_date: null };
 const ORG = { legalEntities: [{ id: 'l1', name: 'Co' }], branches: [{ id: 'b1', name: 'HQ', legal_entity_id: 'l1' }], departments: [] };

@@ -4,7 +4,7 @@ import './PayLines.css';
 export interface PayLine { kind: string; name: string; amount: number | string; basis?: string | null }
 
 /** Earnings, deductions, employer contributions and net pay: shared by payslips and payroll runs. */
-export function PayLines({ lines, gross, deductions, net }: { lines: readonly PayLine[]; gross: number | string; deductions: number | string; net: number | string }) {
+export function PayLines({ lines, gross, deductions, net }: { lines: readonly PayLine[]; gross: number | string | null; deductions: number | string | null; net: number | string | null }) {
   const group = (kind: string) => lines.filter((l) => l.kind === kind);
   const employer = group('employer');
   return (

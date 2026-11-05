@@ -9,13 +9,14 @@ import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { EmptyState } from '../../components/EmptyState';
 import { FilterBar } from '../../components/FilterBar';
 import { Money, formatMoney } from '../../components/Money';
+import { RevealToggle } from '../../components/RevealToggle';
+import { isMaskedField, useRevealable } from '../../lib/masking';
 import { QueryState } from '../../components/QueryState';
 import { Select } from '../../components/Select';
 import { Table, type Column } from '../../components/Table';
 import { useToast } from '../../components/Toast';
 import { useTableState } from '../../components/useTableState';
 import { fmtMonth } from '../../format';
-import { useApiQuery } from '../../lib/query';
 import { ApplyForm, DeferForm, DisburseForm, LoanDetail, RepaymentForm } from './LoanForms';
 import { KIND_LABEL, loanKinds, loansNoun, loansTitle, reloadLoans, terms, type Loan } from './types';
 
@@ -25,10 +26,10 @@ const PAGE_SIZE = 25;
 function baseColumns(showEmployee: boolean): Column<Loan>[] {
   return [
     ...(showEmployee ? [{ key: 'employee', header: 'Employee', card: 'title', cell: (l: Loan) => <>{l.name}<div className="table__cell-sub mono">{l.employee_code}{l.department ? ` · ${l.department}` : ''}</div></> } as Column<Loan>] : []),
-    { key: 'kind', header: 'Kind', card: showEmployee ? 'subtitle' : 'title', cell: (l) => <>{KIND_LABEL[l.kind]}<div className="table__cell-sub">{l.purpose}</div></> },
-    { key: 'amount', header: 'Amount', align: 'right', cell: (l) => <Money value={l.amount} /> },
+    { key: 'kind', header: 'Kind', card: showEmployee ? 'subtitle' : 'title', cell: (l) => <>{KIND_LABEL[l.kind]}{l.purpose && <div className="table__cell-sub">{l.purpose}</div>}</> },
+    { key: 'amount', header: 'Amount', align: 'right', cell: (l) => <Money value={l.amount} masked={isMaskedField(l, 'amount')} /> },
     { key: 'recovery', header: 'Recovery', cell: (l) => <>{terms(l)}{l.skip_periods.length > 0 && <div className="table__cell-sub">Deferred: {l.skip_periods.map(fmtMonth).join(', ')}</div>}</> },
-    { key: 'outstanding', header: 'Outstanding', align: 'right', cell: (l) => (['disbursed', 'closed'].includes(l.status) ? <Money value={l.outstanding} /> : '—') },
+    { key: 'outstanding', header: 'Outstanding', align: 'right', cell: (l) => (['disbursed', 'closed'].includes(l.status) ? <Money value={l.outstanding} masked={isMaskedField(l, 'outstanding')} /> : '—') },
     { key: 'status', header: 'Status', card: 'status', cell: (l) => <span className="stack-1"><StatusBadge status={l.status} />{l.recorded_by_other && <span className="table__cell-sub">Recorded by payroll</span>}</span> },
   ];
 }
@@ -41,7 +42,7 @@ export function MyLoans() {
   const [form, setForm] = useState(false);
   const [detail, setDetail] = useState<string | null>(null);
   const [withdraw, setWithdraw] = useState<Loan | null>(null);
-  const list = useApiQuery<Paged<Loan>>(`${URL_BASE}${qs({ scope: 'mine', page, pageSize: PAGE_SIZE })}`, { placeholderData: (p) => p });
+  const { query: list, revealed, setRevealed } = useRevealable<Paged<Loan>>(`${URL_BASE}${qs({ scope: 'mine', page, pageSize: PAGE_SIZE })}`, { keepPrevious: true });
   const columns: Column<Loan>[] = [
     ...baseColumns(false),
     {
@@ -57,7 +58,7 @@ export function MyLoans() {
     <div className="stack-3">
       <div className="cluster-between">
         <h2>My {loansTitle(kinds).toLowerCase().replace('&', 'and')}</h2>
-        <Button variant="primary" onClick={() => setForm(true)}>Apply</Button>
+        <div className="cluster"><RevealToggle revealed={revealed} loading={list.isFetching} onChange={setRevealed} /><Button variant="primary" onClick={() => setForm(true)}>Apply</Button></div>
       </div>
       <QueryState query={list} isEmpty={(d) => !d.items.length} empty={<EmptyState icon={<HandCoins />} title={`You have no ${loansTitle(kinds).toLowerCase().replace('&', 'or')}`} description={`Apply for ${loansNoun(kinds)} when you need one.`} />}>
         {(d) => <Table label="My advances and loans" columns={columns} rows={d.items} rowKey={(l) => l.id} refreshing={list.isPlaceholderData} pagination={{ page: d.page, pageSize: d.pageSize, total: d.total, onPage: setPage }} />}
@@ -67,7 +68,7 @@ export function MyLoans() {
       {withdraw && (
         <ConfirmDialog
           title="Withdraw application"
-          message={`Withdraw your ${KIND_LABEL[withdraw.kind].toLowerCase()} application for ${formatMoney(withdraw.amount)}?`}
+          message={`Withdraw your ${KIND_LABEL[withdraw.kind].toLowerCase()} application${withdraw.amount === null ? '' : ` for ${formatMoney(withdraw.amount)}`}?`}
           confirmLabel="Withdraw"
           onClose={() => setWithdraw(null)}
           onConfirm={async () => { await api.post(`${URL_BASE}/${withdraw.id}/withdraw`); toast('Application withdrawn'); await reloadLoans(); }}
@@ -90,7 +91,7 @@ export function LoanList({ scope }: { scope: 'team' | 'all' }) {
   const [detail, setDetail] = useState<string | null>(null);
   const [record, setRecord] = useState(false);
   const [act, setAct] = useState<Act | null>(null);
-  const list = useApiQuery<Paged<Loan>>(`${URL_BASE}${qs({ scope, status: table.filters['status'], kind: table.filters['kind'], page: table.page, pageSize: PAGE_SIZE })}`, { placeholderData: (p) => p });
+  const { query: list, revealed, setRevealed } = useRevealable<Paged<Loan>>(`${URL_BASE}${qs({ scope, status: table.filters['status'], kind: table.filters['kind'], page: table.page, pageSize: PAGE_SIZE })}`, { keepPrevious: true });
   const manage = scope === 'all' && can('loans.manage');
   const cancelOk = scope === 'all' && (can('loans.manage') || can('loans.approve'));
   const columns: Column<Loan>[] = [
@@ -133,7 +134,7 @@ export function LoanList({ scope }: { scope: 'team' | 'all' }) {
           minCommentLength={3}
           confirmLabel="Cancel application"
           onClose={() => setAct(null)}
-          message={`Cancel ${act.loan.name}'s ${KIND_LABEL[act.loan.kind].toLowerCase()} of ${formatMoney(act.loan.amount)} before it is paid?`}
+          message={`Cancel ${act.loan.name}'s ${KIND_LABEL[act.loan.kind].toLowerCase()}${act.loan.amount === null ? '' : ` of ${formatMoney(act.loan.amount)}`} before it is paid?`}
           onConfirm={async (reason) => { await api.post(`${URL_BASE}/${act.loan.id}/cancel`, { reason }); toast('Cancelled'); await reloadLoans(); }}
         />
       )}

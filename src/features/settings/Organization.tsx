@@ -15,11 +15,11 @@ import { useToast } from '../../components/Toast';
 import { useSubmit } from '../../components/useSubmit';
 import { invalidateApi, useApiQuery } from '../../lib/query';
 
-type Kind = 'legal-entities' | 'branches' | 'departments';
+type Kind = 'legal-entities' | 'branches' | 'departments' | 'grades' | 'designations';
 interface Row { id: string; name: string; status: string; code?: string | null; gstin?: string | null; cin?: string | null; state_code?: string | null; state?: string | null; city?: string | null; legal_entity_id?: string; parent_id?: string | null }
-interface OrgData { legalEntities: Row[]; branches: Row[]; departments: Row[] }
+interface OrgData { legalEntities: Row[]; branches: Row[]; departments: Row[]; grades: Row[]; designations: Row[] }
 
-const NOUN: Record<Kind, string> = { 'legal-entities': 'legal entity', branches: 'branch', departments: 'department' };
+const NOUN: Record<Kind, string> = { 'legal-entities': 'legal entity', branches: 'branch', departments: 'department', grades: 'grade', designations: 'designation' };
 const STATUS_OPTIONS = [{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }];
 const ORG_URL = '/api/v1/org';
 
@@ -39,6 +39,7 @@ export function Organization() {
           { kind: 'legal-entities', title: 'Legal entities', rows: d.legalEntities, columns: [{ key: 'name', header: 'Name', card: 'title', cell: (r) => r.name }, status, { key: 'gstin', header: 'GSTIN', cell: (r) => <span className="mono">{dash(r.gstin)}</span> }, ...actions('legal-entities')] },
           { kind: 'branches', title: 'Branches', rows: d.branches, columns: [{ key: 'name', header: 'Name', card: 'title', cell: (r) => r.name }, { key: 'code', header: 'Code', card: 'subtitle', cell: (r) => <span className="mono">{dash(r.code)}</span> }, status, { key: 'state', header: 'State', cell: (r) => dash(r.state) }, { key: 'city', header: 'City', cell: (r) => dash(r.city) }, { key: 'entity', header: 'Legal entity', cell: (r) => legalName(r.legal_entity_id) }, ...actions('branches')] },
           { kind: 'departments', title: 'Departments', rows: d.departments, columns: [{ key: 'name', header: 'Name', card: 'title', cell: (r) => r.name }, { key: 'code', header: 'Code', card: 'subtitle', cell: (r) => <span className="mono">{dash(r.code)}</span> }, status, ...actions('departments')] },
+          ...(['grades', 'designations'] as const).map((kind) => ({ kind, title: kind === 'grades' ? 'Grades' : 'Designations', rows: d[kind] ?? [], columns: [{ key: 'name', header: 'Name', card: 'title', cell: (r: Row) => r.name }, { key: 'code', header: 'Code', card: 'subtitle', cell: (r: Row) => <span className="mono">{r.code}</span> }, status, ...actions(kind)] as Column<Row>[] })),
         ];
         return (
           <div className="stack-4">
@@ -59,6 +60,7 @@ function initialValues(kind: Kind, row: Row | null, legalEntities: readonly Row[
   const status = row?.status ?? 'active';
   if (kind === 'legal-entities') return { name: row?.name ?? '', gstin: row?.gstin ?? '', cin: row?.cin ?? '', stateCode: row?.state_code ?? '', status };
   if (kind === 'branches') return { legalEntityId: row?.legal_entity_id ?? legalEntities[0]?.id ?? '', code: row?.code ?? '', name: row?.name ?? '', state: row?.state ?? '', city: row?.city ?? '', status };
+  if (kind === 'grades' || kind === 'designations') return { code: row?.code ?? '', name: row?.name ?? '', status };
   return { code: row?.code ?? '', name: row?.name ?? '', parentId: row?.parent_id ?? '', status };
 }
 

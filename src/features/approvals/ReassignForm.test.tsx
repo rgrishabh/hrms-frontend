@@ -2,12 +2,12 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Approvals } from '../../pages/Approvals';
-import { mockPageApi, problem, renderPage, writes } from '../../test/pageHarness';
+import { mockPageApi, problem, renderPage, writes } from '../../test/page';
 
-const INBOX = { items: [{ id: 'a1', summary: 'Salary change', entity_type: 'salary_change', requester_name: 'Asha', created_at: '2026-11-01T04:00:00Z', via: 'escalation' }] };
+const INBOX = { items: [{ id: 'a1', summary: 'Salary change', entity_type: 'salary_change', requester_name: 'Asha', created_at: '2026-11-01T04:00:00Z', via: 'escalation' }], page: 1, pageSize: 25, total: 1 };
 const handler = (reassign: () => unknown) => (url: string) => {
-  if (url.endsWith('/approvals/inbox')) return INBOX;
-  if (url.endsWith('/approvals/mine')) return { items: [] };
+  if (url.includes('/approvals/inbox')) return INBOX;
+  if (url.includes('/approvals/mine')) return { items: [], page: 1, pageSize: 25, total: 0 };
   if (url.includes('/approvals/delegates')) return { items: [{ id: 'u9', name: 'Meera Nair', code: 'E9', designation: null }] };
   if (url.endsWith('/approvals/a1/reassign')) return reassign();
   return { items: [] };

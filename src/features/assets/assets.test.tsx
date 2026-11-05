@@ -2,7 +2,7 @@ import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Assets } from '../../pages/Assets';
-import { mockPageApi, problem, showPage } from '../../test/pageApi';
+import { mockPageApi, problem, showPage } from '../../test/page';
 
 const ASSET = { id: 'a1', tag: 'IT-05', name: 'Laptop', category: 'it', serial_number: 'S1', status: 'available', calibration_due: null, branch_id: null, branch_name: null, holder_id: null, holder_name: null, issued_at: null, due_back: null, acknowledged_at: null, purchase_date: null, notes: null };
 const list = { items: [ASSET], page: 1, pageSize: 25, total: 1, today: '2026-03-02' };

@@ -11,13 +11,16 @@ import { FormActions } from '../../components/FormActions';
 import { Checkbox, Input } from '../../components/Input';
 import { KeyValue } from '../../components/KeyValue';
 import { Modal } from '../../components/Modal';
+import { Money } from '../../components/Money';
 import type { PickerItem } from '../../components/Picker';
 import { QueryState } from '../../components/QueryState';
+import { RevealToggle } from '../../components/RevealToggle';
 import { Select } from '../../components/Select';
 import { Table, type Column } from '../../components/Table';
 import { useToast } from '../../components/Toast';
 import { useSubmit, type FieldErrors } from '../../components/useSubmit';
 import { currencySymbol, fmtDate, todayLocal } from '../../format';
+import { isMaskedField, useRevealable } from '../../lib/masking';
 import { invalidateApi, useApiQuery } from '../../lib/query';
 import { EmployeeField } from '../employees/EmployeeField';
 import { SalaryAmounts } from './parts';
@@ -43,7 +46,7 @@ export function Salaries() {
 }
 
 function SalaryHistory({ employee, manage }: { employee: PickerItem; manage: boolean }) {
-  const salaries = useApiQuery<{ items: Salary[] }>(`/api/v1/payroll/employees/${employee.id}/salaries`);
+  const { query: salaries, revealed, setRevealed } = useRevealable<{ items: Salary[] }>(`/api/v1/payroll/employees/${employee.id}/salaries`);
   const components = useApiQuery<{ items: PayComponent[] }>(COMPONENTS_URL);
   const [proposing, setProposing] = useState(false);
   const columns: Column<Salary>[] = [
@@ -54,7 +57,7 @@ function SalaryHistory({ employee, manage }: { employee: PickerItem; manage: boo
   ];
   return (
     <div className="stack-3">
-      <div className="cluster-between"><h2>Salary history</h2>{manage && <Button size="sm" variant="primary" onClick={() => setProposing(true)}>Propose change</Button>}</div>
+      <div className="cluster-between"><h2>Salary history</h2><div className="cluster"><RevealToggle revealed={revealed} loading={salaries.isFetching} onChange={setRevealed} />{manage && <Button size="sm" variant="primary" onClick={() => setProposing(true)}>Propose change</Button>}</div></div>
       <QueryState query={salaries} compact isEmpty={(d) => !d.items.length} empty={<EmptyState compact title="No salary yet" />}>
         {(d) => <Table label="Salary history" columns={columns} rows={d.items} rowKey={(s) => s.id} />}
       </QueryState>
@@ -96,17 +99,20 @@ function SalaryForm({ employee, components, onClose }: { employee: PickerItem; c
 }
 
 function StatutoryCard({ employee, manage }: { employee: PickerItem; manage: boolean }) {
-  const query = useApiQuery<Statutory>(`/api/v1/payroll/employees/${employee.id}/statutory`);
+  const { query, revealed, setRevealed } = useRevealable<Statutory>(`/api/v1/payroll/employees/${employee.id}/statutory`);
   const [editing, setEditing] = useState(false);
+  // Hidden fields read null, and saving a form built from them would clear what is stored. So editing starts from what has been revealed.
+  const hidden = isMaskedField(query.data, 'uan') || isMaskedField(query.data, 'esi_ip_number') || isMaskedField(query.data, 'pf_member_id');
+  const shown = (s: Statutory, field: keyof Statutory) => (isMaskedField(s, field) ? <Money value={null} masked /> : (s[field] as string | null) && <span className="mono">{s[field] as string}</span>);
   return (
-    <Card title="Statutory details" actions={manage && query.data && <Button size="sm" onClick={() => setEditing(true)}>Edit</Button>}>
+    <Card title="Statutory details" actions={<div className="cluster"><RevealToggle revealed={revealed} loading={query.isFetching} onChange={setRevealed} what="details" />{manage && query.data && <Button size="sm" disabled={hidden} title={hidden ? 'Show the details first' : undefined} onClick={() => setEditing(true)}>Edit</Button>}</div>}>
       <QueryState query={query} compact>
         {(s) => (
           <KeyValue items={[
-            { label: 'UAN', value: s.uan && <span className="mono">{s.uan}</span> },
+            { label: 'UAN', value: shown(s, 'uan') },
             { label: 'Provident fund', value: s.pf_excluded ? 'Excluded' : 'Covered' },
-            { label: 'ESI IP number', value: s.esi_ip_number && <span className="mono">{s.esi_ip_number}</span> },
-            { label: 'PAN', value: s.pan && <span className="mono">{s.pan}</span> },
+            { label: 'ESI IP number', value: shown(s, 'esi_ip_number') },
+            { label: 'PAN', value: shown(s, 'pan') },
             { label: 'Tax regime', value: s.tax_regime === 'old' ? 'Old' : 'New' },
             { label: 'PT state', value: s.pt_state ?? 'Branch state' },
           ]} />

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Banknote } from 'lucide-react';
-import { api } from '../../api';
+import { api, type Paged } from '../../api';
 import { useAuth } from '../../auth';
 import { Badge, StatusBadge, statusLabel } from '../../components/Badge';
 import { Button } from '../../components/Button';
@@ -14,10 +14,12 @@ import { Modal } from '../../components/Modal';
 import { Money } from '../../components/Money';
 import type { PickerItem } from '../../components/Picker';
 import { QueryState } from '../../components/QueryState';
+import { RevealToggle } from '../../components/RevealToggle';
 import { Select } from '../../components/Select';
 import { Table, type Column } from '../../components/Table';
 import { useToast } from '../../components/Toast';
 import { useSubmit, type FieldErrors } from '../../components/useSubmit';
+import { isMaskedField, useRevealable } from '../../lib/masking';
 import { invalidateApi, useApiQuery } from '../../lib/query';
 import { EmployeeField } from '../employees/EmployeeField';
 import { orgOptions, useOrg } from '../org/useOrg';
@@ -27,13 +29,11 @@ import { RunDetail } from './RunDetail';
 import { RUNS_URL, type FnfSuggestion, type RunRow } from './types';
 
 const PAGE_SIZE = 25;
-/** The server returns the latest this many runs. */
-const SERVER_LIMIT = 100;
 
 export function Runs() {
   const { can } = useAuth();
   const [params, setParams] = useSearchParams();
-  const runs = useApiQuery<{ items: RunRow[] }>(RUNS_URL);
+  const { query: runs, revealed, setRevealed } = useRevealable<Paged<RunRow>>(RUNS_URL, { keepPrevious: true });
   const [creating, setCreating] = useState(false);
   const [status, setStatus] = useState('');
   const [text, setText] = useState('');
@@ -45,9 +45,9 @@ export function Runs() {
     { key: 'period', header: 'Period', card: 'title', cell: (r) => <Button variant="link" onClick={() => setOpen(r.id)}><span className="tnum nowrap">{r.period}</span></Button> },
     { key: 'entity', header: 'Entity', card: 'subtitle', cell: (r) => r.legal_entity_name },
     { key: 'kind', header: 'Kind', cell: (r) => (r.kind === 'fnf' ? `F&F · ${r.employee_name ?? ''}` : 'Regular') },
-    { key: 'employees', header: 'Employees', align: 'right', cell: (r) => r.totals?.employees ?? '—' },
-    { key: 'gross', header: 'Gross', align: 'right', cell: (r) => <Money value={r.totals?.gross} /> },
-    { key: 'net', header: 'Net', align: 'right', cell: (r) => <Money value={r.totals?.net} /> },
+    { key: 'employees', header: 'Employees', align: 'right', cell: (r) => (isMaskedField(r, 'totals') ? <Money value={null} masked /> : r.totals?.employees ?? '—') },
+    { key: 'gross', header: 'Gross', align: 'right', cell: (r) => <Money value={r.totals?.gross} masked={isMaskedField(r, 'totals')} /> },
+    { key: 'net', header: 'Net', align: 'right', cell: (r) => <Money value={r.totals?.net} masked={isMaskedField(r, 'totals')} /> },
     { key: 'warnings', header: 'Warnings', cell: (r) => (r.warnings ? <Badge tone={r.warnings_acknowledged ? 'neutral' : 'warn'}>{r.warnings_acknowledged ? `${r.warnings} acknowledged` : r.warnings}</Badge> : '—') },
     { key: 'status', header: 'Status', card: 'status', cell: (r) => <StatusBadge status={r.status} /> },
   ];
@@ -60,7 +60,7 @@ export function Runs() {
         search={{ label: 'Search runs', placeholder: 'Month, entity or person', value: text, onChange: (v) => { setText(v); setPage(1); } }}
         activeCount={(status ? 1 : 0) + (text ? 1 : 0)}
         onClear={clear}
-        actions={can('payroll.manage') && <Button variant="primary" onClick={() => setCreating(true)}>New run</Button>}
+        actions={<><RevealToggle revealed={revealed} loading={runs.isFetching} onChange={setRevealed} />{can('payroll.manage') && <Button variant="primary" onClick={() => setCreating(true)}>New run</Button>}</>}
       >
         <Select label="Status" hideLabel placeholder="Any status" value={status} options={statuses} onChange={(e) => { setStatus(e.target.value); setPage(1); }} />
       </FilterBar>
@@ -70,7 +70,7 @@ export function Runs() {
             {filtered.length
               ? <Table label="Payroll runs" columns={columns} rows={filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)} rowKey={(r) => r.id} pagination={{ page, pageSize: PAGE_SIZE, total: filtered.length, onPage: setPage }} />
               : <EmptyState compact title="No runs match these filters" />}
-            {d.items.length >= SERVER_LIMIT && <p className="text-sm text-2">Showing the latest {SERVER_LIMIT} runs.</p>}
+            {d.total > d.items.length && <p className="text-sm text-2">Showing the latest {d.items.length} of {d.total} runs.</p>}
           </>
         )}
       </QueryState>
