@@ -1,7 +1,10 @@
 import { formatMoney } from '../../components/Money';
+import type { ApiResponse } from '../../lib/api-types';
+import type { RunItem } from './types';
 import './PayLines.css';
 
-export interface PayLine { kind: string; name: string; amount: number | string; basis?: string | null }
+type Lines<T extends { lines: readonly unknown[] | null }> = NonNullable<T['lines']>[number];
+export type PayLine = Lines<ApiResponse<'/api/v1/payroll/payslips/{id}'>> | Lines<RunItem>;
 
 /** Earnings, deductions, employer contributions and net pay: shared by payslips and payroll runs. */
 export function PayLines({ lines, gross, deductions, net }: { lines: readonly PayLine[]; gross: number | string | null; deductions: number | string | null; net: number | string | null }) {

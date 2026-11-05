@@ -17,6 +17,7 @@ import { Table, type Column } from '../../components/Table';
 import { useToast } from '../../components/Toast';
 import { useAction, useSubmit, type FieldErrors } from '../../components/useSubmit';
 import { fmtDate } from '../../format';
+import type { ApiResponse, Refine } from '../../lib/api-types';
 import { invalidateApi, useApiQuery } from '../../lib/query';
 import type { RuleKind, StatutoryRule } from './types';
 
@@ -39,7 +40,7 @@ export function StatutoryRules() {
   const { can, me } = useAuth();
   const toast = useToast();
   const action = useAction();
-  const query = useApiQuery<{ items: StatutoryRule[] }>(URL);
+  const query = useApiQuery<Refine<ApiResponse<'/api/v1/payroll/statutory-rules'>, { items: StatutoryRule[] }>>(URL);
   const [edit, setEdit] = useState<RuleForm | null>(null);
   const [retire, setRetire] = useState<StatutoryRule | null>(null);
   const manage = can('payroll.statutory');

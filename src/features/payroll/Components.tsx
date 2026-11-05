@@ -13,6 +13,7 @@ import { Select } from '../../components/Select';
 import { Table, type Column } from '../../components/Table';
 import { useToast } from '../../components/Toast';
 import { useSubmit, type FieldErrors } from '../../components/useSubmit';
+import type { ApiResponse } from '../../lib/api-types';
 import { invalidateApi, useApiQuery } from '../../lib/query';
 import { COMPONENTS_URL, type PayComponent } from './types';
 
@@ -23,7 +24,7 @@ const FLAGS: [keyof Pick<ComponentForm, 'prorate' | 'taxable' | 'pfWage' | 'esiW
 
 export function Components() {
   const { can } = useAuth();
-  const query = useApiQuery<{ items: PayComponent[] }>(COMPONENTS_URL);
+  const query = useApiQuery<ApiResponse<'/api/v1/payroll/components'>>(COMPONENTS_URL);
   const [edit, setEdit] = useState<ComponentForm | null>(null);
   const columns: Column<PayComponent>[] = [
     { key: 'name', header: 'Name', card: 'title', cell: (c) => c.name },

@@ -20,6 +20,7 @@ import { Table, type Column } from '../../components/Table';
 import { useToast } from '../../components/Toast';
 import { useSubmit, type FieldErrors } from '../../components/useSubmit';
 import { currencySymbol, fmtDate, todayLocal } from '../../format';
+import type { ApiResponse } from '../../lib/api-types';
 import { isMaskedField, useRevealable } from '../../lib/masking';
 import { invalidateApi, useApiQuery } from '../../lib/query';
 import { EmployeeField } from '../employees/EmployeeField';
@@ -47,8 +48,8 @@ export function Salaries() {
 }
 
 function SalaryHistory({ employee, manage }: { employee: PickerItem; manage: boolean }) {
-  const { query: salaries, revealed, setRevealed } = useRevealable<{ items: Salary[] }>(`/api/v1/payroll/employees/${employee.id}/salaries`);
-  const components = useApiQuery<{ items: PayComponent[] }>(COMPONENTS_URL);
+  const { query: salaries, revealed, setRevealed } = useRevealable<ApiResponse<'/api/v1/payroll/employees/{id}/salaries'>>(`/api/v1/payroll/employees/${employee.id}/salaries`);
+  const components = useApiQuery<ApiResponse<'/api/v1/payroll/components'>>(COMPONENTS_URL);
   const [proposing, setProposing] = useState(false);
   const columns: Column<Salary>[] = [
     { key: 'effective', header: 'Effective', card: 'title', cell: (s) => fmtDate(s.effective_from) },
@@ -104,7 +105,7 @@ function StatutoryCard({ employee, manage }: { employee: PickerItem; manage: boo
   const [editing, setEditing] = useState(false);
   // Hidden fields read null, and saving a form built from them would clear what is stored. So editing starts from what has been revealed.
   const hidden = isMaskedField(query.data, 'uan') || isMaskedField(query.data, 'esi_ip_number') || isMaskedField(query.data, 'pf_member_id');
-  const shown = (s: Statutory, field: keyof Statutory) => (isMaskedField(s, field) ? <Money value={null} masked /> : (s[field] as string | null) && <span className="mono">{s[field] as string}</span>);
+  const shown = (s: Statutory, field: 'uan' | 'esi_ip_number' | 'pan') => (isMaskedField(s, field) ? <Money value={null} masked /> : s[field] && <span className="mono">{s[field]}</span>);
   return (
     <Card title="Statutory details" actions={<div className="cluster"><RevealToggle revealed={revealed} loading={query.isFetching} onChange={setRevealed} what="details" />{manage && query.data && <Button size="sm" disabled={hidden} title={hidden ? 'Show the details first' : undefined} onClick={() => setEditing(true)}>Edit</Button>}</div>}>
       <QueryState query={query} compact>

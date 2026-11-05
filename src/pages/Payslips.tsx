@@ -12,25 +12,24 @@ import { PageHeader } from '../components/PageHeader';
 import { QueryState } from '../components/QueryState';
 import { RevealToggle } from '../components/RevealToggle';
 import { Table, type Column } from '../components/Table';
-import { PayLines, type PayLine } from '../features/payroll/PayLines';
+import { PayLines } from '../features/payroll/PayLines';
 import { currencySymbol, fmtDate } from '../format';
 import { formatMoney } from '../components/Money';
-import { isMaskedField, useRevealable, withReveal, type Maskable } from '../lib/masking';
+import type { ApiItem, ApiResponse, Refine } from '../lib/api-types';
+import { isMaskedField, useRevealable, withReveal } from '../lib/masking';
 import { useApiQuery } from '../lib/query';
 
-interface PayslipRow extends Maskable { id: string; period: string; kind: string; status?: string; gross: number | string | null; deductions: number | string | null; net: number | string | null }
-interface Payslip extends PayslipRow {
-  legal_entity: string; name: string; employee_code: string; designation: string | null; department: string | null; branch: string; date_of_joining: string;
-  paid_days: number | string; days_in_period: number | string; lop_days: number | string; uan: string | null; pan: string | null; account: string | null; ifsc: string | null; lines: PayLine[] | null;
-}
+/** The list masks like the slip does, though its schema says neither. */
+type PayslipRow = Refine<ApiItem<'/api/v1/payroll/payslips/mine'>, { gross: string | null; deductions: string | null; net: string | null; masked?: boolean; maskedFields?: string[] }>;
+type Payslip = ApiResponse<'/api/v1/payroll/payslips/{id}'>;
 
 export function Payslips() {
-  const query = useApiQuery<{ items: PayslipRow[] }>('/api/v1/payroll/payslips/mine');
+  const query = useApiQuery<Refine<ApiResponse<'/api/v1/payroll/payslips/mine'>, { items: PayslipRow[] }>>('/api/v1/payroll/payslips/mine');
   const [open, setOpen] = useState<string | null>(null);
   const mask = `${currencySymbol()} ••••••`;
   // One slip at a time, so each look writes one audit row for this person's own figure.
   const amount = (p: PayslipRow, field: 'gross' | 'deductions' | 'net', name: string) => (isMaskedField(p, field)
-    ? <MaskedValue label={`${name} for ${p.period}`} mask={mask} onReveal={async () => formatMoney((await api.get<PayslipRow>(withReveal(`/api/v1/payroll/payslips/${p.id}`)))[field])} />
+    ? <MaskedValue label={`${name} for ${p.period}`} mask={mask} onReveal={async () => formatMoney((await api.get<Payslip>(withReveal(`/api/v1/payroll/payslips/${p.id}`)))[field])} />
     : formatMoney(p[field]));
   const columns: Column<PayslipRow>[] = [
     { key: 'period', header: 'Month', card: 'title', cell: (p) => <span className="tnum">{p.period}{p.kind === 'fnf' ? ' (F&F)' : ''}</span> },

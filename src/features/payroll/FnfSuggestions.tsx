@@ -5,17 +5,18 @@ import { QueryState } from '../../components/QueryState';
 import { RevealToggle } from '../../components/RevealToggle';
 import { SkeletonRows } from '../../components/Skeleton';
 import { fmtDate, fmtNumber } from '../../format';
+import type { ApiResponse } from '../../lib/api-types';
 import { isMaskedField, useRevealable } from '../../lib/masking';
 import { useApiQuery } from '../../lib/query';
 import { SalaryAmounts } from './parts';
-import { COMPONENTS_URL, type FnfSuggestion, type PayComponent } from './types';
+import { COMPONENTS_URL, type FnfSuggestion } from './types';
 
 export const fnfUrl = (employeeId: string) => `/api/v1/payroll/fnf-suggestions/${employeeId}`;
 
 /** What the system knows about a leaver. HR confirms each figure and enters it as an adjustment. */
 export function FnfSuggestions({ employeeId }: { employeeId: string }) {
   const { query, revealed, setRevealed } = useRevealable<FnfSuggestion>(fnfUrl(employeeId));
-  const components = useApiQuery<{ items: PayComponent[] }>(COMPONENTS_URL);
+  const components = useApiQuery<ApiResponse<'/api/v1/payroll/components'>>(COMPONENTS_URL);
   return (
     <QueryState query={query} compact loading={<SkeletonRows rows={3} />}>
       {(s) => (

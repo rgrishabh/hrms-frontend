@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Banknote } from 'lucide-react';
-import { api, type Paged } from '../../api';
+import { api } from '../../api';
 import { useAuth } from '../../auth';
 import { Badge, StatusBadge, statusLabel } from '../../components/Badge';
 import { Button } from '../../components/Button';
@@ -19,7 +19,7 @@ import { Select } from '../../components/Select';
 import { Table, type Column } from '../../components/Table';
 import { useToast } from '../../components/Toast';
 import { useSubmit, type FieldErrors } from '../../components/useSubmit';
-import type { ApiBody } from '../../lib/api-types';
+import type { ApiBody, ApiResponse } from '../../lib/api-types';
 import { isMaskedField, useRevealable } from '../../lib/masking';
 import { invalidateApi, useApiQuery } from '../../lib/query';
 import { EmployeeField } from '../employees/EmployeeField';
@@ -34,7 +34,7 @@ const PAGE_SIZE = 25;
 export function Runs() {
   const { can } = useAuth();
   const [params, setParams] = useSearchParams();
-  const { query: runs, revealed, setRevealed } = useRevealable<Paged<RunRow>>(RUNS_URL, { keepPrevious: true });
+  const { query: runs, revealed, setRevealed } = useRevealable<ApiResponse<'/api/v1/payroll/runs'>>(RUNS_URL, { keepPrevious: true });
   const [creating, setCreating] = useState(false);
   const [status, setStatus] = useState('');
   const [text, setText] = useState('');
@@ -44,7 +44,7 @@ export function Runs() {
   const setOpen = (id: string | null) => setParams((p) => { const n = new URLSearchParams(p); if (id) n.set('run', id); else n.delete('run'); return n; }, { replace: true });
   const columns: Column<RunRow>[] = [
     { key: 'period', header: 'Period', card: 'title', cell: (r) => <Button variant="link" onClick={() => setOpen(r.id)}><span className="tnum nowrap">{r.period}</span></Button> },
-    { key: 'entity', header: 'Entity', card: 'subtitle', cell: (r) => r.legal_entity_name },
+    { key: 'entity', header: 'Entity', card: 'subtitle', cell: (r) => r.legal_entity_name ?? '—' },
     { key: 'kind', header: 'Kind', cell: (r) => (r.kind === 'fnf' ? `F&F · ${r.employee_name ?? ''}` : 'Regular') },
     { key: 'employees', header: 'Employees', align: 'right', cell: (r) => (isMaskedField(r, 'totals') ? <Money value={null} masked /> : r.totals?.employees ?? '—') },
     { key: 'gross', header: 'Gross', align: 'right', cell: (r) => <Money value={r.totals?.gross} masked={isMaskedField(r, 'totals')} /> },
@@ -53,7 +53,7 @@ export function Runs() {
     { key: 'status', header: 'Status', card: 'status', cell: (r) => <StatusBadge status={r.status} /> },
   ];
   const statuses = useMemo(() => [...new Set(runs.data?.items.map((r) => r.status))].map((s) => ({ value: s, label: statusLabel(s) })), [runs.data]);
-  const filtered = (runs.data?.items ?? []).filter((r) => (!status || r.status === status) && (!search || `${r.period} ${r.legal_entity_name} ${r.employee_name ?? ''}`.toLowerCase().includes(search)));
+  const filtered = (runs.data?.items ?? []).filter((r) => (!status || r.status === status) && (!search || `${r.period} ${r.legal_entity_name ?? ''} ${r.employee_name ?? ''}`.toLowerCase().includes(search)));
   const clear = () => { setStatus(''); setText(''); setPage(1); };
   return (
     <div className="stack-3">
@@ -94,7 +94,7 @@ function NewRun({ onClose, onCreated }: { onClose: () => void; onCreated: (id: s
   const suggested = suggestion.data?.period;
   useEffect(() => { if (suggested) setPeriod(suggested); }, [suggested]);
   const form = useSubmit(async () => {
-    const r = await api.post<{ id: string }>(RUNS_URL, { period, legalEntityId, kind, employeeId: fnf ? employee?.id : undefined } satisfies ApiBody<'/api/v1/payroll/runs'>);
+    const r = await api.post<ApiResponse<'/api/v1/payroll/runs', 'post'>>(RUNS_URL, { period, legalEntityId, kind, employeeId: fnf ? employee?.id : undefined } satisfies ApiBody<'/api/v1/payroll/runs'>);
     toast('Run created');
     await invalidateApi(RUNS_URL);
     onCreated(r.id);
