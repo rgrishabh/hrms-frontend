@@ -180,7 +180,7 @@ describe('bulk import', () => {
     return screen.findByRole('dialog', { name: 'Bulk import employees' });
   };
   it('reads the CSV, validates first, shows the report, and blocks import on errors', async () => {
-    const f = mockPageApi(['employees.read', 'employees.manage'], api(list([]), (url, init) => (init.method === 'POST' ? { summary: { total: 2, valid: 1, errors: 1, warnings: 1 }, report: [{ row: 2, employeeCode: 'E9', errors: ['Branch not found'], warnings: ['No manager'] }] } : undefined)));
+    const f = mockPageApi(['employees.read', 'employees.manage'], api(list([]), (url, init) => (init.method === 'POST' ? { committed: false, summary: { total: 2, valid: 1, errors: 1, warnings: 1 }, report: [{ row: 2, employeeCode: 'E9', errors: ['Branch not found'], warnings: ['No manager'] }] } : undefined)));
     showList();
     const dlg = await open();
     const w = within(dlg);
@@ -196,10 +196,20 @@ describe('bulk import', () => {
     expect(w.getByText('No manager')).toBeTruthy();
     expect((w.getByRole('button', { name: /^Import 1 employees/ }) as HTMLButtonElement).disabled).toBe(true);
   });
+  it('a report row whose code was left blank shows a dash', async () => {
+    mockPageApi(['employees.read', 'employees.manage'], api(list([]), (_url, init) => (init.method === 'POST' ? { committed: false, summary: { total: 1, valid: 0, errors: 1, warnings: 0 }, report: [{ row: 1, errors: ['employeeCode: Required'], warnings: [] }] } : undefined)));
+    showList();
+    const w = within(await open());
+    await userEvent.upload(w.getByLabelText('CSV file'), csv('firstName\nRohan\n'));
+    await w.findByText('1 row(s) read.');
+    await userEvent.click(w.getByRole('button', { name: 'Validate' }));
+    const row = (await w.findByText('Row 1')).closest('tr')!;
+    expect(within(row).getByText('—')).toBeTruthy();
+  });
   it('a clean file can be imported, then the dialog closes with a count', async () => {
     const f = mockPageApi(['employees.read', 'employees.manage'], api(list([]), (url, init) => {
       if (init.method !== 'POST') return undefined;
-      return bodyOf([url, init])['dryRun'] ? { summary: { total: 1, valid: 1, errors: 0, warnings: 1 }, report: [] } : { committed: true, summary: { total: 1, valid: 1, errors: 0, warnings: 0 } };
+      return bodyOf([url, init])['dryRun'] ? { committed: false, summary: { total: 1, valid: 1, errors: 0, warnings: 1 }, report: [] } : { committed: true, summary: { total: 1, valid: 1, errors: 0, warnings: 0 }, report: [] };
     }));
     showList();
     const dlg = await open();
@@ -284,6 +294,36 @@ describe('employee record', () => {
     expect(screen.queryByRole('link')).toBeNull();
     expect(screen.queryByText('Letters and records')).toBeNull();
   });
+  const DIRECTORY = { id: 'e2', employee_code: 'E2', first_name: 'Asha', last_name: null, work_email: null, designation: null, department_id: null, department_name: null };
+  const printsNothingMissing = () => expect(document.body.textContent).not.toMatch(/undefined|null|NaN|Invalid/);
+  it('the limited directory answer shows only what it holds, with dashes for the empty', async () => {
+    mockPageApi([], record({ ...DIRECTORY, view: 'directory' }), {}, 'e1');
+    show();
+    await screen.findByRole('heading', { name: 'Asha' });
+    expect(screen.getByText('No designation')).toBeTruthy();
+    expect(screen.getByText('Work email').parentElement!.textContent).toBe('Work email—');
+    expect(screen.getByText('Department').parentElement!.textContent).toBe('Department—');
+    expect(screen.queryByText('Phone')).toBeNull();
+    expect(screen.queryByText('Reporting manager')).toBeNull();
+    printsNothingMissing();
+  });
+  it('the limited team answer shows the manager and joining date, or dashes without them', async () => {
+    mockPageApi([], record({ ...DIRECTORY, view: 'team', status: 'active', branch_id: 'b1', branch_name: 'HQ', reporting_manager_id: null, reporting_manager_name: null, date_of_joining: '2020-01-15' }), {}, 'e1');
+    show();
+    await screen.findByRole('heading', { name: 'Asha' });
+    expect(screen.getByText('Reporting manager').parentElement!.textContent).toBe('Reporting manager—');
+    expect(screen.getByText('Date of joining').parentElement!.textContent).toBe('Date of joining15/01/2020');
+    expect(screen.queryByText('Employment type')).toBeNull();
+    printsNothingMissing();
+  });
+  it('a full answer holding only what the schema requires still opens, with dashes', async () => {
+    mockPageApi(['employees.read'], record({ ...DIRECTORY, view: 'full' }), {}, 'e1');
+    show();
+    await screen.findByRole('heading', { name: 'Asha' });
+    expect(screen.getByText('Employment type').parentElement!.textContent).toBe('Employment type—');
+    expect(screen.getByText('Phone').parentElement!.textContent).toBe('Phone—');
+    printsNothingMissing();
+  });
   it('tabs depend on features and permissions, and each loads for this person', async () => {
     const f = mockPageApi(['employees.read', 'attendance.read', 'documents.read'], ['FEATURE_ATTENDANCE', 'FEATURE_DOCUMENTS'], record(EMP, (url) => {
       if (url.endsWith('/profile')) return { missing: [], sections: { contacts: [], addresses: [], nominees: [], education: [], experience: [] }, edit: {}, pending: [] };
@@ -301,17 +341,28 @@ describe('employee record', () => {
   it('change history shows old and new values, bank changes and the system', async () => {
     mockPageApi(['employees.read'], record(EMP, (url) => (url.endsWith('/history') ? { items: [
       { id: 'h1', created_at: '2026-10-01T04:30:00Z', actor_name: 'Kavita', action: 'employee.updated_details', change_metadata: { changes: { grade: { from: 'G1', to: null }, phone: { from: null, to: '98' } } } },
-      { id: 'h2', created_at: '2026-10-02T04:30:00Z', actor_name: null, action: 'employee.bank_changed', change_metadata: { newLast4: '4321' } },
-      { id: 'h3', created_at: '2026-10-03T04:30:00Z', actor_name: null, action: 'employee.viewed', change_metadata: null },
+      { id: 'h2', created_at: '2026-10-02T04:30:00Z', actor_name: null, action: 'employee.bank_changed', change_metadata: { changeId: 'c1', fields: ['ifsc'] } },
+      { id: 'h3', created_at: '2026-10-03T04:30:00Z', actor_name: 'Bo', action: 'employee.viewed', change_metadata: {} },
     ] } : undefined)));
     show('/employees/e2?tab=history');
     const table = within(await screen.findByRole('table', { name: 'Change history' }));
     expect(table.getByText('updated details')).toBeTruthy();
     expect(table.getByText('Kavita')).toBeTruthy();
-    expect(table.getAllByText('System')).toHaveLength(2);
+    expect(table.getAllByText('System')).toHaveLength(1);
     expect(table.getByText('grade').parentElement!.textContent).toBe('grade: G1 → —');
     expect(table.getByText('phone').parentElement!.textContent).toBe('phone: — → 98');
-    expect(table.getByText('Account ending 4321')).toBeTruthy();
+    expect(table.getByText('bank changed')).toBeTruthy();
+  });
+  it('change details this reader may not see say hidden, never empty, and no legacy redaction is printed', async () => {
+    mockPageApi(['employees.read'], record(EMP, (url) => (url.endsWith('/history') ? { items: [
+      { id: 'h1', created_at: '2026-10-01T04:30:00Z', actor_name: 'Kavita', action: 'leave.approved', change_metadata: null },
+      { id: 'h2', created_at: '2026-10-02T04:30:00Z', actor_name: 'Kavita', action: 'employee.bank_changed', change_metadata: { newLast4: '[REDACTED]' } },
+    ] } : undefined)));
+    show('/employees/e2?tab=history');
+    const table = within(await screen.findByRole('table', { name: 'Change history' }));
+    expect(table.getByText(/^Hidden\./)).toBeTruthy();
+    expect(table.queryByText(/Account ending/)).toBeNull();
+    expect(screen.getByRole('table', { name: 'Change history' }).textContent).not.toMatch(/null|undefined/);
   });
   it('no history says so', async () => {
     mockPageApi(['employees.read'], record());

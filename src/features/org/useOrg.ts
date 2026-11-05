@@ -1,8 +1,9 @@
 import type { SelectOption } from '../../components/Select';
+import type { ApiResponse } from '../../lib/api-types';
 import { useApiQuery } from '../../lib/query';
 
-export interface OrgItem { id: string; name: string; code?: string | null; status?: string; legal_entity_id?: string; version?: number }
-export interface Org { legalEntities: OrgItem[]; branches: OrgItem[]; departments: OrgItem[] }
+export type Org = ApiResponse<'/api/v1/org'>;
+export type OrgItem = Org['legalEntities' | 'branches' | 'departments'][number];
 
 /** GET /org, shared by every page that filters or assigns by branch, department or legal entity. */
 export const useOrg = (enabled = true) => useApiQuery<Org>(enabled ? '/api/v1/org' : null);

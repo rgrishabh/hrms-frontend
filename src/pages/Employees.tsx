@@ -1,7 +1,7 @@
 import { useMemo, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Users } from 'lucide-react';
-import { api, ApiError, qs, type Paged } from '../api';
+import { api, ApiError, qs } from '../api';
 import { useAuth } from '../auth';
 import { Alert } from '../components/Alert';
 import { Avatar } from '../components/Avatar';
@@ -33,7 +33,9 @@ import { AttendanceCalendar } from '../features/attendance/AttendanceCalendar';
 import { EmployeeDocuments } from '../features/documents/EmployeeDocuments';
 import { employeeName, searchEmployees } from '../features/employees/searchEmployees';
 import { PersonalDetails } from '../features/profile/PersonalDetails';
+import type { Org } from '../features/org/useOrg';
 import { fmtDate, fmtDateTime } from '../format';
+import type { ApiItem, ApiResponse, Refine } from '../lib/api-types';
 import { isMaskedField, useRevealable, withReveal, type Maskable } from '../lib/masking';
 import { invalidateApi, useApiQuery } from '../lib/query';
 
@@ -44,18 +46,10 @@ const label = (s: string) => s.replace(/_/g, ' ').replace(/^\w/, (c) => c.toUppe
 const masterOptions = (rows: readonly { name: string; status: string }[], current: string) => [...new Set([...rows.filter((r) => r.status === 'active').map((r) => r.name), ...(current ? [current] : [])])].map((n) => ({ value: n, label: n }));
 const asOptions = (values: string[]) => values.map((v) => ({ value: v, label: label(v) }));
 
-interface OrgUnit { id: string; name: string; legal_entity_id?: string }
-interface Org { branches: OrgUnit[]; departments: OrgUnit[]; legalEntities: OrgUnit[]; grades?: (OrgUnit & { status: string })[]; designations?: (OrgUnit & { status: string })[] }
 /** A directory reader gets only name, code, email, designation and department. `status`, branch and joining date are L2. */
-interface EmployeeRow {
-  id: string; employee_code: string; first_name: string; last_name: string | null; work_email: string | null; designation: string | null;
-  department_name: string | null; branch_name?: string; date_of_joining?: string; status?: string;
-}
-interface Employee extends EmployeeRow, Maskable {
-  view: 'full' | 'team' | 'directory'; version: number; phone: string | null; date_of_birth: string | null; legal_entity_id: string; legal_entity_name: string; branch_id: string; department_id: string | null;
-  grade: string | null; employment_type: string; reporting_manager_id: string | null; reporting_manager_name: string | null; probation_end_date: string | null; confirmation_date: string | null; contract_end_date: string | null; exit_date: string | null;
-}
-type EmployeeList = Paged<EmployeeRow> & { view: 'full' | 'team' | 'directory' };
+type EmployeeRow = ApiItem<'/api/v1/employees'>;
+type EmployeeList = ApiResponse<'/api/v1/employees'>;
+type Employee = ApiResponse<'/api/v1/employees/{id}'>;
 
 export function Employees() {
   const { can } = useAuth();
@@ -123,7 +117,7 @@ export function Employees() {
 
 interface Duplicate { id: string; reason: string; name: string; employee_code: string }
 
-const FIELD_COLUMNS: Record<string, keyof Employee> = {
+const FIELD_COLUMNS: Record<string, keyof EmployeeRow> = {
   employeeCode: 'employee_code', firstName: 'first_name', lastName: 'last_name', workEmail: 'work_email', phone: 'phone', dateOfBirth: 'date_of_birth', legalEntityId: 'legal_entity_id', branchId: 'branch_id', departmentId: 'department_id',
   designation: 'designation', grade: 'grade', employmentType: 'employment_type', status: 'status', reportingManagerId: 'reporting_manager_id', dateOfJoining: 'date_of_joining', probationEndDate: 'probation_end_date', confirmationDate: 'confirmation_date', contractEndDate: 'contract_end_date',
 };
@@ -169,7 +163,7 @@ function EmployeeForm({ org, existing, onClose, onSaved }: { org: Org; existing?
         onSaved(existing.id);
         onClose();
       } else {
-        const r = await api.post<{ id: string }>('/api/v1/employees', { employee: payload(), confirmDuplicate });
+        const r = await api.post<ApiResponse<'/api/v1/employees', 'post'>>('/api/v1/employees', { employee: payload(), confirmDuplicate });
         toast('Employee created');
         await invalidateApi('/api/v1/employees');
         onSaved(r.id);
@@ -259,7 +253,10 @@ export function parseCsv(text: string): Record<string, string>[] {
 
 const TEMPLATE = 'employeeCode,firstName,lastName,workEmail,phone,dateOfBirth,branchCode,departmentCode,designation,grade,employmentType,dateOfJoining,probationEndDate,contractEndDate,reportingManagerCode\n';
 
-interface ImportResult { committed?: boolean; summary: { total: number; valid: number; errors: number; warnings: number }; report?: { row: number; employeeCode: string; errors: string[]; warnings: string[] }[] }
+type ImportAnswer = ApiResponse<'/api/v1/employees/import', 'post'>;
+/** A row whose code was left blank has none in the report, whatever the schema says. */
+type ImportReportRow = Refine<ImportAnswer['report'][number], { employeeCode?: string }>;
+type ImportResult = Refine<ImportAnswer, { report: ImportReportRow[] }>;
 
 function ImportDialog({ onClose }: { onClose: () => void }) {
   const toast = useToast();
@@ -287,9 +284,9 @@ function ImportDialog({ onClose }: { onClose: () => void }) {
       if (r.committed) { toast(`Imported ${r.summary.valid} employees`); await invalidateApi('/api/v1/employees'); onClose(); }
     } catch (e) { setError(e); } finally { setBusy(false); }
   };
-  const reportColumns: Column<NonNullable<ImportResult['report']>[number]>[] = [
+  const reportColumns: Column<ImportReportRow>[] = [
     { key: 'row', header: 'Row', card: 'title', cell: (r) => `Row ${r.row}` },
-    { key: 'code', header: 'Code', card: 'subtitle', cell: (r) => r.employeeCode },
+    { key: 'code', header: 'Code', card: 'subtitle', cell: (r) => r.employeeCode ?? '—' },
     { key: 'problems', header: 'Problems', cell: (r) => <div className="stack-1">{r.errors.map((x) => <Badge key={x} tone="danger">{x}</Badge>)}{r.warnings.map((x) => <Badge key={x} tone="warn">{x}</Badge>)}</div> },
   ];
   return (
@@ -313,7 +310,7 @@ function ImportDialog({ onClose }: { onClose: () => void }) {
         {result && (result.summary.errors
           ? <InlineError error={`${result.summary.errors} row(s) have errors. Fix the file and validate again.`} />
           : <Alert tone="ok">All {result.summary.total} rows are valid{result.summary.warnings ? ` (${result.summary.warnings} with warnings)` : ''}.</Alert>)}
-        {!!result?.report?.length && <Table label="Import report" columns={reportColumns} rows={result.report} rowKey={(r) => String(r.row)} />}
+        {!!result?.report.length && <Table label="Import report" columns={reportColumns} rows={result.report} rowKey={(r) => String(r.row)} />}
         <InlineError error={error} />
       </div>
     </Modal>
@@ -369,8 +366,10 @@ function LettersCard({ employeeId, self }: { employeeId: string; self: boolean }
 
 const BLANK_BANK = { accountHolder: '', accountNumber: '', ifsc: '', bankName: '' };
 
-interface BankAccount extends Maskable { accountHolder: string | null; accountNumberMasked: string; accountNumber?: string | null; ifsc: string | null; bankName: string | null }
-interface PendingBankChange extends BankAccount { id: string; requestedAt: string; requestedBy: string }
+type BankAccount = ApiResponse<'/api/v1/employees/{id}/bank-account'>;
+type PendingBankAnswer = ApiResponse<'/api/v1/employees/{id}/bank-account/pending'>;
+/** Until shown, the server masks holder and IFSC to null and says so, which the schema does not record. */
+type PendingBankChange = Refine<NonNullable<PendingBankAnswer['pending']>, Maskable & { accountHolder: string | null; ifsc: string | null }>;
 
 function BankPanel({ employeeId }: { employeeId: string }) {
   const { can, canAny, me } = useAuth();
@@ -378,7 +377,7 @@ function BankPanel({ employeeId }: { employeeId: string }) {
   const url = `/api/v1/employees/${employeeId}/bank-account`;
   const canRead = can('employees.bank.read') || me?.user.employeeId === employeeId;
   // A masked answer carries no figure and writes no audit row, so it loads at once. Only showing the details is recorded.
-  const { query: bank, revealed, setRevealed } = useRevealable<BankAccount | null>(canRead ? url : null);
+  const { query: bank, revealed, setRevealed } = useRevealable<BankAccount>(canRead ? url : null);
   const pendingUrl = canAny('employees.bank.read', 'employees.bank.approve') ? `${url}/pending` : null;
   const pending = useApiQuery<{ pending: PendingBankChange | null }>(pendingUrl && revealed ? withReveal(pendingUrl) : pendingUrl, { gcTime: 0, staleTime: 0 });
   const canChange = can('employees.bank.manage') && me?.user.employeeId !== employeeId;
@@ -418,7 +417,7 @@ function BankForm({ employeeId, onClose, onSaved }: { employeeId: string; onClos
     setError(null);
     setBusy(true);
     try {
-      await api.put<{ pending: boolean; id: string; approvalRequestId: string }>(`/api/v1/employees/${employeeId}/bank-account`, { ...f, bankName: f.bankName || null });
+      await api.put<ApiResponse<'/api/v1/employees/{id}/bank-account', 'put'>>(`/api/v1/employees/${employeeId}/bank-account`, { ...f, bankName: f.bankName || null });
       toast('Bank change sent for approval');
       onSaved();
       onClose();
@@ -439,7 +438,8 @@ function BankForm({ employeeId, onClose, onSaved }: { employeeId: string; onClos
   );
 }
 
-interface HistoryItem { id: string; created_at: string; actor_name: string | null; action: string; change_metadata: { changes?: Record<string, { from: unknown; to: unknown }>; newLast4?: string } | null }
+/** The schema says only `object`. The column is never null in the database, so a null here means this reader may not see it. */
+type HistoryItem = Refine<ApiItem<'/api/v1/employees/{id}/history'>, { change_metadata: { changes?: Record<string, { from: unknown; to: unknown }> } | null }>;
 
 const historyColumns: Column<HistoryItem>[] = [
   { key: 'when', header: 'When', card: 'title', cell: (h) => fmtDateTime(h.created_at) },
@@ -447,15 +447,16 @@ const historyColumns: Column<HistoryItem>[] = [
   { key: 'action', header: 'Action', cell: (h) => h.action.replace('employee.', '').replace(/_/g, ' ') },
   {
     key: 'details', header: 'Details', cell: (h) => {
-      const changes = h.change_metadata?.changes;
+      if (!h.change_metadata) return <Restricted />;
+      const { changes } = h.change_metadata;
       if (changes) return <div className="stack-1">{Object.entries(changes).map(([k, v]) => <div key={k}><strong>{k}</strong>: {String(v.from ?? '—')} → {String(v.to ?? '—')}</div>)}</div>;
-      return h.change_metadata?.newLast4 ? `Account ending ${h.change_metadata.newLast4}` : '';
+      return '';
     },
   },
 ];
 
 function EmployeeHistory({ id }: { id: string }) {
-  const query = useApiQuery<{ items: HistoryItem[] }>(`/api/v1/employees/${id}/history`);
+  const query = useApiQuery<Refine<ApiResponse<'/api/v1/employees/{id}/history'>, { items: HistoryItem[] }>>(`/api/v1/employees/${id}/history`);
   return (
     <QueryState query={query} isEmpty={(d) => !d.items.length} empty={<EmptyState title="No changes recorded" />}>
       {(d) => <Table label="Change history" columns={historyColumns} rows={d.items} rowKey={(h) => h.id} />}
@@ -503,7 +504,7 @@ function ProfileBody({ employee: e, id }: { employee: Employee; id: string }) {
                 ] : []),
                 ...(full ? [
                   { label: 'Phone', value: isMaskedField(e, 'phone') ? <Restricted /> : e.phone }, { label: 'Date of birth', value: isMaskedField(e, 'date_of_birth') ? <Restricted /> : fmtDate(e.date_of_birth) }, { label: 'Legal entity', value: e.legal_entity_name }, { label: 'Grade', value: e.grade },
-                  { label: 'Employment type', value: label(e.employment_type) },
+                  { label: 'Employment type', value: e.employment_type ? label(e.employment_type) : null },
                   { label: 'Reporting manager', value: e.reporting_manager_id ? <Link to={`/employees/${e.reporting_manager_id}`}>{e.reporting_manager_name}</Link> : null },
                   { label: 'Date of joining', value: fmtDate(e.date_of_joining ?? null) }, { label: 'Probation end', value: fmtDate(e.probation_end_date) }, { label: 'Confirmation date', value: fmtDate(e.confirmation_date) },
                   { label: 'Contract end', value: fmtDate(e.contract_end_date) }, { label: 'Exit date', value: fmtDate(e.exit_date) },
