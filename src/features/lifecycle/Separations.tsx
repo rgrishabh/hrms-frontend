@@ -23,6 +23,7 @@ import { useToast } from '../../components/Toast';
 import { useSubmit } from '../../components/useSubmit';
 import { useTableState } from '../../components/useTableState';
 import { addDays, fmtDate, todayLocal } from '../../format';
+import { isMaskedField } from '../../lib/masking';
 import { useApiQuery } from '../../lib/query';
 import { EmployeeField } from '../employees/EmployeeField';
 import { ChecklistDetail, reloadLifecycle } from './Checklist';
@@ -128,14 +129,15 @@ function SeparationDetail({ id, onClose }: { id: string; onClose: () => void }) 
             <div className="cluster"><StatusBadge status={d.status} />{d.shortfall_days > 0 && <Badge tone="warn">Notice short by {shortfall(d)}</Badge>}</div>
             <KeyValue items={[
               { label: 'Notice date', value: fmtDate(d.notice_date) }, { label: 'Last working day', value: fmtDate(d.approved_lwd ?? d.requested_lwd) }, { label: 'Initiated by', value: d.initiated_by_name },
-              { label: 'Notice required', value: `${d.notice_days_required} days` }, { label: 'F&F', value: `${statusLabel(d.fnf_status)}${d.fnf_note ? `: ${d.fnf_note}` : ''}` },
+              { label: 'Notice required', value: `${d.notice_days_required} days` }, { label: 'F&F', value: isMaskedField(d, 'fnf_note') ? `${statusLabel(d.fnf_status)} · note hidden` : `${statusLabel(d.fnf_status)}${d.fnf_note ? `: ${d.fnf_note}` : ''}` },
             ]} />
             <p className="lifecycle-note"><MaskableText row={d} field="reason" reason="Only the person, HR above them and who decides it can see this." /></p>
             <div className="cluster">
               {d.status === 'pending' && d.initiated_by === me?.user.id && <Button size="sm" onClick={() => setPanel('withdraw')}>Withdraw request</Button>}
               {d.status === 'pending' && manage && <Button size="sm" onClick={() => setPanel('lwd')}>Set last working day</Button>}
               {['approved', 'completed'].includes(d.status) && (d.employee.id === me?.user.employeeId || manage) && <Button size="sm" onClick={() => setPanel('exit')}>Exit interview</Button>}
-              {['approved', 'completed'].includes(d.status) && manage && <Button size="sm" onClick={() => setPanel('fnf')}>Update F&amp;F</Button>}
+              {/* The form saves status and note together, so one built without a hidden note would erase it. */}
+              {['approved', 'completed'].includes(d.status) && manage && <Button size="sm" disabled={isMaskedField(d, 'fnf_note')} title={isMaskedField(d, 'fnf_note') ? 'Only HR above this person can change this' : undefined} onClick={() => setPanel('fnf')}>Update F&amp;F</Button>}
               {d.status === 'approved' && manage && <Button size="sm" variant="danger-ghost" onClick={() => setPanel('cancel')}>Cancel separation</Button>}
               {d.status === 'approved' && manage && <Button size="sm" variant="primary" onClick={() => setPanel('complete')}>Complete exit</Button>}
             </div>

@@ -345,6 +345,22 @@ describe('separations', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Open checklist' }));
     await screen.findByRole('dialog', { name: /Onboarding — Bo Das/ });
   });
+  it('a masked reason and F&F note read as hidden, and F&F cannot be saved over a note the reader cannot see', async () => {
+    await openSeparation({ ...SEP, fnf_status: 'in_progress', reason: null, fnf_note: null, masked: true, maskedFields: ['reason', 'fnf_note'] });
+    const dlg = screen.getByRole('dialog', { name: /Bo Das/ });
+    expect(await within(dlg).findByText('In progress · note hidden')).toBeTruthy();
+    expect(within(dlg).getByText(/^Hidden\. Only the person/)).toBeTruthy();
+    expect(dlg.textContent).not.toMatch(/null|undefined/);
+    const update = within(dlg).getByRole<HTMLButtonElement>('button', { name: 'Update F&F' });
+    expect(update.disabled).toBe(true);
+  });
+  it('an empty F&F note that is not masked still lets HR update F&F', async () => {
+    await openSeparation({ ...SEP, reason: null, fnf_note: null, masked: false });
+    const dlg = screen.getByRole('dialog', { name: /Bo Das/ });
+    const update = await within(dlg).findByRole<HTMLButtonElement>('button', { name: 'Update F&F' });
+    expect(update.disabled).toBe(false);
+    expect(within(dlg).queryByText(/note hidden/)).toBeNull();
+  });
   it('the exit interview starts from recorded answers and drops bookkeeping and blanks', async () => {
     const f = await openSeparation({ ...SEP, exit_interview: { _at: 'x', reasonForLeaving: 'Family', whatWentWell: null } });
     await userEvent.click(await screen.findByRole('button', { name: 'Exit interview' }));
