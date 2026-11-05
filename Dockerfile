@@ -19,7 +19,7 @@ LABEL org.opencontainers.image.title="hrms-frontend" \
       org.opencontainers.image.revision="${REVISION}"
 ENV APP_VERSION=${VERSION}
 # Security fixes published after the base image was built (Trivy gate is CRITICAL).
-USER root
+USER 0:0
 # hadolint ignore=DL3018
 RUN apk upgrade --no-cache
 COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
