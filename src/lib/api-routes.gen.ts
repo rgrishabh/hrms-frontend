@@ -313,6 +313,7 @@ export const API_ROUTES: readonly (readonly [string, string, boolean])[] = [
   ['GET','/api/v1/recruitment/candidates/{id}',true],
   ['POST','/api/v1/recruitment/candidates/{id}/anonymize',true],
   ['GET','/api/v1/recruitment/candidates/{id}/resume',true],
+  ['PUT','/api/v1/recruitment/candidates/{id}/resume',true],
   ['POST','/api/v1/recruitment/interviews/{id}/cancel',true],
   ['POST','/api/v1/recruitment/interviews/{id}/feedback',true],
   ['GET','/api/v1/recruitment/interviews/mine',true],

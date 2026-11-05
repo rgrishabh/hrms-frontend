@@ -40,7 +40,9 @@ function calls(): Call[] {
     const value = (name: string) => local.get(name) ?? shared.get(name);
     const url = (literal: string) => shape(literal.slice(1, -1).replace(/\$\{([A-Za-z_]\w*)\}/g, (hole, name: string) => value(name) ?? hole));
     const seen = new Set<string>();
-    for (const m of text.matchAll(CALL)) { out.push({ file, method: METHOD[m[1]!]!, url: url(m[2]!) }); seen.add(m[2]!); }
+    // An upload is a POST unless its last argument says otherwise.
+    const methodOf = (m: RegExpMatchArray) => (m[1] === 'upload' && /^[^)]*,\s*'PUT'\s*\)/.test(text.slice(m.index! + m[0].length)) ? 'PUT' : METHOD[m[1]!]!);
+    for (const m of text.matchAll(CALL)) { out.push({ file, method: methodOf(m), url: url(m[2]!) }); seen.add(m[2]!); }
     for (const m of text.matchAll(QUERY)) { out.push({ file, method: 'GET', url: url(m[1]!) }); seen.add(m[1]!); }
     for (const m of text.matchAll(CONSTANT_CALL)) { const v = value(m[2]!); if (v) out.push({ file, method: METHOD[m[1]!]!, url: v }); }
     for (const m of text.matchAll(CONSTANT_QUERY)) { const v = value(m[1]!); if (v) out.push({ file, method: 'GET', url: v }); }
