@@ -101,7 +101,7 @@ function MembershipForm({ current, onClose }: { current: CommitteeData; onClose:
             </div>
           ))}
           {errors['members'] && <span className="field__error" role="alert">{errors['members']}</span>}
-          <Picker label="Add a member" placeholder="Search people" queryKey="case-people" search={async (t) => (await searchPeople(t)).filter((u) => !members.some((m) => m.userId === u.id))} value={null} onChange={(u) => { if (u) setMembers([...members, { userId: u.id, name: u.label, role: 'member' }]); }} />
+          <Picker label="Add a member" placeholder="Search people" queryKey={`case-people:${members.map((m) => m.userId).join()}`} search={async (t) => (await searchPeople(t)).filter((u) => !members.some((m) => m.userId === u.id))} value={null} onChange={(u) => { if (u) setMembers([...members, { userId: u.id, name: u.label, role: 'member' }]); }} />
         </fieldset>
         <fieldset className="table-toolbar__group">
           <legend>External members</legend>
