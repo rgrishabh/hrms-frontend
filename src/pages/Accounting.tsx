@@ -13,7 +13,8 @@ import { Input } from '../components/Input';
 import { Modal } from '../components/Modal';
 import { Money } from '../components/Money';
 import { RevealToggle } from '../components/RevealToggle';
-import { isMaskedField, useRevealable, type Maskable } from '../lib/masking';
+import type { ApiResponse } from '../lib/api-types';
+import { isMaskedField, useRevealable } from '../lib/masking';
 import { PageHeader } from '../components/PageHeader';
 import { QueryState } from '../components/QueryState';
 import { Table, type Column } from '../components/Table';
@@ -26,13 +27,12 @@ import { invalidateApi, useApiQuery } from '../lib/query';
 type Tab = 'exports' | 'ledgers';
 type SourceKind = 'payroll-runs' | 'reimbursement-batches';
 
-interface LastExport { at: string; format: string; by: string }
-interface RunSource extends Maskable { id: string; period: string; kind: string; status: string; totals: { gross?: number | string } | null; legal_entity: string; last_export: LastExport | null }
-interface BatchSource { id: string; status: string; total: number | string; claim_count: number; created_at: string; payment_reference: string | null; last_export: LastExport | null }
-interface Sources { runs: RunSource[]; batches: BatchSource[] }
-interface JournalEntry { key: string; label: string; ledger: string | null; debit: number | string; credit: number | string }
-interface Journal { number: string; date: string; narration: string; missing: string[]; balanced: boolean; total: number | string; entries: JournalEntry[] }
-interface LedgerMap { items: { map_key: string; ledger_name: string }[]; heads: { key: string; label: string }[] }
+type Sources = ApiResponse<'/api/v1/accounting/sources'>;
+type RunSource = Sources['runs'][number];
+type BatchSource = Sources['batches'][number];
+type Journal = ApiResponse<'/api/v1/accounting/payroll-runs/{id}/journal'> | ApiResponse<'/api/v1/accounting/reimbursement-batches/{id}/journal'>;
+type JournalEntry = Journal['entries'][number];
+type LedgerMap = ApiResponse<'/api/v1/accounting/ledger-map'>;
 interface Preview { kind: SourceKind; id: string; title: string }
 
 const SOURCES_URL = '/api/v1/accounting/sources';
@@ -58,7 +58,7 @@ export function Accounting() {
   );
 }
 
-const lastExport = (x: { last_export: LastExport | null }) => (x.last_export
+const lastExport = (x: RunSource | BatchSource) => (x.last_export
   ? <span className="text-sm text-2">{x.last_export.format === 'csv' ? 'CSV' : 'Tally'} · {fmtDateTime(x.last_export.at)} · {x.last_export.by}</span>
   : <span className="text-sm text-2">Not exported</span>);
 
