@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createRoot } from 'react-dom/client';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useLocation } from 'react-router-dom';
@@ -30,6 +31,27 @@ describe('opening', () => {
     expect(await input()).toBeTruthy();
     fireEvent.keyDown(window, { key: 'K', metaKey: true });
     await waitFor(() => expect(screen.queryByRole('combobox')).toBeNull());
+  });
+  it('listens from the moment it is on screen', async () => {
+    // Outside act, as in a browser: a commit runs passive effects later, in a task of their own. On a busy machine a test
+    // that saw the page could press the key first, and the press was lost.
+    const act = globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean };
+    const before = act.IS_REACT_ACT_ENVIRONMENT;
+    act.IS_REACT_ACT_ENVIRONMENT = false;
+    const host = document.body.appendChild(document.createElement('div'));
+    const root = createRoot(host);
+    const onOpenChange = vi.fn();
+    try {
+      await new Promise<void>((done) => {
+        new MutationObserver(() => done()).observe(host, { childList: true });
+        root.render(<><CommandPalette open={false} onOpenChange={onOpenChange} /><p>page</p></>);
+      });
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }));
+      expect(onOpenChange).toHaveBeenCalledWith(true);
+    } finally {
+      root.unmount();
+      act.IS_REACT_ACT_ENVIRONMENT = before;
+    }
   });
   it('a plain k does nothing', async () => {
     show(false);

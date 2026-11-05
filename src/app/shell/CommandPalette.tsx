@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LogOut, Moon, Search, Sun } from 'lucide-react';
 import { useAuth } from '../../auth';
@@ -12,7 +12,8 @@ interface Command { id: string; label: string; section: string; keywords: string
 
 /** Opens with Ctrl+K or Cmd+K. Lists every page this person can reach, whatever view they are in. */
 export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
-  useEffect(() => {
+  // A layout effect, so a key pressed as soon as this is on screen is heard, and always sees the current `open`.
+  useLayoutEffect(() => {
     const onKey = (e: globalThis.KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); onOpenChange(!open); }
     };
