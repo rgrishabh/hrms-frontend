@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { api, setCsrf, ApiError } from './api';
 import { setLocalePrefs } from './format';
 import { applyBrand } from './lib/brand';
@@ -46,6 +46,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [challenge, setChallenge] = useState<MfaChallenge | null>(null);
   const [sessionEnded, setSessionEnded] = useState(false);
+  const signedIn = useRef(false);
+  useEffect(() => { signedIn.current = !!me; }, [me]);
 
   const refresh = useCallback(async () => {
     try {
@@ -77,7 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [refresh]);
 
   useEffect(() => {
-    const onUnauthorized = () => { setMe((was) => { if (was) setSessionEnded(true); return null; }); setCsrf(''); queryClient.clear(); };
+    const onUnauthorized = () => { if (signedIn.current) setSessionEnded(true); setMe(null); setCsrf(''); queryClient.clear(); };
     window.addEventListener('hrms:unauthorized', onUnauthorized);
     return () => window.removeEventListener('hrms:unauthorized', onUnauthorized);
   }, []);

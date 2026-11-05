@@ -7,6 +7,50 @@ const respond = (status: number, body: string, type = 'application/problem+json'
 afterEach(() => vi.restoreAllMocks());
 
 describe('api errors', () => {
+  const problem = (status: number, code: string, extra: object = {}, detail = 'Server words') => JSON.stringify({ type: `urn:hrms:problem:${code}`, title: 'T', status, detail, code, errors: [], ...extra });
+
+  it('weak_password lists its reasons, in words, and they reach the new password field', async () => {
+    respond(400, problem(400, 'weak_password', { problems: ['breached', 'personal'] }));
+    const err = await api.post('/x').catch((x: ApiError) => x) as ApiError;
+    expect(err.message).toBe('Choose a different password. It appears on a list of leaked passwords. It contains part of your name or email.');
+    expect(err.fieldErrors()).toEqual({ newPassword: err.message });
+  });
+
+  it('a 429 says how long to wait, from Retry-After in seconds', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(problem(429, 'rate_limited', {}, 'Too many attempts.'), { status: 429, headers: { 'content-type': 'application/problem+json', 'retry-after': '30' } }));
+    const err = await api.post('/x').catch((x: ApiError) => x) as ApiError;
+    expect(err.retryAfter).toBe(30);
+    expect(err.message).toBe('Too many attempts. Try again in 30 seconds.');
+  });
+
+  it('a long wait reads in minutes, and a server message that already gives a figure is left alone', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(new Response(problem(429, 'rate_limited', {}, 'Too many attempts.'), { status: 429, headers: { 'content-type': 'application/problem+json', 'retry-after': '900' } }));
+    expect(await api.post('/x').catch((x: Error) => x.message)).toBe('Too many attempts. Try again in 15 minutes.');
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(new Response(problem(429, 'mfa_locked', {}, 'Too many incorrect codes. Try again in 15 minutes.'), { status: 429, headers: { 'content-type': 'application/problem+json', 'retry-after': '900' } }));
+    expect(await api.post('/x').catch((x: Error) => x.message)).toBe('Too many incorrect codes. Try again in 15 minutes.');
+  });
+
+  it.each([
+    [422, 'malware_detected', /virus scan flagged it/],
+    [503, 'scanner_unavailable', /virus scanner cannot be reached/],
+    [403, 'requires_higher_level', /above your salary level/],
+  ])('%i %s has words a person can act on', async (status, code, words) => {
+    respond(status, problem(status, code));
+    expect(await api.upload('/x', new FormData()).catch((x: Error) => x.message)).toMatch(words);
+  });
+
+  it('keeps the rotated CSRF token from any answer and sends it on the next write', async () => {
+    const f = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(new Response(JSON.stringify({ ok: true, csrfToken: 'rotated' }), { headers: { 'content-type': 'application/json' } })).mockResolvedValueOnce(new Response('{}', { headers: { 'content-type': 'application/json' } }));
+    await api.post('/api/v1/auth/password', {});
+    await api.put('/next', {});
+    expect((f.mock.calls[1]![1] as RequestInit).headers).toMatchObject({ 'x-csrf-token': 'rotated' });
+  });
+
+  it('counts people an export left out', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('a,b', { headers: { 'x-excluded-subjects': '3' } }));
+    expect((await api.blob('/x.csv')).excluded).toBe(3);
+  });
+
   it('reads an RFC 7807 problem', async () => {
     respond(422, JSON.stringify({ type: 'https://errors/validation', title: 'Invalid', status: 422, detail: 'Fix the fields', instance: '/x', code: 'validation', errors: [{ path: 'employee.firstName', message: 'Required' }] }));
     const e = await api.get('/x').catch((x: unknown) => x);

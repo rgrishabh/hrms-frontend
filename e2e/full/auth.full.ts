@@ -32,6 +32,7 @@ test('invitation, a refused weak password with its reason, sign-in, then forgot 
   await page.goto('/');
   const asked = Date.now() - 1000;
   await page.getByRole('link', { name: 'Forgot your password?' }).click();
+  await expect(page.getByRole('heading', { name: 'Reset your password' })).toBeVisible();
   await page.getByLabel('Work email').fill(email);
   await page.getByRole('button', { name: 'Send reset link' }).click();
   await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible();
@@ -53,7 +54,7 @@ test('changing a password rotates the CSRF token, and the next write still works
   await signInWith(page, email);
   await welcomed(page);
   await page.goto('/account');
-  const next = `${STRONG}-rotated`;
+  const next = `${STRONG}-updated`;
   await page.getByLabel('Current password').fill(STRONG);
   await page.getByLabel(/^New password/).fill(next);
   await page.getByLabel(/^Confirm/).fill(next);
@@ -82,11 +83,11 @@ test('two-factor by authenticator: enrol, a wrong code is refused, the right one
   await page.context().clearCookies();
   await signInWith(page, email);
   await expect(page.getByRole('heading', { name: 'Two-factor authentication' })).toBeVisible();
-  await page.getByLabel('Code', { exact: true }).fill('000000');
+  await page.getByLabel(/^Code/).fill('000000');
   await page.getByRole('button', { name: 'Verify' }).click();
   await expect(page.getByRole('alert')).toContainText('not valid');
   // A step already used at enrolment is refused, so take the next one.
-  await page.getByLabel('Code', { exact: true }).fill(totp(secret, Date.now() + 30_000));
+  await page.getByLabel(/^Code/).fill(totp(secret, Date.now() + 30_000));
   await page.getByRole('button', { name: 'Verify' }).click();
   await welcomed(page);
 
@@ -99,6 +100,7 @@ test('two-factor by authenticator: enrol, a wrong code is refused, the right one
 });
 
 test('two-factor by email: enrol with a mailed code, and sign in with the next one', async ({ page }) => {
+  test.setTimeout(180_000);
   const { email, since } = await invited(page.request, 'emailcode');
   await acceptInvite(page, email, since);
   await signInWith(page, email);
@@ -108,7 +110,7 @@ test('two-factor by email: enrol with a mailed code, and sign in with the next o
   await page.getByRole('button', { name: 'Use codes sent by email' }).click();
   const sent = Date.now() - 1000;
   await page.getByRole('button', { name: 'Send the code' }).click();
-  const code = /\b(\d{6})\b/.exec(await waitForMail(page.request, email, sent, /\b\d{6}\b/))![1]!;
+  const code = /(?:code is |\b)(\d{6})\b/.exec(await waitForMail(page.request, email, sent, /\b\d{6}\b.*(expires|works)/s))![1]!;
   await page.getByLabel('Code from the email').fill(code);
   await page.getByRole('button', { name: 'Turn on two-factor authentication' }).click();
   await page.getByLabel('I have saved my recovery codes').check();
@@ -116,13 +118,17 @@ test('two-factor by email: enrol with a mailed code, and sign in with the next o
   await expect(page.getByText('On: Email codes')).toBeVisible();
 
   await page.context().clearCookies();
-  const login = Date.now() + 1;
-  await page.waitForTimeout(5);
   await signInWith(page, email);
   await expect(page.getByRole('heading', { name: 'Two-factor authentication' })).toBeVisible();
-  await expect(page.getByText(/sent a 6-digit code|sent a moment ago/)).toBeVisible();
-  const next = /\b(\d{6})\b/.exec(await waitForMail(page.request, email, login, /\b\d{6}\b/))![1]!;
-  await page.getByLabel('Code', { exact: true }).fill(next);
+  // One code a minute, and enrolment just sent one, so sign-in says so and asking again gives the wait from Retry-After.
+  await expect(page.getByText(/sent a moment ago/)).toBeVisible();
+  await page.getByRole('button', { name: 'Send another code' }).click();
+  await expect(page.getByRole('status').filter({ hasText: /wait \d+ seconds/i })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Send another code', exact: true })).toBeEnabled({ timeout: 70_000 });
+  const asked = Date.now() - 1000;
+  await page.getByRole('button', { name: 'Send another code', exact: true }).click();
+  const next = /Your code is (\d{6})/.exec(await waitForMail(page.request, email, asked, /Your code is \d{6}/))![1]!;
+  await page.getByLabel(/^Code/).fill(next);
   await page.getByRole('button', { name: 'Verify' }).click();
   await welcomed(page);
 });
@@ -155,8 +161,10 @@ test('an expired session returns to sign-in and says why', async ({ page }) => {
   await signInWith(page, email);
   await welcomed(page);
   await page.goto('/notifications');
+  await expect(page.getByRole('heading', { level: 1, name: 'Notifications' })).toBeVisible();
+  // As if the idle limit passed: the next request answers 401. Moving within the app, with no reload, makes one.
   await page.context().clearCookies();
-  await page.getByRole('button', { name: /Mark all|Refresh/ }).first().click({ timeout: 2000 }).catch(() => page.evaluate(() => window.dispatchEvent(new Event('hrms:unauthorized'))));
+  await page.evaluate(() => { history.pushState(null, '', '/account'); window.dispatchEvent(new PopStateEvent('popstate')); });
   await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
   await expect(page.getByText(/Your session ended/)).toBeVisible();
 });
