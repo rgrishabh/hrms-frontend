@@ -19,6 +19,7 @@ import { invalidateApi, useApiQuery } from '../../lib/query';
 import { EmployeeField } from '../employees/EmployeeField';
 import { orgOptions, useOrg } from '../org/useOrg';
 import { useAssetTerms } from './terms';
+import type { ApiResponse } from '../../lib/api-types';
 import { ASSETS_URL, OUTCOME, STATUS, type Asset, type AssetCategory, type AssetHistoryItem } from './types';
 
 const TAG = /^[A-Za-z0-9][A-Za-z0-9/_.-]{0,39}$/;
@@ -139,7 +140,7 @@ const historyColumns: Column<AssetHistoryItem>[] = [
 ];
 
 export function AssetHistory({ asset, onClose }: { asset: Asset; onClose: () => void }) {
-  const query = useApiQuery<{ items: AssetHistoryItem[] }>(`${ASSETS_URL}/${asset.id}/history`);
+  const query = useApiQuery<ApiResponse<'/api/v1/assets/{id}/history'>>(`${ASSETS_URL}/${asset.id}/history`);
   return (
     <Modal title={`History — ${asset.tag}`} size="lg" onClose={onClose}>
       <QueryState query={query} isEmpty={(d) => !d.items.length} empty={<EmptyState compact icon={<HistoryIcon />} title="Never issued" />}>

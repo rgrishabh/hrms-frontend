@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Package } from 'lucide-react';
-import { qs, type Paged } from '../../api';
+import { qs } from '../../api';
 import { Badge, StatusBadge } from '../../components/Badge';
 import { Button } from '../../components/Button';
 import { EmptyState } from '../../components/EmptyState';
@@ -14,7 +14,7 @@ import { fmtDate, todayLocal } from '../../format';
 import { useApiQuery } from '../../lib/query';
 import { AssetForm, AssetHistory, IssueForm, ReceiveForm } from './AssetForms';
 import { useAssetTerms, type AssetTerms } from './terms';
-import { ASSETS_URL, STATUS, type Asset } from './types';
+import { ASSETS_URL, STATUS, type Asset, type AssetPage } from './types';
 import './Assets.css';
 
 /** Days from today to a YYYY-MM-DD date; negative is past. */
@@ -36,7 +36,7 @@ export function AssetRegister() {
   const { setFilter } = table;
   useEffect(() => { setFilter('search', debounced); }, [debounced, setFilter]);
   const { status, category, due } = table.filters;
-  const query = useApiQuery<Paged<Asset> & { today: string }>(`${ASSETS_URL}${qs({ search: table.filters['search'], status, category, calibrationWithinDays: due, page: table.page, pageSize: 25 })}`, { placeholderData: (p) => p });
+  const query = useApiQuery<AssetPage>(`${ASSETS_URL}${qs({ search: table.filters['search'], status, category, calibrationWithinDays: due, page: table.page, pageSize: 25 })}`, { placeholderData: (p) => p });
   const [dialog, setDialog] = useState<Dialog | null>(null);
   const today = query.data?.today ?? todayLocal();
   const close = () => setDialog(null);

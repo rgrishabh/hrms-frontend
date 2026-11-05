@@ -11,10 +11,9 @@ import { useToast } from '../../components/Toast';
 import { fmtDate, fmtDateOfInstant } from '../../format';
 import { invalidateApi, useApiQuery } from '../../lib/query';
 import { useAssetTerms } from './terms';
-import { ASSETS_URL, type MyAsset } from './types';
+import { ASSETS_URL, type MyAsset, type MyAssetList as Mine } from './types';
 
 const URL_MINE = `${ASSETS_URL}/mine`;
-type Mine = { items: MyAsset[] };
 
 export function MyAssets() {
   const toast = useToast();
