@@ -91,6 +91,7 @@ function OrgForm({ kind, row, legalEntities, departments, onClose }: { kind: Kin
             <Select label="Parent department" value={f['parentId']} placeholder="None" options={departments.filter((d) => d.id !== row?.id).map((d) => ({ value: d.id, label: d.name }))} error={form.errors['parentId']} onChange={(e) => setF({ ...f, parentId: e.target.value })} />
           </>
         )}
+        {(kind === 'grades' || kind === 'designations') && <>{text('code', 'Code', true)}{text('name', 'Name', true)}</>}
         <Select label="Status" value={f['status']} options={STATUS_OPTIONS} onChange={(e) => setF({ ...f, status: e.target.value })} />
         <FormActions error={form.error} busy={form.busy} submitLabel="Save" onCancel={onClose} />
       </form>
