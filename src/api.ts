@@ -17,25 +17,56 @@ export interface Problem {
   [extension: string]: unknown;
 }
 
+/** What `weak_password` refusals mean, in the order a person can act on them. */
+const PASSWORD_PROBLEM: Record<string, string> = {
+  too_short: 'It is too short.',
+  too_long: 'It is too long.',
+  breached: 'It appears on a list of leaked passwords.',
+  personal: 'It contains part of your name or email.',
+  too_simple: 'It is too repetitive.',
+};
+
+/** Words for the codes whose meaning a person needs, whatever the server's own wording. */
+const CODE_MESSAGE: Record<string, string> = {
+  malware_detected: 'This file was refused because a virus scan flagged it. It has not been saved.',
+  scanner_unavailable: 'Uploads are paused because the virus scanner cannot be reached. Your file has not been saved. Try again shortly.',
+  requires_higher_level: 'This includes people above your salary level, so it cannot be produced for you. Someone at a higher level must do this.',
+};
+
+const waitFor = (seconds: number) => (seconds < 90 ? `${seconds} second${seconds === 1 ? '' : 's'}` : `${Math.ceil(seconds / 60)} minutes`);
+
+/** The whole message for a problem. Everything a screen shows about a failure comes through here. */
+function describeProblem(problem: Problem, retryAfter: number | null): string {
+  const passwordProblems = problem.code === 'weak_password' && Array.isArray(problem['problems']) ? (problem['problems'] as string[]).map((c) => PASSWORD_PROBLEM[c]).filter(Boolean) : [];
+  if (passwordProblems.length) return `Choose a different password. ${passwordProblems.join(' ')}`;
+  const base = (problem.code && CODE_MESSAGE[problem.code]) ?? problem.detail ?? problem.title;
+  if (retryAfter !== null && !/\d/.test(base)) return `${base} Try again in ${waitFor(retryAfter)}.`;
+  return base;
+}
+
 export class ApiError extends Error {
   readonly status: number;
   readonly code: string;
   readonly problem: Problem;
   readonly errors: ProblemFieldError[];
+  /** Seconds, from the Retry-After header of a 429 or 503. */
+  readonly retryAfter: number | null;
 
-  constructor(problem: Problem) {
-    super(problem.detail ?? problem.title);
+  constructor(problem: Problem, retryAfter: number | null = null) {
+    super(describeProblem(problem, retryAfter));
     this.name = 'ApiError';
     this.problem = problem;
     this.status = problem.status;
     this.code = problem.code ?? 'error';
     this.errors = Array.isArray(problem.errors) ? problem.errors : [];
+    this.retryAfter = retryAfter;
   }
 
   /** Field errors by field name, for inline messages. Prefixes such as `employee.` are dropped. */
   fieldErrors(): Record<string, string> {
     const key = (e: ProblemFieldError) => (e.path ?? e.field ?? e.pointer ?? '').replace(/^\//, '').replace(/^\w+[./](?=.)/, '');
-    return Object.fromEntries(this.errors.map((e) => [key(e), e.message]).filter(([k]) => k));
+    const fields = Object.fromEntries(this.errors.map((e) => [key(e), e.message]).filter(([k]) => k));
+    return this.code === 'weak_password' ? { ...fields, newPassword: this.message } : fields;
   }
 
 }
@@ -67,6 +98,18 @@ export const inflightStore = {
   get: () => inflight,
 };
 
+function parseRetryAfter(res: Response): number | null {
+  const value = res.headers.get('retry-after');
+  if (!value) return null;
+  const seconds = /^\d+$/.test(value.trim()) ? Number(value) : Math.ceil((Date.parse(value) - Date.now()) / 1000);
+  return Number.isFinite(seconds) && seconds >= 0 ? seconds : null;
+}
+
+/** A failed response as an ApiError. The one place status, problem body and Retry-After are read. */
+function toError(res: Response, text: string): ApiError {
+  return new ApiError(toProblem(res, text), parseRetryAfter(res));
+}
+
 async function send<T>(url: string, init: RequestInit, isLogin: boolean): Promise<T> {
   setInflight(inflight + 1);
   try {
@@ -79,14 +122,19 @@ async function send<T>(url: string, init: RequestInit, isLogin: boolean): Promis
     const text = await res.text();
     if (!res.ok) {
       if (res.status === 401 && !isLogin) window.dispatchEvent(new Event('hrms:unauthorized'));
-      throw new ApiError(toProblem(res, text));
+      throw toError(res, text);
     }
     if (!text) return null as T;
+    let data: T;
     try {
-      return JSON.parse(text) as T;
+      data = JSON.parse(text) as T;
     } catch {
       throw new ApiError({ type: 'about:blank', title: GENERIC_TITLE[502]!, status: 502, code: 'bad_response' });
     }
+    // Sign-in, /auth/password and the MFA routes rotate the session and answer with its new token.
+    const rotated = (data as { csrfToken?: unknown } | null)?.csrfToken;
+    if (typeof rotated === 'string') setCsrf(rotated);
+    return data;
   } finally {
     setInflight(inflight - 1);
   }
@@ -105,7 +153,7 @@ function upload<T>(url: string, form: FormData): Promise<T> {
 }
 
 /** A file from the API. Failures throw like any other call, so a problem body is never saved as the file. */
-async function blob(url: string): Promise<{ blob: Blob; fileName: string | null }> {
+async function blob(url: string): Promise<{ blob: Blob; fileName: string | null; excluded: number }> {
   setInflight(inflight + 1);
   try {
     let res: Response;
@@ -116,10 +164,12 @@ async function blob(url: string): Promise<{ blob: Blob; fileName: string | null 
     }
     if (!res.ok) {
       if (res.status === 401) window.dispatchEvent(new Event('hrms:unauthorized'));
-      throw new ApiError(toProblem(res, await res.text()));
+      throw toError(res, await res.text());
     }
     const name = /filename="?([^";]+)"?/i.exec(res.headers.get('content-disposition') ?? '')?.[1] ?? null;
-    return { blob: await res.blob(), fileName: name };
+    // How many people an export left out because they are above the reader's salary level.
+    const excluded = Number(res.headers.get('x-excluded-subjects') ?? 0) || 0;
+    return { blob: await res.blob(), fileName: name, excluded };
   } finally {
     setInflight(inflight - 1);
   }
@@ -146,6 +196,7 @@ export interface Paged<T> { items: T[]; page: number; pageSize: number; total: n
 
 /** A feature that is on, but missing something only an administrator can supply. */
 export const isNotConfigured = (e: unknown): boolean => e instanceof ApiError && e.code === 'feature_not_configured';
+export const isHigherLevel = (e: unknown): boolean => e instanceof ApiError && e.code === 'requires_higher_level';
 const NOT_CONFIGURED = 'This feature is switched on but not set up yet. Ask your administrator to finish setting it up.';
 
 /** Human message for any thrown value, with field errors appended. */

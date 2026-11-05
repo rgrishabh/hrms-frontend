@@ -25,7 +25,11 @@ export function DownloadButton({ url, fileName, children, size = 'sm', variant =
   const [busy, setBusy] = useState(false);
   const go = async () => {
     setBusy(true);
-    try { await downloadFile(url, fileName); onDone?.(); } catch (x) { toast(errorMessage(x), 'error'); } finally { setBusy(false); }
+    try {
+      const { excluded } = await downloadFile(url, fileName);
+      if (excluded > 0) toast(`${excluded} ${excluded === 1 ? 'person is' : 'people are'} above your salary level and left out of this file.`);
+      onDone?.();
+    } catch (x) { toast(errorMessage(x), 'error'); } finally { setBusy(false); }
   };
   return <Button size={size} variant={variant} disabled={disabled} loading={busy} aria-label={ariaLabel} icon={<Download aria-hidden="true" />} onClick={() => void go()}>{children}</Button>;
 }
