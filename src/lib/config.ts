@@ -1,4 +1,5 @@
 import { api } from '../api';
+import type { ApiResponse } from './api-types';
 import type { Features } from './features';
 
 export type ManagementMode = 'single' | 'single_hr' | 'multi';
@@ -20,8 +21,9 @@ export interface PublicConfig {
   auth: { resetByEmail: boolean };
 }
 
-type RawBrand = Partial<PublicConfig['brand']>;
-interface RawConfig { product?: { name?: string }; brand?: RawBrand; features?: Features; mode?: string; mfa?: Partial<PublicConfig['mfa']>; auth?: Partial<PublicConfig['auth']> }
+type ConfigAnswer = ApiResponse<'/api/v1/config/public'>;
+/** What the normaliser accepts: the schema's answer with anything missing. `productName` is older than `product.name`, and the server no longer sends it. */
+interface RawConfig { product?: Partial<ConfigAnswer['product']>; brand?: Partial<ConfigAnswer['brand']> & { productName?: string }; features?: ConfigAnswer['features']; mode?: ConfigAnswer['mode']; mfa?: Partial<ConfigAnswer['mfa']>; auth?: Partial<ConfigAnswer['auth']> }
 
 const str = (v: unknown): string | null => (typeof v === 'string' && v.trim() ? v : null);
 
@@ -60,4 +62,4 @@ export function normalizeConfig(raw: RawConfig): PublicConfig {
   };
 }
 
-export const fetchPublicConfig = async (): Promise<PublicConfig> => normalizeConfig(await api.get<RawConfig>('/api/v1/config/public'));
+export const fetchPublicConfig = async (): Promise<PublicConfig> => normalizeConfig(await api.get<ConfigAnswer>('/api/v1/config/public'));

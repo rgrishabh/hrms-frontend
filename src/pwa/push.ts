@@ -1,4 +1,5 @@
 import { api } from '../api';
+import type { ApiResponse } from '../lib/api-types';
 
 /** Shown only when FEATURE_PUSH_NOTIFICATIONS is on. Without VAPID keys the server answers 409 feature_not_configured. */
 const KEY_URL = '/api/v1/notifications/push/public-key';
@@ -23,7 +24,7 @@ export async function enablePush(): Promise<void> {
   const permission = await Notification.requestPermission();
   if (permission !== 'granted') throw new Error('Notifications are blocked for this site in your browser settings.');
   const reg = await navigator.serviceWorker.ready;
-  const { publicKey } = await api.get<{ publicKey: string }>(KEY_URL);
+  const { publicKey } = await api.get<ApiResponse<'/api/v1/notifications/push/public-key'>>(KEY_URL);
   const subscription = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(publicKey) });
   const { endpoint, keys } = subscription.toJSON();
   await api.post(SUBSCRIBE_URL, { endpoint, keys });

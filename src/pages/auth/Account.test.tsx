@@ -135,6 +135,13 @@ describe('sessions', () => {
     for (const [, name] of uas) expect(within(list).getByText(name)).toBeTruthy();
     expect(within(list).getByText('Edge on Windows').closest('li')!.textContent).toContain('From 10.0.0.1.');
   });
+  it('a session with no recorded address or browser still reads properly and can be ended', async () => {
+    show(undefined, {}, [], [CURRENT, session({ id: 'bare', ip: null, user_agent: null })]);
+    const list = await screen.findByRole('list', { name: 'Signed-in sessions' });
+    const row = within(list).getByText('Browser').closest('li')!;
+    expect(row.textContent).not.toMatch(/null|undefined|From/);
+    expect(within(row).getByRole('button', { name: /Sign out Browser/ })).toBeTruthy();
+  });
   it('no sessions says so', async () => {
     show(undefined, {}, [], []);
     expect(await screen.findByText('No other sessions.')).toBeTruthy();

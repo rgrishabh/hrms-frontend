@@ -165,7 +165,7 @@ function MfaCard() {
           ))}
         {mode === 'enroll' && <MfaEnroll onDone={async () => { setMode('idle'); await refresh(); toast('Two-factor authentication is on'); }} />}
         {mode === 'codes' && (codes ? <RecoveryCodes codes={codes} onDone={() => { setCodes(null); setMode('idle'); }} /> : (
-          <form className="stack-3" onSubmit={run(async () => { setCodes((await api.post<{ recoveryCodes: string[] }>('/api/v1/auth/mfa/recovery-codes', { code: f.code })).recoveryCodes); })}>
+          <form className="stack-3" onSubmit={run(async () => { setCodes((await api.post<ApiResponse<'/api/v1/auth/mfa/recovery-codes', 'post'>>('/api/v1/auth/mfa/recovery-codes', { code: f.code })).recoveryCodes); })}>
             <Input label={byEmail ? 'Current code from your email' : 'Current code from your app'} hint="Your old recovery codes stop working." required inputMode="numeric" maxLength={6} value={f.code} onChange={(e) => setF({ ...f, code: e.target.value })} />
             {byEmail && <SendCodeButton label="Send a code" />}
             <InlineError error={error} />
