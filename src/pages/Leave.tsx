@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { CalendarDays } from 'lucide-react';
-import { api, qs, type Paged } from '../api';
+import { api, qs } from '../api';
 import { useAuth } from '../auth';
 import { Badge, StatusBadge } from '../components/Badge';
 import { Button } from '../components/Button';
@@ -18,8 +18,9 @@ import { ApplyForm } from '../features/leave/ApplyForm';
 import { LeaveAdmin } from '../features/leave/LeaveAdmin';
 import { LedgerDrawer } from '../features/leave/LedgerDrawer';
 import { TeamCalendar } from '../features/leave/TeamCalendar';
-import type { LeaveBalance, LeaveRequest } from '../features/leave/types';
+import type { LeaveRequest } from '../features/leave/types';
 import { fmtDate, fmtNumber, todayLocal } from '../format';
+import type { ApiResponse } from '../lib/api-types';
 import { invalidateApi, useApiQuery } from '../lib/query';
 
 type Tab = 'mine' | 'team' | 'admin';
@@ -53,8 +54,8 @@ function MyLeave() {
   const [ledger, setLedger] = useState(false);
   const [cancel, setCancel] = useState<LeaveRequest | null>(null);
   const [page, setPage] = useState(1);
-  const bal = useApiQuery<{ items: LeaveBalance[]; leaveYear: number; period: { start: string; end: string } }>('/api/v1/leave/balances');
-  const reqs = useApiQuery<Paged<LeaveRequest>>(`/api/v1/leave/requests${qs({ scope: 'mine', page, pageSize: 10 })}`, { placeholderData: (p) => p });
+  const bal = useApiQuery<ApiResponse<'/api/v1/leave/balances'>>('/api/v1/leave/balances');
+  const reqs = useApiQuery<ApiResponse<'/api/v1/leave/requests'>>(`/api/v1/leave/requests${qs({ scope: 'mine', page, pageSize: 10 })}`, { placeholderData: (p) => p });
   const today = todayLocal();
   const reload = () => invalidateApi('/api/v1/leave', '/api/v1/dashboard');
   const columns: Column<LeaveRequest>[] = [

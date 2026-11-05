@@ -7,9 +7,9 @@ import { Leave } from '../../pages/Leave';
 import { bodyOf, mockPageApi, problem, reads, showPage, writes, type Handler } from '../../test/page';
 import type { LeaveBalance, LeaveCalendarItem, LeaveRequest, LeaveType } from './types';
 
-const bal = (over: Partial<LeaveBalance> = {}): LeaveBalance => ({ id: 'lt1', name: 'Casual Leave', code: 'CL', paid: true, requires_balance: true, allow_half_day: true, available: 8, used: 2, pending: 1, ...over });
-const req = (over: Partial<LeaveRequest> = {}): LeaveRequest => ({ id: 'r1', type_name: 'Casual Leave', start_date: '2026-03-02', end_date: '2026-03-02', start_half: 'full', end_half: 'full', days: 1, reason: 'Family visit', status: 'rejected', ...over });
-const type = (over: Partial<LeaveType> = {}): LeaveType => ({ id: 'lt1', code: 'CL', name: 'Casual Leave', description: 'Short breaks', paid: true, allow_half_day: true, requires_balance: true, accrual_method: 'annual', annual_entitlement: 12, carry_forward_max: 5, max_balance: 30, count_non_working_days: true, min_notice_days: 2, max_consecutive_days: 3, eligible_after_days: 90, applicable_employment_types: ['permanent', 'probation'], status: 'active', ...over });
+const bal = (over: Partial<LeaveBalance> = {}): LeaveBalance => ({ id: 'lt1', name: 'Casual Leave', code: 'CL', paid: true, requires_balance: true, allow_half_day: true, accrual_method: 'annual', annual_entitlement: '12', balance: '10', available: '8', used: '2', pending: '1', ...over });
+const req = (over: Partial<LeaveRequest> = {}): LeaveRequest => ({ id: 'r1', employee_id: 'e1', employee_code: 'E1', name: 'Asha Rao', type_code: 'CL', type_name: 'Casual Leave', start_date: '2026-03-02', end_date: '2026-03-02', start_half: 'full', end_half: 'full', days: '1', reason: 'Family visit', status: 'rejected', approval_request_id: null, created_at: '2026-02-20T10:00:00.000Z', decided_at: null, ...over });
+const type = (over: Partial<LeaveType> = {}): LeaveType => ({ id: 'lt1', code: 'CL', name: 'Casual Leave', description: 'Short breaks', paid: true, allow_half_day: true, requires_balance: true, accrual_method: 'annual', annual_entitlement: '12', carry_forward_max: '5', max_balance: '30', count_non_working_days: true, min_notice_days: 2, max_consecutive_days: '3', eligible_after_days: 90, applicable_employment_types: ['permanent', 'probation'], status: 'active', version: 1, ...over });
 const PREVIEW = { days: 1, paid: true, requiresBalance: true, available: 8, sufficient: true, perDate: [] };
 const PERIOD = { leaveYear: 2026, period: { start: '2026-01-01', end: '2026-12-31' } };
 
@@ -51,7 +51,7 @@ describe('my leave', () => {
   });
 
   it('writes half days into the dates column and hides a withheld reason', async () => {
-    const row = req({ start_date: '2026-03-02', end_date: '2026-03-04', start_half: 'second_half', end_half: 'first_half', days: 2 });
+    const row = req({ start_date: '2026-03-02', end_date: '2026-03-04', start_half: 'second_half', end_half: 'first_half', days: '2' });
     const hidden = { ...req({ id: 'r2', reason: '' }), reason: null, masked: true, maskedFields: ['reason'] } as unknown as LeaveRequest;
     mockPageApi(['leave.self'], mine([bal()], [row, hidden]));
     showPage(<Leave />, '/leave');
@@ -219,7 +219,7 @@ describe('apply for leave', () => {
 });
 
 describe('team calendar', () => {
-  const item = (over: Partial<LeaveCalendarItem> = {}): LeaveCalendarItem => ({ employee_id: 'e2', name: 'Rohan Iyer', employee_code: 'E2', type_code: 'CL', status: 'approved', start_date: addDays(todayLocal(), 1), end_date: addDays(todayLocal(), 2), start_half: 'full', end_half: 'first_half', ...over });
+  const item = (over: Partial<LeaveCalendarItem> = {}): LeaveCalendarItem => ({ id: 'l1', days: '1', employee_id: 'e2', name: 'Rohan Iyer', employee_code: 'E2', type_code: 'CL', status: 'approved', start_date: addDays(todayLocal(), 1), end_date: addDays(todayLocal(), 2), start_half: 'full', end_half: 'first_half', ...over });
 
   it('asks for four weeks and moves by four weeks', async () => {
     const today = todayLocal();

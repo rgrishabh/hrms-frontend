@@ -7,10 +7,11 @@ import { QueryState } from '../../components/QueryState';
 import { Select } from '../../components/Select';
 import { Table, type Column } from '../../components/Table';
 import { fmtDateTime, fmtNumber } from '../../format';
+import type { ApiItem, ApiResponse } from '../../lib/api-types';
 import { useApiQuery } from '../../lib/query';
 import type { LeaveBalance } from './types';
 
-interface LedgerEntry { id: string; entry_type: string; days: number | string; note: string | null; created_at: string; created_by_name: string | null }
+type LedgerEntry = ApiItem<'/api/v1/leave/ledger'>;
 
 /** Every way the ledger records a change to a balance. An unknown type reads as its code in words. */
 const ENTRY_LABEL: Record<string, string> = {
@@ -31,7 +32,7 @@ const columns: Column<LedgerEntry>[] = [
 export function LedgerDrawer({ employeeId, types, leaveYear, onClose }: { employeeId: string; types: readonly LeaveBalance[]; leaveYear: number; onClose: () => void }) {
   const withBalance = types.filter((t) => t.requires_balance);
   const [typeId, setTypeId] = useState(withBalance[0]?.id ?? '');
-  const query = useApiQuery<{ items: LedgerEntry[] }>(typeId ? `/api/v1/leave/ledger${qs({ employeeId, leaveTypeId: typeId, year: leaveYear })}` : null);
+  const query = useApiQuery<ApiResponse<'/api/v1/leave/ledger'>>(typeId ? `/api/v1/leave/ledger${qs({ employeeId, leaveTypeId: typeId, year: leaveYear })}` : null);
   return (
     <Drawer title={`Balance history, ${leaveYear}`} onClose={onClose}>
       <div className="stack-4">

@@ -17,6 +17,7 @@ import { useToast } from '../../components/Toast';
 import { fmtNumber, todayLocal } from '../../format';
 import { invalidateApi, useApiQuery } from '../../lib/query';
 import { searchEmployees } from '../employees/searchEmployees';
+import type { ApiResponse } from '../../lib/api-types';
 import type { LeaveType } from './types';
 
 interface TypeFormValues {
@@ -30,12 +31,12 @@ const TYPES_URL = '/api/v1/leave/types?includeInactive=true';
 const toForm = (t: LeaveType): TypeFormValues => ({
   id: t.id, code: t.code, name: t.name, description: t.description ?? '', paid: t.paid, allowHalfDay: t.allow_half_day, requiresBalance: t.requires_balance, accrualMethod: t.accrual_method,
   annualEntitlement: Number(t.annual_entitlement), carryForwardMax: Number(t.carry_forward_max), maxBalance: t.max_balance === null ? '' : Number(t.max_balance), countNonWorkingDays: t.count_non_working_days,
-  minNoticeDays: t.min_notice_days, maxConsecutiveDays: t.max_consecutive_days === null ? '' : Number(t.max_consecutive_days), eligibleAfterDays: t.eligible_after_days, applicableEmploymentTypes: t.applicable_employment_types, status: t.status,
+  minNoticeDays: t.min_notice_days, maxConsecutiveDays: t.max_consecutive_days == null ? '' : Number(t.max_consecutive_days), eligibleAfterDays: t.eligible_after_days, applicableEmploymentTypes: t.applicable_employment_types, status: t.status,
 });
 
 export function LeaveAdmin() {
   const toast = useToast();
-  const types = useApiQuery<{ items: LeaveType[] }>(TYPES_URL);
+  const types = useApiQuery<ApiResponse<'/api/v1/leave/types'>>(TYPES_URL);
   const [edit, setEdit] = useState<TypeFormValues | null>(null);
   const [year, setYear] = useState(Number(todayLocal().slice(0, 4)));
   const [through, setThrough] = useState(12);
@@ -55,7 +56,7 @@ export function LeaveAdmin() {
   const runAccruals = async () => {
     setAccruing(true);
     try {
-      const r = await api.post<{ credited: number; alreadyCredited: number }>('/api/v1/leave/accruals', { leaveYear: year, throughMonth: through });
+      const r = await api.post<ApiResponse<'/api/v1/leave/accruals', 'post'>>('/api/v1/leave/accruals', { leaveYear: year, throughMonth: through });
       toast(`Accruals: ${r.credited} credit(s) added, ${r.alreadyCredited} already done`);
     } catch (e) { toast(errorMessage(e), 'error'); } finally { setAccruing(false); }
   };
@@ -93,7 +94,7 @@ export function LeaveAdmin() {
           confirmLabel="Close year"
           onClose={() => setConfirmYearEnd(false)}
           message={`Balances above each type's carry-forward limit will lapse and the rest moves to ${year + 1}. All requests of ${year} must be decided first. This cannot be undone except by manual adjustments.`}
-          onConfirm={async () => { const r = await api.post<{ daysCarried: number; daysLapsed: number }>('/api/v1/leave/year-end', { leaveYear: year }); toast(`Year closed: ${fmtNumber(r.daysCarried)} day(s) carried, ${fmtNumber(r.daysLapsed)} lapsed`); }}
+          onConfirm={async () => { const r = await api.post<ApiResponse<'/api/v1/leave/year-end', 'post'>>('/api/v1/leave/year-end', { leaveYear: year }); toast(`Year closed: ${fmtNumber(r.daysCarried)} day(s) carried, ${fmtNumber(r.daysLapsed)} lapsed`); }}
         />
       )}
       {adjust && <AdjustForm types={types.data?.items ?? []} year={year} onClose={() => setAdjust(false)} />}

@@ -9,9 +9,10 @@ import { Modal } from '../../components/Modal';
 import { Select } from '../../components/Select';
 import { useToast } from '../../components/Toast';
 import { addDays, fmtDate, fmtNumber, todayLocal } from '../../format';
+import type { ApiResponse } from '../../lib/api-types';
 import type { LeaveBalance } from './types';
 
-interface Preview { days: number; paid: boolean; requiresBalance: boolean; available: number; sufficient: boolean; perDate: { date: string; fraction: number }[] }
+type Preview = ApiResponse<'/api/v1/leave/requests/preview', 'post'>;
 
 export function ApplyForm({ types, onClose, onDone }: { types: readonly LeaveBalance[]; onClose: () => void; onDone: () => void }) {
   const toast = useToast();
@@ -39,7 +40,7 @@ export function ApplyForm({ types, onClose, onDone }: { types: readonly LeaveBal
     setBusy(true);
     setError(null);
     try {
-      const r = await api.post<{ days: number }>('/api/v1/leave/requests', { ...body, reason: f.reason });
+      const r = await api.post<ApiResponse<'/api/v1/leave/requests', 'post'>>('/api/v1/leave/requests', { ...body, reason: f.reason });
       toast(`Leave requested: ${fmtNumber(r.days)} day(s). Sent for approval.`);
       onDone();
       onClose();

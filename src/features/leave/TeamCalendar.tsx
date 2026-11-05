@@ -7,6 +7,7 @@ import { EmptyState } from '../../components/EmptyState';
 import { CARD_LIST_QUERY, useMediaQuery } from '../../components/hooks';
 import { QueryState } from '../../components/QueryState';
 import { addDays, fmtDate, todayLocal } from '../../format';
+import type { ApiResponse } from '../../lib/api-types';
 import { useApiQuery } from '../../lib/query';
 import type { LeaveCalendarItem } from './types';
 import './TeamCalendar.css';
@@ -19,7 +20,7 @@ const isHalf = (r: LeaveCalendarItem, d: string) => (d === r.start_date && r.sta
 export function TeamCalendar() {
   const [from, setFrom] = useState(todayLocal());
   const to = addDays(from, SPAN);
-  const query = useApiQuery<{ items: LeaveCalendarItem[] }>(`/api/v1/leave/calendar${qs({ from, to })}`);
+  const query = useApiQuery<ApiResponse<'/api/v1/leave/calendar'>>(`/api/v1/leave/calendar${qs({ from, to })}`);
   const phone = useMediaQuery(CARD_LIST_QUERY);
   return (
     <div className="stack-3">
