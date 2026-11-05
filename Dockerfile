@@ -2,7 +2,8 @@
 # HRMS frontend: static SPA on nginx (unprivileged, :8080). Runtime config (title, theme,
 # favicon, env.js, CSP) is rendered at container start; no rebuild per environment/customer.
 
-FROM node:22-alpine AS build
+# The build stage makes the same static files on any machine, so it runs natively and multi-arch images need no QEMU for it.
+FROM --platform=$BUILDPLATFORM node:22-alpine AS build
 WORKDIR /src
 COPY package.json package-lock.json ./
 RUN --mount=type=cache,target=/root/.npm npm ci --no-audit --no-fund

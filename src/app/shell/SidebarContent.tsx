@@ -30,7 +30,7 @@ export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       </div>
       {views.length > 1 && (
         <div className="side__switch">
-          <Select label="Switch view" hideLabel value={view} onChange={(e) => setView(e.target.value as ViewId)} options={views.map((v) => ({ value: v, label: VIEW_LABEL[v] }))} />
+          <Select label="Switch view" hideLabel value={view} onChange={(e) => setView(e.target.value as ViewId)} options={views.map((v) => ({ value: v, label: me?.views.find((x) => (x.key === 'owner' ? 'super' : x.key) === v)?.label ?? VIEW_LABEL[v] }))} />
         </div>
       )}
       <nav className="side__nav" aria-label="Main navigation">

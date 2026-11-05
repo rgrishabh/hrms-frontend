@@ -30,7 +30,7 @@ esac
 case "$BRAND_FAVICON_URL" in ""|https://*|/brand/*|/branding/*) ;; *) echo "hrms: BRAND_FAVICON_URL must be https://… or /brand/…" >&2; exit 1 ;; esac
 
 title=$(html_escape "$PRODUCT_NAME")
-head="<title>$title</title><meta name=\"application-name\" content=\"$(html_escape "$PRODUCT_NAME")\" /><meta name=\"theme-color\" content=\"$BRAND_PRIMARY_COLOR\" />"
+head="<title>$title</title><meta name=\"application-name\" content=\"$(html_escape "$PRODUCT_NAME")\" /><meta name=\"description\" content=\"$(html_escape "$PRODUCT_NAME") for $(html_escape "$BRAND_NAME"): attendance, leave, payroll and people records.\" /><meta name=\"theme-color\" content=\"$BRAND_PRIMARY_COLOR\" />"
 [ -n "$BRAND_FAVICON_URL" ] && head="$head<link rel=\"icon\" href=\"$(html_escape "$BRAND_FAVICON_URL")\" />"
 
 # Replace the marked head block (single line in the built index.html).

@@ -3,7 +3,6 @@ import { Alert } from '../../components/Alert';
 import { Badge } from '../../components/Badge';
 import { Button } from '../../components/Button';
 import { EmptyState } from '../../components/EmptyState';
-import { InlineError } from '../../components/ErrorState';
 import { QueryState } from '../../components/QueryState';
 import { Table, type Column } from '../../components/Table';
 import { fmtDate, fmtDateOfInstant } from '../../format';
@@ -31,7 +30,7 @@ export function MyPolicies({ onOpen }: { onOpen: (versionId: string) => void }) 
         const message = `${d.pending} ${d.pending === 1 ? 'policy needs' : 'policies need'} your acknowledgement${d.overdue ? ` (${d.overdue} overdue)` : ''}.`;
         return (
           <div className="stack-3">
-            {d.pending > 0 && (d.overdue ? <InlineError error={message} /> : <Alert tone="warn">{message}</Alert>)}
+            {d.pending > 0 && <Alert tone="warn">{message}</Alert>}
             <Table label="My policies" columns={columns} rows={d.items} rowKey={(p) => p.id} />
           </div>
         );

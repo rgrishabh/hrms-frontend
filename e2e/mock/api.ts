@@ -22,7 +22,7 @@ export type Persona = keyof typeof PERSONAS;
 
 const page1 = <T>(items: T[]) => ({ items, page: 1, pageSize: 25, total: items.length });
 const iso = (d: string, t = '09:30') => `${d}T${t}:00+05:30`;
-const today = new Date().toISOString().slice(0, 10);
+const today = process.env.E2E_TODAY ?? new Date().toISOString().slice(0, 10);
 const month = today.slice(0, 7);
 const dd = (n: number) => `${month}-${String(n).padStart(2, '0')}`;
 

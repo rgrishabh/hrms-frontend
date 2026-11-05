@@ -8,10 +8,12 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
   testDir: './e2e/mock',
   testMatch: /.*\.mock\.ts$/,
+  // Baselines are per platform, as font rendering differs. Linux ones come from the Playwright image: see README.
+  snapshotPathTemplate: 'e2e/mock/__screenshots__/{platform}/{arg}{ext}',
+  expect: { timeout: 8_000, toHaveScreenshot: { maxDiffPixelRatio: 0.002, animations: 'disabled', caret: 'hide' } },
   fullyParallel: true,
   retries: 0,
   timeout: 45_000,
-  expect: { timeout: 8_000 },
   reporter: 'list',
   use: { baseURL: 'http://127.0.0.1:4173', serviceWorkers: 'block', ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } },
   webServer: { command: 'npx vite preview --host 127.0.0.1 --port 4173 --strictPort', url: 'http://127.0.0.1:4173', reuseExistingServer: true, stdout: 'ignore' },

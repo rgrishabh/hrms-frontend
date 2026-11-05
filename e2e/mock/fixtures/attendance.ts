@@ -16,7 +16,7 @@ export const screens: Screen[] = [
   { name: 'field-duty-all', path: '/field-duty?tab=all', persona: 'admin' },
 ];
 
-const today = new Date().toISOString().slice(0, 10);
+const today = process.env.E2E_TODAY ?? new Date().toISOString().slice(0, 10);
 const plus = (d: string, n: number) => new Date(Date.parse(`${d}T00:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);
 const iso = (d: string, t: string) => `${d}T${t}:00+05:30`;
 const monday = (() => { const wd = new Date(`${today}T00:00:00Z`).getUTCDay(); return plus(today, -((wd + 6) % 7)); })();

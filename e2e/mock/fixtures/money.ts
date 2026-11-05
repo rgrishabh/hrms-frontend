@@ -13,8 +13,8 @@ export const screens: Screen[] = [
   { name: 'assets-register', path: '/assets?tab=register', persona: 'admin' },
 ];
 
-const today = new Date().toISOString().slice(0, 10);
-const plusDays = (n: number) => new Date(Date.now() + n * 86_400_000).toISOString().slice(0, 10);
+const today = process.env.E2E_TODAY ?? new Date().toISOString().slice(0, 10);
+const plusDays = (n: number) => new Date(Date.parse(today) + n * 86_400_000).toISOString().slice(0, 10);
 const at = (d: string) => `${d}T10:15:00+05:30`;
 
 const CLAIMS = [

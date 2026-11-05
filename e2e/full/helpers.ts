@@ -1,4 +1,5 @@
-import { expect, type Browser, type BrowserContext, type Page } from '@playwright/test';
+import { createHmac } from 'node:crypto';
+import { expect, type APIRequestContext, type Browser, type BrowserContext, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { MAIN_TEST_ID } from '../../src/contract';
 import { ADMIN_PASSWORD, DOMAIN, PASSWORD, settled } from '../helpers';
@@ -69,11 +70,6 @@ function decodeBody(raw: string): string {
 }
 
 export function totp(secret: string, at = Date.now()): string {
-  return totpImpl(secret, at);
-}
-
-import { createHmac } from 'node:crypto';
-function totpImpl(secret: string, at: number): string {
   const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
   let bits = '';
   for (const c of secret.replace(/[\s=]/g, '').toUpperCase()) bits += alphabet.indexOf(c).toString(2).padStart(5, '0');
@@ -83,4 +79,53 @@ function totpImpl(secret: string, at: number): string {
   const h = createHmac('sha1', key).update(counter).digest();
   const o = h[h.length - 1]! & 0xf;
   return String((h.readUInt32BE(o) & 0x7fffffff) % 1_000_000).padStart(6, '0');
+}
+
+const API = (path: string) => `/api/v1${path}`;
+
+/** A signed-in API client for setting up a test. What is under test still goes through the screen. */
+export async function apiAs(request: APIRequestContext, who: Person) {
+  const r = await request.post(API('/auth/login'), { data: { email: emailOf(who), password: passwordOf(who) } });
+  expect(r.ok(), `${who} signs in: ${await r.text()}`).toBeTruthy();
+  const { csrfToken } = (await r.json()) as { csrfToken: string };
+  return { headers: { 'x-csrf-token': csrfToken } };
+}
+
+let serial = 0;
+/** Someone new, invited by the administrator, so a test can change their password or MFA without touching anyone else. */
+export async function invited(request: APIRequestContext, label: string) {
+  const email = `${label}.${Date.now().toString(36)}${serial++}@example.test`;
+  const { headers } = await apiAs(request, 'admin');
+  const since = Date.now() - 1000;
+  const res = await request.post(API('/tenant/users'), { headers, data: { email, displayName: `E2E ${label}`, roles: ['employee'] } });
+  expect(res.status(), await res.text()).toBe(201);
+  const body = (await res.json()) as { id: string; inviteSent: boolean };
+  expect(body.inviteSent).toBe(true);
+  await request.post(API('/auth/logout'), { headers });
+  return { email, id: body.id, since };
+}
+
+export const STRONG = 'correct-horse-battery-staple-41';
+
+export function linkFrom(mail: string, path: string): string {
+  const m = new RegExp(`${path}#token=([A-Za-z0-9_\\-.%]+)`).exec(mail);
+  if (!m) throw new Error(`No ${path} link in:\n${mail.slice(0, 600)}`);
+  return `${path}#token=${m[1]}`;
+}
+
+/** An invited person sets their password through the link in their email. */
+export async function acceptInvite(page: Page, email: string, since: number, password = STRONG) {
+  const mail = await waitForMail(page.request, email, since, /setup#token=/);
+  await page.goto(linkFrom(mail, '/setup'));
+  await page.getByLabel('New password', { exact: false }).first().fill(password);
+  await page.getByLabel(/Confirm/).fill(password);
+  await page.getByRole('button', { name: 'Set password' }).click();
+  await expect(page.getByRole('heading', { name: 'Password set' })).toBeVisible();
+}
+
+export async function signInWith(page: Page, email: string, password = STRONG) {
+  await page.goto('/');
+  await page.getByLabel('Work email').fill(email);
+  await page.getByLabel('Password').fill(password);
+  await page.getByRole('button', { name: 'Sign in' }).click();
 }

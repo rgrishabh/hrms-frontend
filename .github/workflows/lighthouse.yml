@@ -53,7 +53,10 @@ jobs:
         with:
           node-version: "22"
       - name: Lighthouse, with the assertions in lighthouserc.json
-        run: npx --yes @lhci/cli@0.16.0 autorun --config=lighthouserc.json
+        run: |
+          node scripts/lighthouse-front.mjs &
+          for _ in $(seq 1 15); do curl -fs http://localhost:8081/healthz > /dev/null && break; sleep 1; done
+          npx --yes @lhci/cli@0.16.0 autorun --config=lighthouserc.json
       - if: ${{ !cancelled() }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:

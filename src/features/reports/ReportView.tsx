@@ -24,8 +24,9 @@ const NUMERIC: ColType[] = ['int', 'number', 'percent', 'money'];
 const CODE_COLUMNS = new Set(['employee_code', 'code', 'course_code', 'method_code']);
 const PAGE_SIZE = 100;
 
-function Cell({ column, value, masked }: { column: ReportColumn; value: unknown; masked?: boolean }) {
-  if (masked && column.type === 'money' && (value === null || value === undefined)) return <Money value={null} masked />;
+function Cell({ column, value, masked }: { column: ReportColumn; value: unknown; masked?: readonly string[] }) {
+  // The server names what it withheld. A report without the list masks every empty money column, the only kind it holds back.
+  if (masked && (masked.length ? masked.includes(column.key) : column.type === 'money') && (value === null || value === undefined)) return <Money value={null} masked />;
   if (value === null || value === undefined || value === '') return <>—</>;
   switch (column.type) {
     case 'money': return <Money value={value as number | string} />;
@@ -135,14 +136,14 @@ function Result({ data, exportBase, exportQuery, fileBase, refreshing }: { data:
     align: NUMERIC.includes(c.type) ? 'right' : 'left',
     card: i === 0 ? 'title' : undefined,
     className: c.type !== 'text' || CODE_COLUMNS.has(c.key) ? 'nowrap' : undefined,
-    cell: (r) => <Cell column={c} value={r[c.key]} masked={data.masked} />,
+    cell: (r) => <Cell column={c} value={r[c.key]} masked={data.masked ? data.maskedFields ?? [] : undefined} />,
   }));
   const foot = data.totals && !filter.trim()
     ? (c: Column<ReportRow>, i: number) => {
       if (i === 0) return 'Total';
       const column = data.columns.find((x) => x.key === c.key);
       const value = data.totals?.[c.key];
-      return !column || column.type === 'text' || value === undefined ? null : <Cell column={column} value={value} masked={data.masked} />;
+      return !column || column.type === 'text' || value === undefined ? null : <Cell column={column} value={value} masked={data.masked ? data.maskedFields ?? [] : undefined} />;
     }
     : undefined;
   return (
