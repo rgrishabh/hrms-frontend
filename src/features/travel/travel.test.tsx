@@ -48,6 +48,13 @@ describe('Travel', () => {
     expect(body['markOnDuty']).toBe(true);
   });
 
+  it('a paid advance with no reference on record does not print null', async () => {
+    mockPageApi(['travel.self'], FLAG, () => ({ items: [{ ...TRIP, employee_id: 'e1', advance_reference: null }], page: 1, pageSize: 25, total: 1, today: '2026-03-02' }));
+    showPage(<Travel />, '/travel');
+    const paid = await screen.findByText(/^Paid/);
+    expect(paid.textContent).toBe('Paid');
+  });
+
   it('if the outstanding advance cannot be loaded, it says so rather than showing zero', async () => {
     mockPageApi(['expenses.pay', 'travel.read'], FLAG, (url) => (url.endsWith('/requests/t1') ? problem(500, 'Settlement is down') : { items: [TRIP], page: 1, pageSize: 25, total: 1, today: '2026-03-02' }));
     showPage(<Travel />, '/travel?tab=all');

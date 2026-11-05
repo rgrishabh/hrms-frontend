@@ -11,19 +11,19 @@ import { Select } from '../../components/Select';
 import { useToast } from '../../components/Toast';
 import { useSubmit } from '../../components/useSubmit';
 import { currencySymbol, fmtNumber, todayLocal } from '../../format';
+import type { ApiResponse } from '../../lib/api-types';
 import { invalidateApi, useApiQuery } from '../../lib/query';
-import type { AllowanceQuote, AllowanceRates } from '../expenses/types';
 import { ESTIMATE_PARTS, MODE, TRIPS_URL, type Trip } from './types';
 import './Travel.css';
 
 /** Fills the meals estimate from the organization's per-diem rate for the trip's days. Optional: without rates, or access to them, it stays out of the way. */
 function PerDiemHelper({ from, to, onUse }: { from: string; to: string; onUse: (amount: string) => void }) {
   const { hasFeature } = useAuth();
-  const rates = useApiQuery<AllowanceRates>(hasFeature('FEATURE_EXPENSE_CLAIMS') ? '/api/v1/expenses/allowance-rates' : null);
+  const rates = useApiQuery<ApiResponse<'/api/v1/expenses/allowance-rates'>>(hasFeature('FEATURE_EXPENSE_CLAIMS') ? '/api/v1/expenses/allowance-rates' : null);
   const tiers = rates.data?.tiers ?? [];
   const [tier, setTier] = useState('');
   const t = tier || tiers[0] || '';
-  const quote = useApiQuery<AllowanceQuote>(t && from && to >= from ? `/api/v1/expenses/allowance-quote${qs({ kind: 'per_diem', tier: t, date: from, to })}` : null);
+  const quote = useApiQuery<ApiResponse<'/api/v1/expenses/allowance-quote'>>(t && from && to >= from ? `/api/v1/expenses/allowance-quote${qs({ kind: 'per_diem', tier: t, date: from, to })}` : null);
   if (!tiers.length) return null;
   const q = quote.data;
   return (

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Plane } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { api, qs, type Paged } from '../../api';
+import { api, qs } from '../../api';
 import { useAuth } from '../../auth';
 import { Alert } from '../../components/Alert';
 import { StatusBadge } from '../../components/Badge';
@@ -15,11 +15,12 @@ import { Table, type Column } from '../../components/Table';
 import { useToast } from '../../components/Toast';
 import { useAction } from '../../components/useSubmit';
 import { todayLocal } from '../../format';
+import type { ApiResponse } from '../../lib/api-types';
 import { invalidateApi, useApiQuery } from '../../lib/query';
 import { AdvanceCell } from './AdvanceCell';
 import { RequestForm } from './RequestForm';
 import { TripDetail } from './TripDetail';
-import { MODE, TRIPS_URL, tripRoute, tripWhen, type Trip } from './types';
+import { MODE, TRIPS_URL, tripRoute, tripWhen, type Trip, type TripPage } from './types';
 
 type Act = { kind: 'withdraw' | 'cancel' | 'complete'; trip: Trip };
 
@@ -30,13 +31,13 @@ export function MyTrips() {
   const nav = useNavigate();
   const { run, isBusy } = useAction();
   const [page, setPage] = useState(1);
-  const query = useApiQuery<Paged<Trip> & { today?: string }>(`${TRIPS_URL}${qs({ scope: 'mine', page, pageSize: 25 })}`, { placeholderData: (p) => p });
+  const query = useApiQuery<TripPage>(`${TRIPS_URL}${qs({ scope: 'mine', page, pageSize: 25 })}`, { placeholderData: (p) => p });
   const [form, setForm] = useState<{ from?: Trip; resubmit?: boolean } | null>(null);
   const [detail, setDetail] = useState<string | null>(null);
   const [act, setAct] = useState<Act | null>(null);
   const today = query.data?.today ?? todayLocal();
   const reload = () => invalidateApi(TRIPS_URL, '/api/v1/approvals', '/api/v1/dashboard');
-  const claim = (t: Trip) => run(t.id, async () => { const r = await api.post<{ id: string }>(`${TRIPS_URL}/${t.id}/claim`); void nav(`/expenses?tab=mine&claim=${r.id}`); });
+  const claim = (t: Trip) => run(t.id, async () => { const r = await api.post<ApiResponse<'/api/v1/travel/requests/{id}/claim', 'post'>>(`${TRIPS_URL}/${t.id}/claim`); void nav(`/expenses?tab=mine&claim=${r.id}`); });
   const columns: Column<Trip>[] = [
     { key: 'when', header: 'When', card: 'subtitle', cell: tripWhen },
     { key: 'route', header: 'Route', card: 'title', cell: (t) => <>{tripRoute(t)}<div className="table__cell-sub">{MODE[t.travel_mode] ?? t.travel_mode}{t.trip_type === 'international' ? ' · international' : ''}</div></> },

@@ -11,8 +11,8 @@ const FLAG = ['FEATURE_TRAVEL'];
 const CLAIMS = ['FEATURE_TRAVEL', 'FEATURE_EXPENSE_CLAIMS'];
 const SELF = ['travel.self'];
 const TODAY = '2026-03-02';
-const trip = (over: Partial<Trip> = {}): Trip => ({ id: 't1', employee_id: 'e1', name: 'Rohan Iyer', employee_code: 'E5', department: 'Ops', start_date: '2026-03-10', end_date: '2026-03-12', origin: 'Pune', destination: 'Mumbai', purpose: 'Client audit', travel_mode: 'rail', trip_type: 'domestic', estimate_total: '5000', advance_requested: '0', advance_paid_at: null, advance_reference: null, status: 'approved', ...over });
-const SETTLED = { advancePaid: '3000', claimed: '2000', advanceAdjusted: '2000', reimbursable: '0', recovered: '200', outstanding: '800', claims: [] };
+const trip = (over: Partial<Trip> = {}): Trip => ({ id: 't1', employee_id: 'e1', name: 'Rohan Iyer', employee_code: 'E5', department: 'Ops', start_date: '2026-03-10', end_date: '2026-03-12', origin: 'Pune', destination: 'Mumbai', purpose: 'Client audit', travel_mode: 'rail', trip_type: 'domestic', estimate_total: '5000', advance_requested: '0', advance_paid_at: null, advance_reference: null, status: 'approved', project: null, accommodation: false, mark_on_duty: true, on_duty_note: null, estimate_travel: '5000', estimate_stay: '0', estimate_local: '0', estimate_meals: '0', estimate_other: '0', advance_paid_amount: null, recovered_amount: '0', recovered_note: null, approval_request_id: null, field_duty_id: null, created_at: '2026-03-01T10:00:00.000Z', decided_at: null, completed_at: null, closed_at: null, cancel_reason: null, ...over });
+const SETTLED = { advancePaid: '3000', claimed: '2000', advanceAdjusted: '2000', reimbursable: '0', recovered: '200', outstanding: '800', openClaims: 0, claims: [] };
 const detail = (over: Partial<TripDetailData> = {}): TripDetailData => ({ ...trip(), settlement: SETTLED, estimate_travel: '4000', estimate_stay: '1000', estimate_local: '0', estimate_meals: '0', estimate_other: '0', ...over });
 
 const api = (trips: Trip[], extra: Handler = () => undefined, one: TripDetailData = detail()): Handler => (url, init) => {
@@ -136,7 +136,7 @@ describe('my trips', () => {
 
 describe('trip detail', () => {
   it('shows only the estimate parts that were filled, the settlement and the claims', async () => {
-    mockPageApi(SELF, FLAG, api([trip()], undefined, detail({ project: 'WO-9', on_duty_note: 'Two days already on leave', field_duty_id: 'fd1', settlement: { ...SETTLED, claims: [{ id: 'c1', title: 'Hotel claim', total: '2000', status: 'approved' }] } })));
+    mockPageApi(SELF, FLAG, api([trip()], undefined, detail({ project: 'WO-9', on_duty_note: 'Two days already on leave', field_duty_id: 'fd1', settlement: { ...SETTLED, claims: [{ id: 'c1', title: 'Hotel claim', total: '2000', status: 'approved', advance_adjusted: '0', paid_at: null }] } })));
     showPage(<Travel />, '/travel');
     await userEvent.click(await screen.findByRole('button', { name: 'Details' }));
     const dlg = await screen.findByRole('dialog', { name: 'Trip — Pune → Mumbai' });

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Plane } from 'lucide-react';
-import { api, qs, type Paged } from '../../api';
+import { api, qs } from '../../api';
 import { useAuth } from '../../auth';
 import { statusLabel, StatusBadge } from '../../components/Badge';
 import { Button } from '../../components/Button';
@@ -19,10 +19,11 @@ import { useToast } from '../../components/Toast';
 import { useSubmit, type FieldErrors } from '../../components/useSubmit';
 import { useTableState } from '../../components/useTableState';
 import { currencySymbol } from '../../format';
+import type { ApiResponse } from '../../lib/api-types';
 import { invalidateApi, useApiQuery } from '../../lib/query';
 import { AdvanceCell } from './AdvanceCell';
 import { TripDetail } from './TripDetail';
-import { STATUSES, TRIPS_URL, tripRoute, tripWhen, type Trip, type TripDetailData } from './types';
+import { STATUSES, TRIPS_URL, tripRoute, tripWhen, type Trip, type TripDetailData, type TripPage } from './types';
 
 type Act = { kind: 'pay' | 'returned' | 'close' | 'cancel'; trip: Trip };
 
@@ -33,7 +34,7 @@ export function AllTrips({ scope }: { scope: 'team' | 'all' }) {
   const { can, me } = useAuth();
   const table = useTableState<Trip>(`travel-${scope}`, [], { filters: { status: '', advance: '', on: '' } });
   const { status, advance, on } = table.filters;
-  const query = useApiQuery<Paged<Trip>>(`${TRIPS_URL}${qs({ scope, status, advance, on, page: table.page, pageSize: 25 })}`, { placeholderData: (p) => p });
+  const query = useApiQuery<TripPage>(`${TRIPS_URL}${qs({ scope, status, advance, on, page: table.page, pageSize: 25 })}`, { placeholderData: (p) => p });
   const [detail, setDetail] = useState<string | null>(null);
   const [act, setAct] = useState<Act | null>(null);
   const pay = scope === 'all' && can('expenses.pay');
@@ -138,7 +139,7 @@ function AdvanceReturnedForm({ trip, outstanding, onClose }: { trip: Trip; outst
     return bad;
   };
   const form = useSubmit(async () => {
-    const r = await api.post<{ outstanding: string | number }>(`${TRIPS_URL}/${trip.id}/advance-returned`, { amount, note });
+    const r = await api.post<ApiResponse<'/api/v1/travel/requests/{id}/advance-returned', 'post'>>(`${TRIPS_URL}/${trip.id}/advance-returned`, { amount, note });
     toast(`Recorded. Outstanding ${formatMoney(r.outstanding)}`);
     await reload();
     onClose();
