@@ -19,27 +19,29 @@ const show = (route = '/leave', unread = 0) => {
   return f;
 };
 
-afterEach(() => { resetViewport(); vi.restoreAllMocks(); });
+afterEach(() => { resetViewport(); vi.restoreAllMocks(); localStorage.clear(); });
 
 describe('on a desktop', () => {
-  it('keeps the navigation behind the menu, shows the crumbs and the page, and titles the tab after the page', async () => {
+  it('shows the icon rail, the crumbs and the page, and titles the tab after the page', async () => {
     show();
     expect(await screen.findByText('Page body')).toBeTruthy();
-    expect(screen.queryByRole('navigation', { name: 'Main navigation' })).toBeNull();
+    const rail = screen.getByRole('navigation', { name: 'Main navigation' });
+    expect(within(rail).getByRole('link', { name: 'Leave' }).getAttribute('title')).toBe('Leave');
     expect(within(screen.getByRole('navigation', { name: 'Breadcrumb' })).getByText('Leave').getAttribute('aria-current')).toBe('page');
     await waitFor(() => expect(document.title).toBe('Leave · Acme HR'));
     expect(screen.getByRole('button', { name: 'Open menu' })).toBeTruthy();
     expect(screen.queryByRole('navigation', { name: 'Quick navigation' })).toBeNull();
   });
-  it('the menu opens a drawer, and following a link closes it', async () => {
-    vi.stubGlobal('scrollTo', vi.fn());
+  it('the menu button expands the rail in place, closes it again, and the choice is remembered', async () => {
     show();
     await userEvent.click(await screen.findByRole('button', { name: 'Open menu' }));
-    const drawer = await screen.findByRole('dialog', { name: 'Acme HR' });
-    await userEvent.click(within(drawer).getByRole('link', { name: 'Payslips' }));
-    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Acme HR' })).toBeNull());
-    expect(document.title).toBe('Payslips · Acme HR');
-    vi.unstubAllGlobals();
+    expect(screen.queryByRole('dialog')).toBeNull();
+    const nav = screen.getByRole('navigation', { name: 'Main navigation' });
+    expect(within(nav).getByRole('link', { name: 'Leave' }).getAttribute('title')).toBeNull();
+    expect(localStorage.getItem('hrms.nav.expanded')).toBe('1');
+    await userEvent.click(screen.getByRole('button', { name: 'Close menu' }));
+    expect(screen.getByRole('button', { name: 'Open menu' }).getAttribute('aria-expanded')).toBe('false');
+    expect(localStorage.getItem('hrms.nav.expanded')).toBe('0');
   });
   it('an unknown address titles the tab with the product only', async () => {
     show('/nowhere');
@@ -80,7 +82,6 @@ describe('on a desktop', () => {
     const scroll = vi.fn();
     vi.stubGlobal('scrollTo', scroll);
     show();
-    await userEvent.click(await screen.findByRole('button', { name: 'Open menu' }));
     const nav = await screen.findByRole('navigation', { name: 'Main navigation' });
     expect(scroll).not.toHaveBeenCalled();
     await userEvent.click(within(nav).getByRole('link', { name: 'Payslips' }));
@@ -105,7 +106,7 @@ describe('on a desktop', () => {
     mockPageApi(SELF, FLAGS, api());
     renderPage(<Shell><Crash /></Shell>, '/leave');
     expect((await screen.findByRole('alert')).textContent).toContain('Something went wrong on this page');
-    expect(screen.getByRole('button', { name: 'Open menu' })).toBeTruthy();
+    expect(screen.getByRole('navigation', { name: 'Main navigation' })).toBeTruthy();
   });
 });
 

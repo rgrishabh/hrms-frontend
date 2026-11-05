@@ -13,13 +13,20 @@ export type Persona = 'director' | 'hr.head' | 'hr.exec' | 'payroll' | 'finance'
 // One sign-in per persona per run (the API allows few sign-ins per minute per IP); later tests reuse the session cookie.
 const sessions = new Map<Persona, Cookie[]>();
 const nav = (page: Page) => page.getByLabel('Main navigation');
-const menuButton = (page: Page) => page.getByRole('button', { name: 'Open menu' });
+const menuButton = (page: Page) => page.getByRole('button', { name: /^(Open|Close) menu$/ });
+const closeButton = (page: Page) => page.getByRole('button', { name: 'Close menu' });
+const inDrawer = (page: Page) => page.getByRole('dialog').getByLabel('Main navigation');
 
-/** Navigation lives in a drawer behind the menu button. Opens it if it is closed, and returns it. */
+/** The whole menu: the rail expanded on a desktop, the drawer on a phone. Opens it if needed, and returns it. */
 export async function openMenu(page: Page) {
-  if (!(await nav(page).isVisible())) await menuButton(page).click();
+  if (!(await closeButton(page).count()) && !(await inDrawer(page).count())) await page.getByRole('button', { name: 'Open menu' }).click();
   await expect(nav(page)).toBeVisible();
   return nav(page);
+}
+
+export async function closeMenu(page: Page) {
+  if (await closeButton(page).count()) await closeButton(page).click();
+  else if (await inDrawer(page).count()) await page.keyboard.press('Escape');
 }
 
 export async function login(page: Page, who: Persona) {
@@ -87,6 +94,5 @@ export async function expectNavHidden(page: Page, labels: readonly string[]) {
     expect(NAV_LABELS as readonly string[], `"${label}" is not a navigation label`).toContain(label);
     await expect(nav(page).getByRole('link', { name: label, exact: true })).toHaveCount(0);
   }
-  await page.keyboard.press('Escape');
-  await expect(nav(page)).toHaveCount(0);
+  await closeMenu(page);
 }

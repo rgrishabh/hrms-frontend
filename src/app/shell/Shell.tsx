@@ -1,7 +1,7 @@
 import { Suspense, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { useIsFetching } from '@tanstack/react-query';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Bell, Menu, Search, WifiOff } from 'lucide-react';
+import { Bell, Menu, PanelLeftClose, Search, WifiOff } from 'lucide-react';
 import { inflightStore } from '../../api';
 import { useAuth } from '../../auth';
 import { Button } from '../../components/Button';
@@ -22,10 +22,23 @@ import { NotificationCentre } from './NotificationCentre';
 import { SidebarContent } from './SidebarContent';
 import './Shell.css';
 
+const RAIL_KEY = 'hrms.nav.expanded';
+
+/** The desktop rail's width is a preference: icons only until someone expands it, then as they left it. */
+function useRailExpanded() {
+  const [expanded, setExpanded] = useState(() => localStorage.getItem(RAIL_KEY) === '1');
+  const toggle = () => {
+    localStorage.setItem(RAIL_KEY, expanded ? '0' : '1');
+    setExpanded(!expanded);
+  };
+  return [expanded, toggle] as const;
+}
+
 export function Shell({ children }: { children: ReactNode }) {
   const { config } = useAuth();
   const mobile = useMediaQuery(MOBILE_QUERY);
   const [drawer, setDrawer] = useState(false);
+  const [railExpanded, toggleRail] = useRailExpanded();
   const [notifications, setNotifications] = useState(false);
   const [palette, setPalette] = useState(false);
   const { pathname } = useLocation();
@@ -52,17 +65,25 @@ export function Shell({ children }: { children: ReactNode }) {
   const unreadLabel = unread ? `Notifications, ${unread} unread` : 'Notifications';
 
   return (
-    <div className="shell">
+    <div className={`shell${railExpanded ? ' shell--rail-expanded' : ''}`}>
       <a className="skip-link" href="#main" onClick={(e) => { e.preventDefault(); main.current?.focus(); }}>Skip to content</a>
-      {drawer && (
+      {!mobile && (
+        <aside className="shell__rail">
+          <SidebarContent
+            collapsed={!railExpanded}
+            toggle={<Button variant="ghost" iconOnly aria-label={railExpanded ? 'Close menu' : 'Open menu'} aria-expanded={railExpanded} icon={railExpanded ? <PanelLeftClose aria-hidden="true" /> : <Menu aria-hidden="true" />} onClick={toggleRail} />}
+          />
+        </aside>
+      )}
+      {mobile && drawer && (
         <Drawer title={config.brand.productName} side="left" size="sm" onClose={() => setDrawer(false)} className="shell__drawer">
           <SidebarContent onNavigate={() => setDrawer(false)} />
         </Drawer>
       )}
       <div className="shell__body">
         <header className="topbar">
-          <Button variant="ghost" iconOnly aria-label="Open menu" aria-expanded={drawer} icon={<Menu aria-hidden="true" />} onClick={() => setDrawer(true)} />
-          <span className="topbar__brand"><BrandMark cfg={config} /><span>{config.brand.productName}</span></span>
+          {mobile && <Button variant="ghost" iconOnly aria-label="Open menu" aria-expanded={drawer} icon={<Menu aria-hidden="true" />} onClick={() => setDrawer(true)} />}
+          {(mobile || !railExpanded) && <span className="topbar__brand"><BrandMark cfg={config} /><span>{config.brand.productName}</span></span>}
           {!mobile && <Breadcrumbs />}
           <span className="topbar__spacer" />
           {mobile

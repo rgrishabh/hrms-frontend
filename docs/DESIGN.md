@@ -120,7 +120,7 @@ The API returns RFC 7807 only. `ApiError` carries `status`, `code`, `problem`, `
 
 **Views** are Employee, Manager, HR, Admin and Super-admin. They come from permissions, never role keys, because custom roles can combine anything. The switcher lists only views the person holds, and appears only with more than one. Single-person modes have no Manager view. Views shape the menu, not access: a page outside the current view still opens if `access` allows it.
 
-**Navigation** lives in a left drawer behind the top bar's menu button at every width. **Breakpoints:** the phone shell (bottom bar) starts at 860px, card lists and sheets at 720px. Touch targets are 44px on phones and coarse pointers.
+**Navigation:** above 860px an icon rail is always visible and its menu button expands it to the labelled menu, remembered per browser. On phones it is a drawer behind the top bar's menu button. **Breakpoints:** the phone shell (bottom bar) starts at 860px, card lists and sheets at 720px. Touch targets are 44px on phones and coarse pointers.
 
 ## PWA
 
