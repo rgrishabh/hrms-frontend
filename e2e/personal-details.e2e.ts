@@ -1,10 +1,10 @@
 import { test, expect } from '@playwright/test';
-import { login, noErrors } from './helpers';
+import { login, noErrors, openMenu } from './helpers';
 
 test('an employee updates contacts directly; a nominee change waits for HR, who compares and approves it', async ({ page }) => {
   const nominee = `Sunita Joshi ${Date.now() % 100000}`;   // unique per run, so a rerun proves the new change applied
   await login(page, 'analyst');
-  await page.getByLabel('Main navigation').getByRole('link', { name: 'My profile', exact: true }).click();
+  await (await openMenu(page)).getByRole('link', { name: 'My profile', exact: true }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'My profile' })).toBeVisible();
 
   // Emergency contacts are the employee's to keep up to date: saved at once.
@@ -21,11 +21,11 @@ test('an employee updates contacts directly; a nominee change waits for HR, who 
   await nominees.getByRole('button', { name: /Edit|Add/ }).click();
   dlg = page.getByRole('dialog', { name: 'Edit nominees' });
   await expect(dlg).toContainText('HR checks changes to nominees');
-  const entry = dlg.getByRole('group', { name: 'Nominees entry 1' });
-  await entry.getByLabel('For', { exact: true }).selectOption('pf');
-  await entry.getByLabel('Name', { exact: true }).fill(nominee);
-  await entry.getByLabel('Relationship', { exact: true }).fill('Mother');
-  await entry.getByLabel('Share %', { exact: true }).fill('100');
+  const entry = dlg.getByRole('region', { name: 'Nominees entry 1' });
+  await entry.getByLabel(/^For/).selectOption('pf');
+  await entry.getByLabel(/^Name/).fill(nominee);
+  await entry.getByLabel(/^Relationship/).fill('Mother');
+  await entry.getByLabel(/^Share %/).fill('100');
   await dlg.getByRole('button', { name: 'Send for approval' }).click();
   await expect(page.getByText('Nominees sent to HR for approval')).toBeVisible();
   await expect(nominees).toContainText('Change awaiting HR approval');

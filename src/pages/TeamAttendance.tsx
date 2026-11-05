@@ -1,57 +1,76 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { CalendarCheck } from 'lucide-react';
 import { api, qs } from '../api';
 import { useAuth } from '../auth';
-import { fmtTime, fmtMinutes, todayLocal, STATUS_LABEL, EXCEPTION_LABEL } from '../format';
-import { useLoad, Loading, ErrorBox, StatusBadge, Pager, Empty, useToast, errText } from '../ui';
+import { Badge, StatusBadge, statusLabel } from '../components/Badge';
+import { Button, ButtonLink } from '../components/Button';
+import { DatePicker } from '../components/DatePicker';
+import { EmptyState } from '../components/EmptyState';
+import { FilterBar } from '../components/FilterBar';
+import { Checkbox } from '../components/Input';
+import { PageHeader } from '../components/PageHeader';
+import { QueryState } from '../components/QueryState';
+import { Select } from '../components/Select';
+import { DownloadButton } from '../components/DownloadButton';
+import { Table, type Column } from '../components/Table';
+import { useToast } from '../components/Toast';
+import { useAction } from '../components/useSubmit';
+import { useTableState } from '../components/useTableState';
+import { orgOptions, useOrg } from '../features/org/useOrg';
+import { EXCEPTION_LABEL, fmtMinutes, fmtTime, todayLocal } from '../format';
+import type { ApiItem, ApiResponse } from '../lib/api-types';
+import { invalidateApi, useApiQuery } from '../lib/query';
+import '../features/attendance/Roster.css';
+
+/** What a daily result can be: the labels table in format.ts also holds other modules' statuses. */
+const ATTENDANCE_STATUSES = ['present', 'half_day', 'absent', 'missing_punch', 'weekly_off', 'holiday', 'on_leave', 'on_duty', 'not_calculated'];
+
+type DailyRow = ApiItem<'/api/v1/attendance/daily'>;
+
+const columns: Column<DailyRow>[] = [
+  { key: 'employee', header: 'Employee', card: 'title', required: true, cell: (r) => <><ButtonLink variant="link" to={`/employees/${r.employee_id}?tab=attendance`}>{r.name}</ButtonLink><div className="table__cell-sub">{r.employee_code}</div></> },
+  { key: 'branch', header: 'Branch', cell: (r) => r.branch_name },
+  { key: 'shift', header: 'Shift', cell: (r) => r.shift_code ?? '—' },
+  { key: 'status', header: 'Status', card: 'status', cell: (r) => <span className="cluster"><StatusBadge status={r.status} />{r.locked && <Badge tone="info">Locked</Badge>}</span> },
+  { key: 'in', header: 'In', cell: (r) => <span className="cluster nowrap">{fmtTime(r.first_in)}{r.selfie_id && <DownloadButton url={`/api/v1/attendance/selfies/${r.selfie_id}`} fileName={`selfie-${r.employee_code}.jpg`} aria-label={`Clock-in selfie of ${r.name}`}>Selfie</DownloadButton>}</span> },
+  { key: 'out', header: 'Out', cell: (r) => <span className="nowrap">{fmtTime(r.last_out)}</span> },
+  { key: 'worked', header: 'Worked', cell: (r) => <span className="nowrap">{r.worked_minutes != null ? fmtMinutes(r.worked_minutes) : '—'}</span> },
+  { key: 'late', header: 'Late', cell: (r) => (r.late_minutes ? `${r.late_minutes}m` : '—') },
+  { key: 'exceptions', header: 'Exceptions', cell: (r) => (r.exceptions?.length ? <span className="cluster">{r.exceptions.map((x) => <Badge key={x} tone="warn">{EXCEPTION_LABEL[x] ?? x}</Badge>)}</span> : '—') },
+];
 
 export function TeamAttendance() {
   const { can } = useAuth();
-  const nav = useNavigate();
-  const toast = useToast();
-  const [date, setDate] = useState(todayLocal());
-  const [branchId, setBranchId] = useState('');
-  const [status, setStatus] = useState('');
-  const [exceptionsOnly, setExceptionsOnly] = useState(false);
-  const [page, setPage] = useState(1);
-  const org = useLoad(() => api.get('/api/v1/org'), []);
-  const url = `/api/v1/attendance/daily${qs({ date, branchId, status, exceptionsOnly: exceptionsOnly || undefined, page, pageSize: 50 })}`;
-  const { data, loading, error, reload } = useLoad(() => api.get(url), [url]);
   const all = can('attendance.read');
+  const table = useTableState('attendance.daily', columns, { filters: { date: todayLocal(), branchId: '', status: '', exceptionsOnly: '' } });
+  const { date = todayLocal(), branchId, status, exceptionsOnly } = table.filters;
+  const org = useOrg(all);
+  const query = useApiQuery<ApiResponse<'/api/v1/attendance/daily'>>(`/api/v1/attendance/daily${qs({ date, branchId, status, exceptionsOnly: exceptionsOnly || undefined, page: table.page, pageSize: 50 })}`, { placeholderData: (p) => p });
+  const toast = useToast();
+  const { run, isBusy } = useAction();
+  const recalculate = () => run('recalculate', async () => {
+    const r = await api.post<ApiResponse<'/api/v1/attendance/recalculate', 'post'>>('/api/v1/attendance/recalculate', { from: date, to: date, branchId: branchId || undefined });
+    toast(`Recalculated ${r.daysCalculated} day(s)${r.lockedDaysSkipped ? `, ${r.lockedDaysSkipped} locked day(s) skipped` : ''}`);
+    await invalidateApi('/api/v1/attendance/daily');
+  });
   return (
-    <div className="stack">
-      <div><h1>{all ? 'Attendance' : 'Team attendance'}</h1><p className="sub">{all ? 'All active employees' : 'Employees in your reporting line'} · daily results</p></div>
-      <div className="card row">
-        <label className="field">Date<input type="date" value={date} max={todayLocal()} onChange={(e) => { setDate(e.target.value); setPage(1); }} /></label>
-        {all && <label className="field">Branch<select value={branchId} onChange={(e) => { setBranchId(e.target.value); setPage(1); }}>
-          <option value="">All branches</option>{org.data?.branches.map((b: any) => <option key={b.id} value={b.id}>{b.name}</option>)}</select></label>}
-        <label className="field">Status<select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }}>
-          <option value="">Any</option>{Object.entries(STATUS_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label>
-        <label className="row" style={{ alignSelf: 'flex-end', paddingBottom: 8 }}><input type="checkbox" checked={exceptionsOnly} onChange={(e) => { setExceptionsOnly(e.target.checked); setPage(1); }} /> Exceptions only</label>
-        <span className="spacer" />
-        {can('attendance.recalculate') && <button className="btn" style={{ alignSelf: 'flex-end' }} onClick={async () => {
-          try { const r = await api.post('/api/v1/attendance/recalculate', { from: date, to: date, branchId: branchId || undefined }); toast(`Recalculated ${r.daysCalculated} day(s)${r.lockedDaysSkipped ? `, ${r.lockedDaysSkipped} locked day(s) skipped` : ''}`); reload(); }
-          catch (e) { toast(errText(e), 'error'); }
-        }}>Recalculate this day</button>}
+    <div className="stack-4">
+      <PageHeader title={all ? 'Attendance' : 'Team attendance'} description={`${all ? 'All active employees' : 'Employees in your reporting line'}: daily results.`} />
+      <div className="filters-labelled">
+        <FilterBar
+          activeCount={table.activeFilterCount}
+          onClear={table.clearFilters}
+          actions={can('attendance.recalculate') && <Button loading={isBusy('recalculate')} onClick={() => void recalculate()}>Recalculate this day</Button>}
+        >
+          <DatePicker label="Date" max={todayLocal()} value={date} onChange={(e) => { if (e.target.value) table.setFilter('date', e.target.value); }} />
+          {all && <Select label="Branch" placeholder="All branches" value={branchId} options={orgOptions(org.data?.branches)} onChange={(e) => table.setFilter('branchId', e.target.value)} />}
+          <Select label="Status" placeholder="Any status" value={status} options={ATTENDANCE_STATUSES.map((s) => ({ value: s, label: statusLabel(s) }))} onChange={(e) => table.setFilter('status', e.target.value)} />
+          <Checkbox label="Exceptions only" checked={exceptionsOnly === 'true'} onChange={(e) => table.setFilter('exceptionsOnly', e.target.checked ? 'true' : '')} />
+        </FilterBar>
       </div>
-      {data?.summary && <div className="row">{data.summary.map((s: any) => <span key={s.status} className="badge">{STATUS_LABEL[s.status] ?? s.status}: {s.count}</span>)}</div>}
-      <ErrorBox error={error} />
-      {loading ? <Loading /> : !data?.items.length ? <Empty>No employees match these filters.</Empty> : (
-        <>
-          <div className="table-wrap"><table className="t">
-            <thead><tr><th>Employee</th><th>Branch</th><th>Shift</th><th>Status</th><th>In</th><th>Out</th><th>Worked</th><th>Late</th><th>Exceptions</th></tr></thead>
-            <tbody>{data.items.map((r: any) => (
-              <tr key={r.employee_id} className="clickable" onClick={() => nav(`/employees/${r.employee_id}?tab=attendance`)}>
-                <td><div>{r.name}</div><div className="muted">{r.employee_code}</div></td><td>{r.branch_name}</td><td>{r.shift_code ?? '—'}</td>
-                <td><StatusBadge status={r.status} />{r.locked && <span className="badge info" style={{ marginLeft: 4 }}>Locked</span>}</td>
-                <td>{fmtTime(r.first_in)}</td><td>{fmtTime(r.last_out)}</td><td>{r.worked_minutes != null ? fmtMinutes(r.worked_minutes) : '—'}</td>
-                <td>{r.late_minutes ? `${r.late_minutes}m` : '—'}</td>
-                <td>{(r.exceptions ?? []).map((x: string) => <span key={x} className="badge warn" style={{ marginRight: 4 }}>{EXCEPTION_LABEL[x] ?? x}</span>)}</td>
-              </tr>))}</tbody>
-          </table></div>
-          <Pager page={data.page} pageSize={data.pageSize} total={data.total} onPage={setPage} />
-        </>
-      )}
+      {!!query.data?.summary.length && <div className="cluster" role="group" aria-label="Summary for this day">{query.data.summary.map((s) => <Badge key={s.status}>{statusLabel(s.status)}: {s.count}</Badge>)}</div>}
+      <QueryState query={query} isEmpty={(d) => !d.items.length} empty={<EmptyState icon={<CalendarCheck />} title="No employees match these filters." />}>
+        {(d) => <Table label="Daily attendance" columns={columns} rows={d.items} rowKey={(r) => r.employee_id} refreshing={query.isPlaceholderData} hidden={table.hidden} onToggleColumn={table.toggleColumn} views={table.views} pagination={{ page: d.page, pageSize: d.pageSize, total: d.total, onPage: table.setPage }} />}
+      </QueryState>
     </div>
   );
 }

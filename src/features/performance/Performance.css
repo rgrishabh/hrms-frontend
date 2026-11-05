@@ -1,0 +1,5 @@
+.goal-progress { display: inline-flex; align-items: center; gap: var(--space-2); white-space: nowrap; }
+.goal-progress progress { width: 5rem; accent-color: var(--brand); }
+.review-text { overflow-wrap: anywhere; white-space: pre-wrap; }
+.review-sections { display: grid; gap: var(--space-3); grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); }
+.review-range { padding: 0; accent-color: var(--brand); }

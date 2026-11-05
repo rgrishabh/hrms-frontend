@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 import { inflateRawSync } from 'node:zlib';
-import { login, noErrors } from './helpers';
+import { login, noErrors, openMenu } from './helpers';
 
 /** The text of one part of a downloaded .xlsx (a ZIP), read from its central directory. */
 function xlsxPart(buf: Buffer, name: string): string {
@@ -20,7 +20,7 @@ function xlsxPart(buf: Buffer, name: string): string {
 
 test('HR runs headcount, regroups it and downloads the CSV and Excel', async ({ page }) => {
   await login(page, 'hr.head');
-  await page.getByLabel('Main navigation').getByRole('link', { name: 'Reports', exact: true }).click();
+  await (await openMenu(page)).getByRole('link', { name: 'Reports', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'People' })).toBeVisible();
   await page.getByRole('link', { name: 'Headcount', exact: true }).click();
   const table = page.getByRole('table', { name: 'Headcount' });
@@ -34,14 +34,14 @@ test('HR runs headcount, regroups it and downloads the CSV and Excel', async ({ 
   const total = Number((await table.locator('tfoot td').nth(1).innerText()).replace(/,/g, ''));
   expect(total).toBeGreaterThan(50);
 
-  const [download] = await Promise.all([page.waitForEvent('download'), page.getByRole('link', { name: 'Download CSV' }).click()]);
+  const [download] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Download CSV' }).click()]);
   expect(download.suggestedFilename()).toMatch(/^headcount-\d{4}-\d{2}-\d{2}\.csv$/);
-  const csv = (await readFile((await download.path())!, 'utf8')).replace(/^﻿/, '');
+  const csv = (await readFile((await download.path())!, 'utf8')).replace(/^\uFEFF/, '');
   const lines = csv.trim().split(/\r\n/);
   expect(lines[0]).toMatch(/^Branch,Headcount,/);
   expect(lines.at(-1)).toMatch(new RegExp(`^Total,${total},`));
 
-  const [xl] = await Promise.all([page.waitForEvent('download'), page.getByRole('link', { name: 'Download Excel' }).click()]);
+  const [xl] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Download Excel' }).click()]);
   expect(xl.suggestedFilename()).toMatch(/^headcount-\d{4}-\d{2}-\d{2}\.xlsx$/);
   const book = await readFile((await xl.path())!);
   expect(book.subarray(0, 2).toString()).toBe('PK');

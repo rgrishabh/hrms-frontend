@@ -1,18 +1,86 @@
-import { defineConfig } from 'vite';
+import { brotliCompressSync, constants, gzipSync } from 'node:zlib';
+import { readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { join } from 'node:path';
+import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
+import type { Plugin } from 'vite';
 
-// The API resolves the tenant from the Host header, so the dev proxy must
-// preserve it (changeOrigin: false). Use http://<tenant>.localhost:5173.
+/** Same strict policy nginx sends (docker/40-hrms-runtime.sh), so preview-based tests catch CSP breakage. */
+const CSP = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'";
+
+/** Writes sw.js with the initial assets to precache. Lazy chunks are cached when first used. */
+function serviceWorker(): Plugin {
+  return {
+    name: 'hrms-service-worker',
+    apply: 'build',
+    generateBundle(_options, bundle) {
+      const initial = new Set<string>();
+      const visit = (file: string) => {
+        const item = bundle[file];
+        if (!item || initial.has(file)) return;
+        initial.add(file);
+        if (item.type === 'chunk') {
+          item.imports.forEach(visit);
+          for (const css of (item as { viteMetadata?: { importedCss?: Set<string> } }).viteMetadata?.importedCss ?? []) initial.add(css);
+        }
+      };
+      for (const [file, item] of Object.entries(bundle)) if (item.type === 'chunk' && item.isEntry) visit(file);
+      const inter = Object.keys(bundle).filter((f) => /inter-latin-wght-normal/.test(f));
+      const paths = [...initial, ...inter].map((f) => `/${f}`).concat(['/boot.js', '/manifest.webmanifest', '/icon.svg']);
+      const build = createHash('sha256').update(paths.join()).digest('hex').slice(0, 12);
+      const source = readFileSync('src/pwa/sw.template.js', 'utf8').replace('__BUILD__', build).replace('__PRECACHE__', JSON.stringify(paths));
+      this.emitFile({ type: 'asset', fileName: 'sw.js', source });
+    },
+  };
+}
+
+/** Pre-compresses text assets, so nginx sends them without spending CPU at request time. */
+function precompress(): Plugin {
+  const walk = (dir: string): string[] => readdirSync(dir).flatMap((f) => { const p = join(dir, f); return statSync(p).isDirectory() ? walk(p) : [p]; });
+  return {
+    name: 'hrms-precompress',
+    apply: 'build',
+    closeBundle() {
+      for (const file of walk('dist').filter((f) => /\.(js|css|svg|txt)$/.test(f) && !f.endsWith('env.js'))) {
+        const raw = readFileSync(file);
+        writeFileSync(`${file}.gz`, gzipSync(raw, { level: 9 }));
+        writeFileSync(`${file}.br`, brotliCompressSync(raw, { params: { [constants.BROTLI_PARAM_QUALITY]: 11 } }));
+      }
+    },
+  };
+}
+
+const API_PROXY = process.env.HRMS_API_PROXY ?? 'http://127.0.0.1:4000';
+const proxy = {
+  '/api': { target: API_PROXY, changeOrigin: false },
+  '/brand': { target: API_PROXY, changeOrigin: false },
+};
+
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), serviceWorker(), precompress()],
+  build: { sourcemap: false },
   server: {
     port: 5173,
     allowedHosts: ['.localhost'],
-    proxy: {
-      '/api': { target: 'http://127.0.0.1:4000', changeOrigin: false },
-      '/health': { target: 'http://127.0.0.1:4000', changeOrigin: false },
-      '/ready': { target: 'http://127.0.0.1:4000', changeOrigin: false },
-      '/branding': { target: 'http://127.0.0.1:4000', changeOrigin: false },
+    proxy,
+  },
+  preview: { headers: { 'Content-Security-Policy': CSP }, proxy },
+  test: {
+    environment: 'jsdom',
+    setupFiles: ['./src/test/setup.ts'],
+    include: ['src/**/*.test.{ts,tsx}'],
+    css: false,
+    restoreMocks: true,
+    testTimeout: 30000,
+    coverage: {
+      provider: 'v8',
+      include: ['src/**/*.{ts,tsx}'],
+      // Generated files, tests and their helpers are not code under test. The service worker template runs only in a browser, and e2e/mock/pwa covers it.
+      exclude: ['src/**/*.test.{ts,tsx}', 'src/**/*.test-util.tsx', 'src/**/testkit.tsx', 'src/test/**', 'src/lib/*.gen.ts', 'src/pwa/sw.template.js', 'src/main.tsx'],
+      reporter: ['text-summary', 'json-summary'],
+      reportsDirectory: 'coverage',
+      thresholds: { lines: 80, statements: 80, functions: 80, branches: 70 },
     },
   },
 });

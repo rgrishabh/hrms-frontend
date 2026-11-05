@@ -1,0 +1,6 @@
+.keyvalue { display: grid; gap: var(--space-3) var(--space-5); margin: 0; }
+.keyvalue--auto { grid-template-columns: repeat(auto-fill, minmax(min(100%, 180px), 1fr)); }
+.keyvalue--one { grid-template-columns: minmax(0, 1fr); }
+.keyvalue__item { min-width: 0; }
+.keyvalue dt { font-size: var(--text-xs); color: var(--text-3); }
+.keyvalue dd { margin: 2px 0 0; overflow-wrap: anywhere; }

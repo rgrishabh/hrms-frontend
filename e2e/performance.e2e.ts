@@ -29,7 +29,7 @@ test('lab manager reviews the analyst from the team tab', async ({ page }) => {
   await open(page, 'Performance');
   await page.getByRole('tab', { name: /My team/ }).click();
   await page.getByLabel('Search').fill('Aditya');
-  await page.getByRole('row', { name: /Aditya Joshi/ }).click();
+  await page.getByRole('row', { name: /Aditya Joshi/ }).getByRole('button', { name: /Aditya Joshi/ }).click();
   const dlg = page.getByRole('dialog', { name: 'Performance review' });
   await expect(dlg.getByRole('heading', { name: 'Aditya Joshi' })).toBeVisible();
   if ((await status(dlg as unknown as Page).innerText()) === 'Self-review done') {
@@ -45,7 +45,7 @@ test('HR head finalizes, then the analyst sees the rating and acknowledges', asy
   await open(page, 'Performance');
   await page.getByRole('tab', { name: 'All reviews' }).click();
   await page.getByLabel('Search').fill('Aditya');
-  await page.getByRole('row', { name: /Aditya Joshi/ }).click();
+  await page.getByRole('row', { name: /Aditya Joshi/ }).getByRole('button', { name: /Aditya Joshi/ }).click();
   const dlg = page.getByRole('dialog', { name: 'Performance review' });
   if ((await status(dlg as unknown as Page).innerText()) === 'Manager review done') {
     await dlg.getByLabel('Final rating').selectOption('3');

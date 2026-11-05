@@ -10,3 +10,5 @@ playwright-report/
 
 # TypeScript incremental build cache
 *.tsbuildinfo
+.e2e/
+coverage/

@@ -1,0 +1,4 @@
+.selfie__frame { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); }
+.selfie__frame--off { display: none; }
+.selfie__file { align-self: flex-start; cursor: pointer; }
+.selfie__file:focus-within { outline: 2px solid var(--brand-ring); outline-offset: 2px; }

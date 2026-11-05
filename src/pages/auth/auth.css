@@ -1,0 +1,8 @@
+.auth-page { min-height: 100vh; min-height: 100dvh; display: flex; align-items: center; justify-content: center; padding: var(--space-4); background: var(--bg); }
+.auth-card { display: flex; flex-direction: column; gap: var(--space-4); width: min(400px, 100%); padding: var(--space-6); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); }
+.auth-card__brand { display: flex; align-items: center; gap: var(--space-3); font-size: var(--text-md); font-weight: var(--weight-semibold); }
+.auth-qr { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-4); }
+.auth-qr img { background: #fff; padding: var(--space-2); border-radius: var(--radius); }
+.auth-codes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-1); padding: var(--space-3); background: var(--surface-2); border-radius: var(--radius); }
+.auth-steps { margin: 0; padding-left: var(--space-5); }
+@media (max-width: 480px) { .auth-page { padding: 0; align-items: stretch; } .auth-card { border: 0; border-radius: 0; box-shadow: none; width: 100%; justify-content: center; } }

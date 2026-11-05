@@ -1,0 +1,4 @@
+.lifecycle-note { padding: var(--space-3); background: var(--surface-2); border-radius: var(--radius); white-space: pre-wrap; overflow-wrap: anywhere; }
+.template-task { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) 7rem auto; gap: var(--space-2); align-items: end; padding-bottom: var(--space-3); border-bottom: 1px solid var(--border); }
+.template-task:last-child { border-bottom: 0; }
+@media (max-width: 720px) { .template-task { grid-template-columns: minmax(0, 1fr); align-items: stretch; } }

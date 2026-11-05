@@ -1,0 +1,16 @@
+/** Layer 1 flags as served by GET /api/v1/config/public. See docs/CONFIGURATION.md in hrms-deployment. */
+export type FeatureFlag =
+  | 'FEATURE_DOCUMENTS' | 'FEATURE_ONBOARDING' | 'FEATURE_OFFBOARDING' | 'FEATURE_POLICIES' | 'FEATURE_ATTENDANCE' | 'FEATURE_ATTENDANCE_WEB'
+  | 'FEATURE_ATTENDANCE_MOBILE' | 'FEATURE_ATTENDANCE_GEOFENCE' | 'FEATURE_ATTENDANCE_SELFIE' | 'FEATURE_ATTENDANCE_BIOMETRIC'
+  | 'FEATURE_ATTENDANCE_REGULARIZATION' | 'FEATURE_SHIFTS' | 'FEATURE_HOLIDAYS' | 'FEATURE_LEAVE' | 'FEATURE_OVERTIME' | 'FEATURE_COMP_OFF'
+  | 'FEATURE_FIELD_DUTY' | 'FEATURE_PAYROLL' | 'FEATURE_PAYSLIPS' | 'FEATURE_PAYROLL_STATUTORY' | 'FEATURE_LOANS' | 'FEATURE_SALARY_ADVANCE'
+  | 'FEATURE_ACCOUNTING_EXPORTS' | 'FEATURE_EXPENSE_CLAIMS' | 'FEATURE_TRAVEL' | 'FEATURE_RECRUITMENT' | 'FEATURE_PERFORMANCE_REVIEW'
+  | 'FEATURE_TRAINING' | 'FEATURE_LAB_COMPETENCY' | 'FEATURE_ASSET_MANAGEMENT' | 'FEATURE_GRIEVANCE' | 'FEATURE_POSH' | 'FEATURE_REPORTS_ADVANCED'
+  | 'FEATURE_EMAIL_NOTIFICATIONS' | 'FEATURE_PUSH_NOTIFICATIONS';
+
+export type Features = Partial<Record<FeatureFlag, boolean>>;
+
+/** Any listed flag on. A route with no flags is always on (employee records, approvals, audit). */
+export function anyFlagOn(features: Features, flags: readonly FeatureFlag[] | undefined): boolean {
+  return !flags?.length || flags.some((f) => features[f] === true);
+}
