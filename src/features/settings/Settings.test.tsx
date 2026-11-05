@@ -67,6 +67,19 @@ describe('settings: values', () => {
   });
 });
 
+describe('settings: long wording', () => {
+  it('a text area edits it and saves what was typed', async () => {
+    const f = mockPageApi(['settings.read', 'settings.manage'], (url) => (url.includes('/tenant/settings') ? { items: [{ ...SETTING, key: 'cards.id_back_terms', group: 'general', label: 'ID card back: terms', control: 'textarea', feature: null, effective: 'Old words', tenantValue: null }] } : ORG));
+    show('/settings/general');
+    const area = await screen.findByLabelText('ID card back: terms');
+    expect(area.tagName).toBe('TEXTAREA');
+    await userEvent.clear(area);
+    await userEvent.type(area, 'New words');
+    await userEvent.click(screen.getByRole('button', { name: /^Save/ }));
+    await waitFor(() => expect(writes(f, '/tenant/settings/cards.id_back_terms').length).toBe(1));
+  });
+});
+
 describe('settings: installation', () => {
   it('reads the configuration the server sends today, with no organization block', async () => {
     mockPageApi(['settings.read'], () => ({

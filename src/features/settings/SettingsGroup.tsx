@@ -6,7 +6,7 @@ import { Button } from '../../components/Button';
 import { EmptyState } from '../../components/EmptyState';
 import { InlineError } from '../../components/ErrorState';
 import { FilterBar } from '../../components/FilterBar';
-import { Checkbox, Input } from '../../components/Input';
+import { Checkbox, Input, Textarea } from '../../components/Input';
 import { QueryState } from '../../components/QueryState';
 import { Select } from '../../components/Select';
 import { useToast } from '../../components/Toast';
@@ -26,6 +26,7 @@ type Value = Setting['effective'];
 function ValueEditor({ s, value, error, onChange }: { s: Setting; value: Value; error?: string; onChange: (v: Value) => void }) {
   switch (s.control) {
     case 'boolean': return <Checkbox label={value ? 'Enabled' : 'Disabled'} aria-label={`${s.label}: ${value ? 'Enabled' : 'Disabled'}`} checked={!!value} onChange={(e) => onChange(e.target.checked)} />;
+    case 'textarea': return <Textarea label={s.label} hideLabel rows={3} error={error} value={String(value ?? '')} onChange={(e) => onChange(e.target.value)} />;
     case 'number': return <Input label={s.label} hideLabel type="number" inputMode="numeric" error={error} value={value === null ? '' : String(value)} onChange={(e) => onChange(e.target.value === '' ? null : Number(e.target.value))} />;
     case 'select': return <Select label={s.label} hideLabel error={error} value={String(value ?? '')} options={s.options ?? []} onChange={(e) => onChange(e.target.value)} />;
     case 'timezone': return <Select label={s.label} hideLabel error={error} value={String(value ?? '')} options={[...new Set([String(value ?? ''), ...TIMEZONES])].map((t) => ({ value: t, label: t }))} onChange={(e) => onChange(e.target.value)} />;
