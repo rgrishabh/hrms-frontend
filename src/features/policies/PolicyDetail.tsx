@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { api, qs, type Paged } from '../../api';
+import { api, qs } from '../../api';
 import { useAuth } from '../../auth';
 import { Badge, StatusBadge } from '../../components/Badge';
 import { Button } from '../../components/Button';
@@ -17,9 +17,10 @@ import { Table, type Column } from '../../components/Table';
 import { useToast } from '../../components/Toast';
 import { useSubmit } from '../../components/useSubmit';
 import { fmtDate, fmtDateTime, todayLocal } from '../../format';
+import type { ApiResponse } from '../../lib/api-types';
 import { invalidateApi, useApiQuery } from '../../lib/query';
 import { useOrg, type OrgItem } from '../org/useOrg';
-import { CATEGORY, CATEGORY_OPTIONS, POLICIES_URL, type AckRow, type PolicyDetailData, type PolicyVersion } from './types';
+import { CATEGORY, CATEGORY_OPTIONS, POLICIES_URL, type AckPage, type AckRow, type PolicyDetailData, type PolicyVersion } from './types';
 
 type ConfirmKind = 'publish' | 'discard' | 'withdraw' | 'retire';
 const CONFIRM: Record<ConfirmKind, { title: string; label: string; message: string; done: string; danger: boolean; reason: boolean }> = {
@@ -59,8 +60,8 @@ export function PolicyDetail({ id, onView, onClose }: { id: string; onView: (ver
   ];
   const act = async (c: { kind: ConfirmKind; versionId?: string }, comment: string) => {
     const url = c.kind === 'retire' ? `${POLICIES_URL}/${id}/retire` : `${POLICIES_URL}/versions/${c.versionId}/${c.kind}`;
-    const r = await api.post<{ notified?: number } | null>(url, CONFIRM[c.kind].reason ? { reason: comment } : {});
-    toast(r?.notified != null ? `${CONFIRM[c.kind].done}; ${r.notified} people notified` : CONFIRM[c.kind].done);
+    const r = await api.post<ApiResponse<'/api/v1/policies/versions/{id}/publish', 'post'> | ApiResponse<'/api/v1/policies/{id}/retire', 'post'> | ApiResponse<'/api/v1/policies/versions/{id}/discard', 'post'> | ApiResponse<'/api/v1/policies/versions/{id}/withdraw', 'post'>>(url, CONFIRM[c.kind].reason ? { reason: comment } : {});
+    toast('notified' in r ? `${CONFIRM[c.kind].done}; ${r.notified} people notified` : CONFIRM[c.kind].done);
     await invalidateApi(POLICIES_URL);
   };
   return (
@@ -186,7 +187,7 @@ function AckReport({ version, onClose }: { version: PolicyVersion; onClose: () =
   const [status, setStatus] = useState('pending');
   const [page, setPage] = useState(1);
   const base = `${POLICIES_URL}/versions/${version.id}/acknowledgements`;
-  const query = useApiQuery<Paged<AckRow>>(`${base}${qs({ status, page, pageSize: 25 })}`, { placeholderData: (p) => p });
+  const query = useApiQuery<AckPage>(`${base}${qs({ status, page, pageSize: 25 })}`, { placeholderData: (p) => p });
   return (
     <Modal title={`Acknowledgements — v${version.version_no}`} size="lg" onClose={onClose}>
       <div className="stack-3">

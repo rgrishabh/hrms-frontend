@@ -9,10 +9,10 @@ import { fmtDate, fmtDateOfInstant } from '../../format';
 import { useApiQuery } from '../../lib/query';
 import { CATEGORY, POLICIES_URL, type MyPolicies as Mine, type MyPolicy } from './types';
 
-function AckStatus({ policy, today }: { policy: MyPolicy; today: string }) {
+function AckStatus({ policy, today }: { policy: MyPolicy; today: string | undefined }) {
   if (!policy.requires_ack) return <Badge>For information</Badge>;
   if (policy.acknowledged_at) return <Badge tone="ok">Acknowledged {fmtDateOfInstant(policy.acknowledged_at)}</Badge>;
-  return <Badge tone={policy.due_on && policy.due_on < today ? 'danger' : 'warn'}>Due {fmtDate(policy.due_on)}</Badge>;
+  return <Badge tone={policy.due_on && today && policy.due_on < today ? 'danger' : 'warn'}>Due {fmtDate(policy.due_on)}</Badge>;
 }
 
 export function MyPolicies({ onOpen }: { onOpen: (versionId: string) => void }) {

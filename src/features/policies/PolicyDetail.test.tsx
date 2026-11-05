@@ -38,6 +38,23 @@ const openDetail = async () => {
   return screen.findByRole('dialog', { name: 'COC — Code of conduct' });
 };
 
+describe('fields the server may leave empty', () => {
+  it('a policy without an owner, a publish date or a published version reads as dashes, and editing starts blank', async () => {
+    const unpublished = { ...LIST, owner: null, published_at: null, published_version: null, published_version_id: null, effective_from: null, requires_ack: null, audience: null, acknowledged: null };
+    api(detail([version({ published_at: null, published_by_name: null })], { owner: null }), (url) => (url.endsWith('/api/v1/policies') ? { items: [unpublished] } : undefined));
+    renderPage(<Policies />, '/policies?tab=manage');
+    const row = (await screen.findByRole('button', { name: 'Code of conduct' })).closest('tr')!;
+    expect(row.textContent).not.toMatch(/null|undefined|NaN/);
+    await userEvent.click(within(row).getByRole('button', { name: 'Code of conduct' }));
+    const dlg = await screen.findByRole('dialog', { name: /COC/ });
+    await within(dlg).findByRole('table', { name: 'Versions' });
+    expect(dlg.textContent).not.toMatch(/null|undefined|NaN/);
+    await userEvent.click(within(dlg).getByRole('button', { name: 'Edit details' }));
+    const form = await screen.findByRole('dialog', { name: 'Edit policy details' });
+    expect(within(form).getByLabelText<HTMLInputElement>(/Owner/).value).toBe('');
+  });
+});
+
 describe('policy versions', () => {
   it('shows who drafted and published each version, its audience and its acknowledgements', async () => {
     api(detail([version({ audience_department_ids: ['d1'] }), version({ id: 'v0', version_no: 0, requires_ack: false, status: 'withdrawn', change_summary: 'Old text', published_by_name: null })]));

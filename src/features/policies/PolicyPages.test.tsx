@@ -11,6 +11,18 @@ const view = (over: object = {}) => ({ id: 'v1', policyId: 'p1', code: 'LV', tit
 const row = (over: object = {}) => ({ id: 'p1', code: 'COC', title: 'Code of conduct', category: 'code_of_conduct', owner: 'HR', status: 'active', published_version: 1, effective_from: '2026-01-01', requires_ack: true, drafts: 0, audience: 10, acknowledged: 4, ...over });
 
 describe('my policies', () => {
+  it('a version without a publish date, so without a due date, reads as a dash and not as null', async () => {
+    mockPageApi(['policies.self'], () => ({ pending: 1, overdue: 0, date: '2026-11-01', items: [mine({ published_at: null, due_on: null })] }));
+    renderPage(<Policies />, '/policies');
+    const line = (await screen.findByRole('button', { name: 'Leave policy' })).closest('tr')!;
+    expect(within(line).getByText('Due —')).toBeTruthy();
+    expect(line.textContent).not.toMatch(/null|undefined|NaN/);
+  });
+  it('someone with no employee record gets the short answer, with no date, as an empty list', async () => {
+    mockPageApi(['policies.self'], () => ({ items: [], pending: 0 }));
+    renderPage(<Policies />, '/policies');
+    expect(await screen.findByText('No policies have been published for you yet.')).toBeTruthy();
+  });
   it('tells someone with one due and shows its version, category and due date', async () => {
     mockPageApi(['policies.self'], () => ({ pending: 1, overdue: 0, date: '2026-11-01', items: [mine()] }));
     renderPage(<Policies />, '/policies');

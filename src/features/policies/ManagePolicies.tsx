@@ -14,13 +14,14 @@ import { Table, type Column } from '../../components/Table';
 import { useToast } from '../../components/Toast';
 import { useSubmit } from '../../components/useSubmit';
 import { fmtDate } from '../../format';
+import type { ApiResponse } from '../../lib/api-types';
 import { invalidateApi, useApiQuery } from '../../lib/query';
 import { PolicyDetail } from './PolicyDetail';
-import { CATEGORY, CATEGORY_OPTIONS, POLICIES_URL, type PolicyRow } from './types';
+import { CATEGORY, CATEGORY_OPTIONS, POLICIES_URL, type Policies, type PolicyRow } from './types';
 
 export function ManagePolicies({ onView }: { onView: (versionId: string) => void }) {
   const { can } = useAuth();
-  const query = useApiQuery<{ items: PolicyRow[] }>(POLICIES_URL);
+  const query = useApiQuery<Policies>(POLICIES_URL);
   const [open, setOpen] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const columns: Column<PolicyRow>[] = [
@@ -48,7 +49,7 @@ function NewPolicyForm({ onClose, onCreated }: { onClose: () => void; onCreated:
   const toast = useToast();
   const [f, setF] = useState({ code: '', title: '', category: 'hr', owner: '' });
   const form = useSubmit(async () => {
-    const r = await api.post<{ id: string }>(POLICIES_URL, { ...f, owner: f.owner || null });
+    const r = await api.post<ApiResponse<'/api/v1/policies', 'post'>>(POLICIES_URL, { ...f, owner: f.owner || null });
     toast('Policy created. Add its first version.');
     await invalidateApi(POLICIES_URL);
     onClose();
