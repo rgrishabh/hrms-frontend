@@ -58,6 +58,11 @@ describe('audit chain', () => {
     expect(screen.getByText('bbbbbbbbbbbb…').getAttribute('title')).toBe('bbbbbbbbbbbbbbbbbbbb');
     expect(screen.getByText('41')).toBeTruthy();
   });
+  it('an entry without a sequence number or hashes yet shows dashes, not blanks', async () => {
+    mockPageApi(['audit.chain'], () => paged([{ ...ROW, chain_seq: null, prev_hash: null, row_hash: null }]));
+    renderPage(<AuditChain />);
+    expect(await screen.findAllByText('—')).toHaveLength(3);
+  });
   it('says the chain is intact and how many entries were checked', async () => {
     const f = mockPageApi(['audit.chain'], chain({ ok: true, checked: 1200, brokenAt: null, reason: null }));
     renderPage(<AuditChain />);
@@ -66,7 +71,7 @@ describe('audit chain', () => {
     expect(reads(f, '/tenant/audit/chain/verify')).toHaveLength(1);
   });
   it('raises an alert naming the broken entry and the reason', async () => {
-    mockPageApi(['audit.chain'], chain({ ok: false, checked: 41, brokenAt: '41', reason: 'hash mismatch' }));
+    mockPageApi(['audit.chain'], chain({ ok: false, checked: 41, brokenAt: 41, reason: 'hash mismatch' }));
     renderPage(<AuditChain />);
     await userEvent.click(await screen.findByRole('button', { name: 'Verify chain' }));
     expect((await screen.findByRole('alert')).textContent).toContain('The chain is broken at entry 41: hash mismatch. 41 entries checked.');
@@ -125,6 +130,19 @@ describe('company details', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Hide bank details' }));
     await waitFor(() => expect(screen.queryByText('SBIN0001234')).toBeNull());
     expect(screen.getAllByText('Hidden')).toHaveLength(3);
+  });
+  it('a company with no legal name yet shows a dash, and the form opens empty and saves it as no value', async () => {
+    const f = mockPageApi(['company.read', 'company.manage'], api((url, init) => (init.method === 'PUT' ? { ok: true, changed: [], version: 5 } : url.includes('/images/') ? undefined : { ...MASKED, ...REVEALED, legalName: null, stored: { legalName: null, gstin: null, cin: null } })));
+    renderPage(<CompanySettings />);
+    const row = (await screen.findByText('Legal name')).closest('div')!;
+    expect(within(row).getByText('—')).toBeTruthy();
+    expect(document.body.textContent).not.toMatch(/null|undefined/);
+    await userEvent.click(screen.getByRole('button', { name: 'Edit' }));
+    const dlg = await screen.findByRole('dialog', { name: 'Edit company details' });
+    expect((within(dlg).getByLabelText('Legal name') as HTMLInputElement).value).toBe('');
+    await userEvent.click(within(dlg).getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(writes(f, '/tenant/company')).toHaveLength(1));
+    expect(bodyOf(writes(f, '/tenant/company')[0]!)).toMatchObject({ legalName: null });
   });
   it('a reader without company.manage gets no editing or upload, and a missing stamp says so', async () => {
     mockPageApi(['company.read'], api());
@@ -245,7 +263,7 @@ describe('company details', () => {
 
 describe('data rights', () => {
   const RETENTION = { carveOuts: [{ category: 'payroll', label: 'Payroll records', years: 8, basis: 'Income tax rules', setting: 'x' }], auditLog: 'Audit log is kept for 7 years.', notLegalAdvice: 'This is not legal advice.' };
-  const REQ = { id: 'q1', subject_type: 'employee', subject_id: 'e1', subject_name: 'Rohan Iyer', status: 'requested', reason: 'Left the company', requested_by_name: 'A', created_at: '2026-10-01T04:30:00Z', retained_until: null };
+  const REQ = { id: 'q1', subjectType: 'employee', subjectId: 'e1', status: 'pending', requestedBy: 'u1', decidedBy: null, decidedAt: null, decisionNote: null, completedAt: null, createdAt: '2026-10-01T04:30:00Z', retainedUntil: null, reason: 'Left the company', report: null };
   const list = (items: unknown[], extra: (url: string, init: RequestInit) => unknown = () => undefined) => (url: string, init: RequestInit) => {
     const x = extra(url, init);
     if (x !== undefined) return x;
@@ -271,14 +289,14 @@ describe('data rights', () => {
     await waitFor(() => expect(reads(f, '/auth/me').length).toBeGreaterThan(0));
     expect(reads(f, '/data-rights')).toHaveLength(0);
   });
-  it('lists requests with fallbacks for names, reasons and retention', async () => {
-    mockPageApi(['data_rights.manage'], list([REQ, { ...REQ, id: 'q2', subject_type: 'candidate', subject_name: null, status: 'completed', reason: null, retained_until: '2034-03-31' }, { ...REQ, id: 'q3', subject_name: null, status: 'rejected' }]));
+  it('lists requests from the fields the route sends: who, when, and how long records are kept', async () => {
+    mockPageApi(['data_rights.manage'], list([REQ, { ...REQ, id: 'q2', subjectType: 'candidate', status: 'completed', reason: null, retainedUntil: '2034-03-31' }]));
     renderPage(<DataRights />);
     const table = await screen.findByRole('table', { name: 'Erasure requests' });
-    expect(within(table).getByText('Rohan Iyer')).toBeTruthy();
-    expect(within(table).getByText('Candidate')).toBeTruthy();
     expect(within(table).getByText('Employee')).toBeTruthy();
+    expect(within(table).getByText('Candidate')).toBeTruthy();
     expect(within(table).getByText(/31\/03\/2034|Mar.*2034/)).toBeTruthy();
+    expect(within(table).getAllByText(/01\/10\/2026|Oct.*2026/)).toHaveLength(2);
     expect(within(table).queryByRole('button', { name: 'Carry out' })).toBeNull();
   });
   it('shows an empty list and raises nothing until a person is chosen', async () => {

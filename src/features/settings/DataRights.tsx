@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ShieldCheck } from 'lucide-react';
-import { api, qs, type Paged } from '../../api';
+import { api, qs } from '../../api';
 import { useAuth } from '../../auth';
 import { Alert } from '../../components/Alert';
 import { StatusBadge } from '../../components/Badge';
@@ -18,13 +18,13 @@ import { Table, type Column } from '../../components/Table';
 import { useToast } from '../../components/Toast';
 import { useSubmit } from '../../components/useSubmit';
 import { fmtDate, fmtDateTime } from '../../format';
-import type { ApiBody } from '../../lib/api-types';
+import type { ApiBody, ApiItem, ApiResponse } from '../../lib/api-types';
 import { invalidateApi, useApiQuery } from '../../lib/query';
 import { EmployeeField } from '../employees/EmployeeField';
 
 const BASE = '/api/v1/tenant/data-rights';
-interface Retention { carveOuts: { category: string; label: string; years: number; basis: string; setting: string }[]; auditLog: string; notLegalAdvice: string }
-interface Erasure { id: string; subject_type: 'employee' | 'candidate'; subject_id: string; subject_name?: string | null; status: string; reason: string | null; requested_by_name?: string | null; created_at: string; retained_until?: string | null }
+type Retention = ApiResponse<'/api/v1/tenant/data-rights/retention'>;
+type Erasure = ApiItem<'/api/v1/tenant/data-rights/erasure-requests'>;
 
 export function DataRights() {
   const { canAny, can } = useAuth();
@@ -67,16 +67,16 @@ function PersonExport() {
 function ErasureRequests({ execute, manage }: { execute: boolean; manage: boolean }) {
   const [page, setPage] = useState(1);
   const toast = useToast();
-  const query = useApiQuery<Paged<Erasure>>(`${BASE}/erasure-requests${qs({ page, pageSize: 25 })}`, { placeholderData: (p) => p });
+  const query = useApiQuery<ApiResponse<'/api/v1/tenant/data-rights/erasure-requests'>>(`${BASE}/erasure-requests${qs({ page, pageSize: 25 })}`, { placeholderData: (p) => p });
   const [raising, setRaising] = useState(false);
   const [act, setAct] = useState<{ kind: 'execute' | 'reject'; row: Erasure } | null>(null);
   const columns: Column<Erasure>[] = [
-    { key: 'subject', header: 'Person', card: 'title', cell: (r) => r.subject_name ?? (r.subject_type === 'candidate' ? 'Candidate' : 'Employee') },
+    { key: 'subject', header: 'Person', card: 'title', cell: (r) => (r.subjectType === 'candidate' ? 'Candidate' : 'Employee') },
     { key: 'status', header: 'Status', card: 'status', cell: (r) => <StatusBadge status={r.status} /> },
-    { key: 'when', header: 'Requested', card: 'subtitle', cell: (r) => fmtDateTime(r.created_at) },
+    { key: 'when', header: 'Requested', card: 'subtitle', cell: (r) => fmtDateTime(r.createdAt) },
     { key: 'reason', header: 'Reason', cell: (r) => r.reason ?? '—' },
-    { key: 'kept', header: 'Kept until', cell: (r) => (r.retained_until ? fmtDate(r.retained_until) : '—') },
-    ...(execute ? [{ key: 'actions', header: 'Actions', card: 'actions', cell: (r: Erasure) => (r.status === 'requested' || r.status === 'pending' ? <div className="table__actions"><Button size="sm" variant="danger-ghost" onClick={() => setAct({ kind: 'execute', row: r })}>Carry out</Button><Button size="sm" onClick={() => setAct({ kind: 'reject', row: r })}>Reject</Button></div> : null) } as Column<Erasure>] : []),
+    { key: 'kept', header: 'Kept until', cell: (r) => (r.retainedUntil ? fmtDate(r.retainedUntil) : '—') },
+    ...(execute ? [{ key: 'actions', header: 'Actions', card: 'actions', cell: (r: Erasure) => (r.status === 'pending' ? <div className="table__actions"><Button size="sm" variant="danger-ghost" onClick={() => setAct({ kind: 'execute', row: r })}>Carry out</Button><Button size="sm" onClick={() => setAct({ kind: 'reject', row: r })}>Reject</Button></div> : null) } as Column<Erasure>] : []),
   ];
   return (
     <Card title="Erasure requests" actions={manage && <Button size="sm" variant="primary" onClick={() => setRaising(true)}>Raise a request</Button>}>
