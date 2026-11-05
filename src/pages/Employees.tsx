@@ -14,6 +14,7 @@ import { InlineError } from '../components/ErrorState';
 import { FileUpload } from '../components/FileUpload';
 import { FilterBar } from '../components/FilterBar';
 import { useDebouncedValue } from '../components/hooks';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import { DownloadButton } from '../components/DownloadButton';
 import { Checkbox, Input } from '../components/Input';
 import { KeyValue } from '../components/KeyValue';
@@ -322,7 +323,9 @@ function ImportDialog({ onClose }: { onClose: () => void }) {
 /** Letters as PDF. Salary on an appointment letter is a choice, and reading it is recorded. */
 function LettersCard({ employeeId, self }: { employeeId: string; self: boolean }) {
   const { can, hasFeature } = useAuth();
+  const toast = useToast();
   const [includePay, setIncludePay] = useState(false);
+  const [erasing, setErasing] = useState(false);
   const manage = can('employees.manage');
   const onboarding = hasFeature('FEATURE_ONBOARDING') && manage;
   const offboarding = hasFeature('FEATURE_OFFBOARDING') && (manage || (self && can('lifecycle.self')));
@@ -343,7 +346,22 @@ function LettersCard({ employeeId, self }: { employeeId: string; self: boolean }
             <DownloadButton url={`${base}/relieving.pdf`} fileName="relieving.pdf">Relieving letter</DownloadButton>
           </div>
         )}
-        {self && <div><DownloadButton url={`/api/v1/tenant/data-rights/employees/${employeeId}/export`} fileName="my-data.json">Export my data</DownloadButton></div>}
+        {self && (
+          <div className="cluster">
+            <DownloadButton url={`/api/v1/tenant/data-rights/employees/${employeeId}/export`} fileName="my-data.json">Export my data</DownloadButton>
+            <Button size="sm" variant="danger-ghost" onClick={() => setErasing(true)}>Ask for my data to be erased</Button>
+          </div>
+        )}
+        {erasing && (
+          <ConfirmDialog
+            title="Ask for my data to be erased"
+            message="This raises a request, which someone else carries out once you have left. What the law requires stays until its period ends."
+            confirmLabel="Raise request"
+            danger
+            onClose={() => setErasing(false)}
+            onConfirm={async () => { await api.post('/api/v1/tenant/data-rights/erasure-requests', { subjectType: 'employee', subjectId: employeeId }); toast('Erasure request raised'); }}
+          />
+        )}
       </div>
     </Card>
   );

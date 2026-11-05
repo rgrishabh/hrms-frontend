@@ -136,7 +136,7 @@ export function CandidateForm({ onClose, onSaved }: { onClose: () => void; onSav
 }
 
 function CandidateDetail({ id, onClose, onOpenApp }: { id: string; onClose: () => void; onOpenApp: (id: string) => void }) {
-  const { can } = useAuth();
+  const { can, canAny } = useAuth();
   const toast = useToast();
   const { query, revealed, setRevealed } = useRevealable<Candidate>(`${CANDIDATES}/${id}`);
   const [erase, setErase] = useState(false);
@@ -163,6 +163,7 @@ function CandidateDetail({ id, onClose, onOpenApp }: { id: string; onClose: () =
             ]} />
             <div className="cluster">
               {c.has_resume && <DownloadButton url={`${CANDIDATES}/${id}/resume`} fileName="resume">Download resume</DownloadButton>}
+              {canAny('recruitment.manage', 'data_rights.manage') && <DownloadButton url={`/api/v1/tenant/data-rights/candidates/${id}/export`} fileName="candidate-data.json">Export their data</DownloadButton>}
               {can('recruitment.manage') && c.status === 'active' && <Button size="sm" variant="danger-ghost" onClick={() => setErase(true)}>Erase personal data</Button>}
             </div>
             {c.applications.length > 0 && <Table label="Applications" columns={columns} rows={c.applications} rowKey={(a) => a.id} />}

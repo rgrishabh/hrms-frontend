@@ -93,7 +93,7 @@ test('two-factor by authenticator: enrol, a wrong code is refused, the right one
 
   await page.goto('/account');
   await page.getByRole('button', { name: 'Turn off' }).click();
-  await page.getByLabel('Password', { exact: true }).fill(STRONG);
+  await page.getByLabel(/^Password/).fill(STRONG);
   await page.getByLabel(/Code from your app/).fill(totp(secret, Date.now() + 60_000));
   await page.getByRole('button', { name: 'Turn off' }).click();
   await expect(page.getByText('Two-factor authentication is off')).toBeVisible();
