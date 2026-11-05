@@ -64,9 +64,8 @@ describe('QA-002 requisition edit', () => {
     await userEvent.click(within(form).getByRole('button', { name: /save/i }));
     await waitFor(() => expect(posts(f, '/requisitions/r1').some(([, i]) => (i as RequestInit).method === 'PUT')).toBe(true));
     await screen.findByRole('dialog', { name: /REQ-1/ });
-    const gets = f.mock.calls.filter(([u, i]) => String(u).endsWith('/requisitions/r1') && !(i as RequestInit).method?.match(/PUT/)).length;
-    await waitFor(() => expect(f.mock.calls.filter(([u]) => String(u).endsWith('/requisitions/r1')).length).toBeGreaterThanOrEqual(gets));
-    expect(gets).toBeGreaterThanOrEqual(2); // fresh version after the edit, so the next edit cannot 409
+    // Fresh version after the edit, so the next edit cannot 409. The refetch follows the save, so wait for it.
+    await waitFor(() => expect(f.mock.calls.filter(([u, i]) => String(u).endsWith('/requisitions/r1') && !(i as RequestInit).method?.match(/PUT/)).length).toBeGreaterThanOrEqual(2));
   });
   it('goes back to the detail on cancel', async () => {
     api();
