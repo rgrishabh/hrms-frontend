@@ -32,7 +32,7 @@ ESLint and the type generator live in `tools/lint` with their own `node_modules`
 
 `src/api.ts` is the one path to the server. It holds the CSRF token in memory, keeps the rotated token any response carries, and turns every failure into an `ApiError`. `errorMessage` and `ApiError.fieldErrors` are what screens show: field errors, `weak_password` reasons, `Retry-After` waits, `malware_detected`, `scanner_unavailable` and `requires_higher_level` all come from there.
 
-Types come from `src/lib/api-schema.gen.ts`, read through `ApiResponse`, `ApiBody` and `ApiQuery` in `src/lib/api-types.ts`. **About 290 of the 385 API routes have no response schema yet**, so those answer `never`, and a narrow hand-written type sits beside the screen that uses them. `src/lib/api-contract.test.ts` fails if any call in the app is not a route in the spec. To update after a backend change:
+Types come from `src/lib/api-schema.gen.ts`, read through `ApiResponse`, `ApiItem`, `ApiBody` and `ApiQuery` in `src/lib/api-types.ts`. All 390 API routes have a response schema (363 JSON, 27 files), so a screen names its data from there. Where the schema says less than the screen needs, `Refine` narrows those fields by hand: see `docs/DESIGN.md`, D24. The backend's serializer does not enforce the schema, so when a route and the spec disagree, read the route. `src/lib/api-contract.test.ts` fails if any call in the app is not a route in the spec. To update after a backend change:
 
 ```bash
 HRMS_OPENAPI=../hrms-backend/openapi.json npm run api:generate   # in the backend: npm run openapi
@@ -64,7 +64,7 @@ Between profiles, stop the first stack: Playwright reuses a running one locally.
 | `e2e/*.e2e.ts` | Older flows per module, including leave |
 | `e2e/full/*.off.ts`, `*.single.ts` | Flags off and the smaller mode |
 
-Visual baselines are per platform, in `e2e/mock/__screenshots__`. To update the Linux ones CI uses, run in the Playwright image with the repo mounted: `docker run --rm -v "$PWD":/w -w /w mcr.microsoft.com/playwright:v1.64.1-noble sh -c 'npm ci && npm run build && npm run e2e:visual -- --update-snapshots'`.
+Visual baselines are per platform, in `e2e/mock/__screenshots__`. To update the Linux ones CI uses, run in the Playwright image with the repo mounted: `docker run --rm -v "$PWD":/w -v /w/node_modules -v /w/test-results -w /w mcr.microsoft.com/playwright:v1.64.1-noble sh -c 'npm ci && npm run build && npm run e2e:visual -- --update-snapshots'`. The two extra volumes keep Linux modules out of your own `node_modules`.
 
 ## Rebranding needs no rebuild
 

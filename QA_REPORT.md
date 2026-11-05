@@ -70,6 +70,25 @@ Bugs found and fixed during the revamp. Each has a test that was run and seen to
 | QA-064 | Recruitment (found by running end to end) | Med | Draft an offer and type a designation before the requisition has loaded | The fill from the requisition overwrote what was typed, so the form then refused to submit | Only empty fields are filled | `OfferForms.test.tsx` |
 | QA-065 | Reports (found by axe on the real stack) | Low | Open Reports on a phone | The tile link's own box was 21px high, under the 24px minimum | Minimum height | `e2e/full/walk.full.ts` |
 | QA-066 | Sign-in | Medium | Open `/login`, sign in | The sign-in form shows at any address and the app then renders that address; `/login` was not a route, so it fell through to Page not found | `/login` redirects to the dashboard | `e2e/mock/flows.mock.ts` |
+| QA-067 | Settings, Data rights (found moving to generated types) | High | Open Erasure requests | The screen read `subject_type`, `created_at` and `retained_until`; the route sends camelCase. Candidates read as Employee, with no dates | Reads what is sent | `screens-audit-company.test.tsx` |
+| QA-068 | Reports (same) | High | Open a pay report without revealing | The screen read a top-level `masked`; the route marks each row and the totals. Pay showed a dash, with no Show amounts button | Per-row `isMaskedField` | `reports.flows.test.tsx` |
+| QA-069 | Lifecycle, F&F (same) | High | HR who cannot see the F&F note saves F&F | The form started from the masked null and sent it, erasing the note | Save is disabled and says the note is hidden | `lifecycle.flows.test.tsx` |
+| QA-070 | Payslips (same) | Med | Open a slip, press Download PDF | The slip's detail has no `id`, so it asked for `/payslips/undefined/payslip.pdf`. The mock's detail had an id, which hid it | Uses the id it was opened with. Mock corrected | `payroll.flows.test.tsx` |
+| QA-071 | Loans (same) | Med | Open a loan with reference and purpose masked | A masked reference dropped the whole Paid line, and a masked purpose vanished | Both read as hidden | `loans/flows.test.tsx` |
+| QA-072 | Employees (same) | Med | Open history without the right to its details | Null `change_metadata` read as an empty cell | Reads as hidden, as the column is never null in the table | `Employees.test.tsx` |
+| QA-073 | Employees (same) | Low | Open a bank change in history | `newLast4` is never sent, only `[REDACTED]` | Read removed | `Employees.test.tsx` |
+| QA-074 | Employees (same) | Low | Open a full view with no `employment_type`, which the schema allows and the backend does not do today | `label()` threw | Safe | `Employees.test.tsx` |
+| QA-075 | Employees (same) | Low | Import report row with a blank code | Showed nothing | A dash | `Employees.test.tsx` |
+| QA-076 | Approvals (same) | Low | A step with nobody named | Printed `Step 1: ` | Says Approver | `Approvals.test.tsx` |
+| QA-077 | Attendance (same) | Low | A leave day with no type code, allowed by the schema | Printed `null · full day` | Left out | `src/features/attendance` tests |
+| QA-078 | Overtime (same) | Low | Comp off with no day count, allowed by the schema | Read as 0 days | Says nothing false | `Overtime.test.tsx` |
+| QA-079 | Travel (same) | Low | A paid advance with no reference, allowed by the schema | Printed `Paid · null` | Left out | `travel.test.tsx` |
+| QA-080 | Command palette | Low | Press Ctrl+K as soon as the page appears; failed one parallel unit run | The listener came from a passive effect, which runs in a later task than the commit. A key in between was lost | A layout effect attaches it within the commit. The new test failed every time before the fix | `CommandPalette.test.tsx` "listens from the moment it is on screen" |
+| QA-081 | Shell, icon rail | Med | Open a short page at 1440 wide as someone with many links | Labels clipped for screen readers were positioned against the page, so those past the rail's fold made it scroll, 376px at 600 high. Seen reviewing baselines | Positioned against their link | `e2e/mock/layout.mock.ts` |
+| QA-082 | Shell, top bar | Low | Look at the line under the top bar; read the top bar | The rail's header was 53px and the bar 52px, and the breadcrumbs ran on from the product name | Same height; a gap | `e2e/mock/layout.mock.ts` |
+| QA-083 | e2e mock | Low | Open Approvals in the mocked suite | The mock's inbox and mine had no paging, unlike the route, so `NaN–NaN of undefined` sat in the baselines and passed | Mock corrected. Every screen now fails on printed null, NaN or undefined | `e2e/mock/screens.mock.ts` |
+| QA-084 | e2e stack | Low | Run `E2E_PROFILE=single` | The web server came up before the admin's first password change, so Playwright could read the old password: Invalid email or password, once | The web server starts last. Passed on the rerun; the race is not forced | `e2e/full/mode.single.ts` |
+| QA-085 | API contract test | Low | Upload with PUT | The test read every upload as a POST, so the resume route failed it | Reads the method argument | `src/lib/api-contract.test.ts` |
 
 ## Audit claims that needed correcting
 
@@ -79,5 +98,20 @@ Bugs found and fixed during the revamp. Each has a test that was run and seen to
 
 ## Known issues, not fixed here
 
+- **The OpenAPI spec is wrong in places, and the serializer does not enforce it.** Screens stay safe through `Refine` (`docs/DESIGN.md`, D24). Non-null in the spec, null in the route: approvals steps `approver_name`, `acted_by_name`, `acted_for_name`; `attendance/me` `shift_code`; roster `source`, `department`; regularization `reason`; trip `department`; document `uploaded_by_name`; profile `edit.*`; bank pending `accountHolder`, `ifsc`; policies list and acknowledgement joins, `mine.due_on`; jobs `result`, `triggered_by_name`; competency `review_due`, `reviewDue`, `valid_from`; case events `actor`, `description`; application events `actor_name`; `defer.recomputePayroll`; `leave/ledger.created_by_name`. Missing or empty: `travel/requests` items, `me/today.selfieRequired`, mask fields on `payslips/mine`, regularizations and bank pending. Section-dependent items typed as one section: profile pending and profile-changes. `employees/import` `employeeCode` is required but omitted when blank.
+- **Offers (backend).** Rows omit `contract_end_date`, department and branch ids, so editing an offer loses them; the form says to check them.
 - **Exit interview for a non-HR employee (backend).** The API hides `exit_interview` from non-HR viewers, so an employee's form still opens blank, and their save replaces all recorded answers, including HR's. This needs a backend change: refuse or merge.
 - **Backend text can still carry lab words:** approval summaries saying "field sampling", and "Calibration expired" on a legacy `lab_instrument` asset.
+
+## Last full run
+
+Commit e5466ef on a clean export, against the backend at f87f316 on a private Postgres 17 cluster and spare ports; unit, coverage and lint repeated at e89487d.
+
+| Suite | Result |
+|---|---|
+| Unit, with thresholds | 1414 passed: statements 98.88%, branches 95.16%, functions 98.73%, lines 99.45% |
+| Lint | Clean |
+| Mocked browser suite | 1290 passed, 16 skipped: 14 visual tests that need `E2E_TODAY`, and 2 screenshot steps |
+| Visual baselines, `npm run e2e:visual` | 14 passed on darwin. Linux regenerated in the Playwright image and not compared again after that |
+| Full stack: full, off, single | 226, 4 and 2 passed |
+| Lighthouse | Passed: performance 1, accessibility 1, best practices 0.96, SEO 1, LCP about 910ms. Same nginx, config and build, from a scratch Dockerfile because this machine has no buildx |

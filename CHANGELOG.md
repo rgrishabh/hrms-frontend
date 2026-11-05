@@ -4,6 +4,9 @@
 
 ### Removed
 
+* The permanent 232px sidebar on desktop. Above 860px a 56px icon rail takes its place, and its menu button expands it in place to the labelled menu, remembered per browser. Phones keep the drawer and bottom bar.
+* Hand-written API response types: screens name their data from the generated schema (`ApiResponse`, `ApiItem`, `Refine`). The remainder is listed in `docs/DESIGN.md`, D24.
+* The read of `newLast4` in employee history, which the API never sends.
 * SMS: settings page, account preference, e2e spec and the CI variables.
 * `GET /api/v1/public/config`: the app reads `GET /api/v1/config/public`. `me.capabilities` is replaced by `features` from that endpoint.
 * The `{ error: { ... } }` response shape: only RFC 7807 is read.

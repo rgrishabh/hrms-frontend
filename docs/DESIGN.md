@@ -179,6 +179,8 @@ Hashed assets are immutable for a year. The build writes `.gz` and `.br` next to
 
 **D23: Role choices in smaller modes are a fixed list.** `/tenant/roles` answers 404 there, and the set is fixed by the mode. A backend change adding roles to a mode means changing `SMALL_MODE_ROLES` in `Users.tsx`.
 
+**D24: Response types come from the schema, with named exceptions.** Screens use `ApiResponse` and `ApiItem`. `Refine` narrows single fields in 75 places, for three reasons only: a closed set where the schema says `string` (kinds, roles, statuses that index a label table), an `object` the screen reads known keys from (report rows and totals, `goal_ratings`, `change_metadata`, exit interview answers, statutory `params`), and a schema that is wrong (a left join typed as non-null, masked fields absent). Wholly hand-written remain: `PersonalDetails` `Item`, `Profile` and `ProfileChange` (items depend on the section), `Employees` `Duplicate` and `Candidates` `Duplicate` (409 bodies, which the schema does not cover), `MatrixCell`, `TemplateTask`, `RawConfig` in `lib/config.ts` (kept loose because it parses whatever an installation answers) and `Me` in `auth.tsx`. The wrong schema entries are reported to the backend; when one is corrected, its `Refine` can go.
+
 **D7: Decisions live here.** The shared rules ask for `DECISIONS.md`, but this batch was told to create no docs beyond this file and `QA_REPORT.md`.
 
 ## Migration status
