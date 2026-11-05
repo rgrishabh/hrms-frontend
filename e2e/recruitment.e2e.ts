@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { escapeRegExp } from './escape-regexp';
 import { login, noErrors } from './helpers';
 
 /** `datetime-local` value in the browser's (= this machine's) time zone. */
@@ -37,7 +38,7 @@ test('a requisition becomes a hire: request, approval, candidate, interview, off
   await firstOption(page, 'Branch');
   await form.getByLabel('Justification').fill('Metals testing scope extension for NABL; current analysts are fully loaded');
   await form.getByRole('button', { name: 'Save draft' }).click();
-  const req = page.getByRole('dialog', { name: new RegExp(`REQ-\\d+ — ${title.replace(/[()]/g, '\\$&')}`) });
+  const req = page.getByRole('dialog', { name: new RegExp(`REQ-\\d+ — ${escapeRegExp(title)}`) });
   await req.getByRole('button', { name: 'Submit for approval' }).click();
   await expect(page.getByText('Sent for approval')).toBeVisible();
 

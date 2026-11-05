@@ -46,10 +46,15 @@ if (!PROFILES[profile]) throw new Error(`Unknown E2E_PROFILE ${profile}`);
 function secrets() {
   mkdirSync(stateDir, { recursive: true });
   const file = join(stateDir, 'secrets.json');
-  if (existsSync(file)) return JSON.parse(readFileSync(file, 'utf8'));
   const s = { dataKey: randomBytes(32).toString('base64'), adminPassword: `E2E-${randomBytes(12).toString('base64url')}` };
-  writeFileSync(file, JSON.stringify(s), { mode: 0o600 });
-  return s;
+  try {
+    // wx: created here or not at all, so no check and write with a gap between them. Existing secrets are kept.
+    writeFileSync(file, JSON.stringify(s), { mode: 0o600, flag: 'wx' });
+    return s;
+  } catch (e) {
+    if (e.code !== 'EEXIST') throw e;
+  }
+  return JSON.parse(readFileSync(file, 'utf8'));
 }
 
 function backendEnv(extra = {}) {
@@ -143,11 +148,15 @@ async function finishAdminSetup() {
   const creds = JSON.parse(readFileSync(join(stateDir, 'creds.json'), 'utf8'));
   const api = `http://localhost:${ports.api}/api/v1/auth`;
   const headers = { 'content-type': 'application/json' };
+  // A password generated above for this throwaway stack, going to the API it just started on localhost.
+  // codeql[js/file-access-to-http]
   const login = await fetch(`${api}/login`, { method: 'POST', headers, body: JSON.stringify({ email: 'admin@example.test', password: adminPassword }) });
   if (!login.ok) throw new Error(`admin sign-in failed: ${await login.text()}`);
   const { csrfToken } = await login.json();
   const cookie = login.headers.getSetCookie().map((c) => c.split(';')[0]).join('; ');
   const changed = `E2E-${randomBytes(12).toString('base64url')}`;
+  // As above: synthetic credentials, to localhost only.
+  // codeql[js/file-access-to-http]
   const change = await fetch(`${api}/password`, { method: 'POST', headers: { ...headers, cookie, 'x-csrf-token': csrfToken }, body: JSON.stringify({ currentPassword: adminPassword, newPassword: changed }) });
   if (!change.ok) throw new Error(`admin password change failed: ${await change.text()}`);
   writeFileSync(join(stateDir, 'creds.json'), JSON.stringify({ ...creds, adminPassword: changed }), { mode: 0o600 });
