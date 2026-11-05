@@ -16,7 +16,7 @@ import { useToast } from '../../components/Toast';
 import { useSubmit } from '../../components/useSubmit';
 import { currencySymbol } from '../../format';
 import { invalidateApi, useApiQuery } from '../../lib/query';
-import { CATEGORIES_URL, type ExpenseCategory } from './types';
+import { CATEGORIES_URL, type ExpenseCategories, type ExpenseCategory } from './types';
 
 interface CategoryForm { id?: string; code: string; name: string; description: string; requiresReceipt: boolean; maxAmount: string; gstApplicable: boolean; status: string; calc: string }
 
@@ -25,7 +25,7 @@ const toForm = (c: ExpenseCategory): CategoryForm => ({ id: c.id, code: c.code, 
 const CALC_LABEL = { per_diem: 'Days × per-diem rate', mileage: 'Km × mileage rate' } as const;
 
 export function Categories() {
-  const query = useApiQuery<{ items: ExpenseCategory[] }>(CATEGORIES_URL);
+  const query = useApiQuery<ExpenseCategories>(CATEGORIES_URL);
   const [edit, setEdit] = useState<CategoryForm | null>(null);
   const columns: Column<ExpenseCategory>[] = [
     { key: 'code', header: 'Code', card: 'subtitle', cell: (c) => <span className="mono">{c.code}</span> },

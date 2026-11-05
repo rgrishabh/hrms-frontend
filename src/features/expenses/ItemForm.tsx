@@ -10,6 +10,7 @@ import { Select } from '../../components/Select';
 import { useToast } from '../../components/Toast';
 import { useSubmit, type FieldErrors } from '../../components/useSubmit';
 import { currencySymbol, todayLocal } from '../../format';
+import type { ApiResponse } from '../../lib/api-types';
 import { invalidateApi, useApiQuery } from '../../lib/query';
 import { CLAIMS_URL, RATES_URL, VEHICLE, type AllowanceQuote, type AllowanceRates, type ExpenseCategory } from './types';
 
@@ -50,7 +51,7 @@ export function ItemForm({ claimId, categories, onClose }: { claimId: string; ca
     for (const [k, v] of Object.entries(rest)) if (v) body.append(k, v);
     if (calc) { body.append('quantity', quantity); if (calc === 'per_diem') body.append('tier', tier); else body.append('vehicle', vehicle); }
     if (file) body.append('receipt', file);
-    const r = await api.upload<{ possibleDuplicate?: boolean }>(`${CLAIMS_URL}/${claimId}/items`, body);
+    const r = await api.upload<ApiResponse<'/api/v1/expenses/claims/{id}/items', 'post'>>(`${CLAIMS_URL}/${claimId}/items`, body);
     if (r.possibleDuplicate) toast('Added, but it looks similar to another claimed expense. Check it is not a duplicate.', 'error');
     else toast('Expense added');
     await invalidateApi(CLAIMS_URL);

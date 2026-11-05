@@ -20,6 +20,7 @@ import { Table, type Column } from '../../components/Table';
 import { useToast } from '../../components/Toast';
 import { useAction, useSubmit } from '../../components/useSubmit';
 import { fmtDateOfInstant, fmtDateTime } from '../../format';
+import type { ApiResponse } from '../../lib/api-types';
 import { invalidateApi, useApiQuery } from '../../lib/query';
 import type { Ageing, Batch, Payable } from './types';
 
@@ -43,12 +44,12 @@ function AgeingTiles() {
 function Payables() {
   const asCards = useMediaQuery(CARD_LIST_QUERY);
   const { run, isBusy } = useAction();
-  const query = useApiQuery<{ items: Payable[] }>(`${BASE}/payables`);
+  const query = useApiQuery<ApiResponse<'/api/v1/expenses/payables'>>(`${BASE}/payables`);
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
   const toggle = (id: string, on: boolean) => setSelected((s) => { const n = new Set(s); if (on) n.add(id); else n.delete(id); return n; });
   const toast = useToast();
   const prepare = () => run('prepare', async () => {
-    const r = await api.post<{ total: string | number }>(`${BASE}/batches`, { claimIds: [...selected] });
+    const r = await api.post<ApiResponse<'/api/v1/expenses/batches', 'post'>>(`${BASE}/batches`, { claimIds: [...selected] });
     toast(`Batch prepared: ${formatMoney(r.total)}. Another finance user must approve it.`);
     setSelected(new Set());
     await reloadFinance();
@@ -80,7 +81,7 @@ function Batches() {
   const { can, me } = useAuth();
   const toast = useToast();
   const { run, isBusy } = useAction();
-  const query = useApiQuery<{ items: Batch[] }>(`${BASE}/batches`);
+  const query = useApiQuery<ApiResponse<'/api/v1/expenses/batches'>>(`${BASE}/batches`);
   const [paying, setPaying] = useState<Batch | null>(null);
   const [cancelling, setCancelling] = useState<Batch | null>(null);
   const canPay = can('expenses.pay');

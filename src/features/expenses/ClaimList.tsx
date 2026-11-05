@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Receipt } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
-import { api, qs, type Paged } from '../../api';
+import { api, qs } from '../../api';
 import { Badge, StatusBadge } from '../../components/Badge';
 import { Button } from '../../components/Button';
 import { EmptyState } from '../../components/EmptyState';
@@ -13,6 +13,7 @@ import { QueryState } from '../../components/QueryState';
 import { Table, type Column } from '../../components/Table';
 import { useSubmit } from '../../components/useSubmit';
 import { fmtDateTime } from '../../format';
+import type { ApiResponse } from '../../lib/api-types';
 import { invalidateApi, useApiQuery } from '../../lib/query';
 import { ClaimDetail } from './ClaimDetail';
 import { CLAIMS_URL, type Claim, type ClaimRow, type ClaimScope } from './types';
@@ -23,7 +24,7 @@ export function ClaimList({ scope }: { scope: ClaimScope }) {
   // ?claim=<id> opens a claim directly, for example a trip's claim started from Travel.
   const [open, setOpen] = useState<string | null>(scope === 'mine' ? params.get('claim') : null);
   const [creating, setCreating] = useState(false);
-  const query = useApiQuery<Paged<ClaimRow>>(`${CLAIMS_URL}${qs({ scope, page, pageSize: 20 })}`, { placeholderData: (p) => p });
+  const query = useApiQuery<ApiResponse<'/api/v1/expenses/claims'>>(`${CLAIMS_URL}${qs({ scope, page, pageSize: 20 })}`, { placeholderData: (p) => p });
   const close = () => {
     setOpen(null);
     if (params.has('claim')) setParams((p) => { const n = new URLSearchParams(p); n.delete('claim'); return n; }, { replace: true });
@@ -58,7 +59,7 @@ export function ClaimForm({ claim, onClose, onSaved }: { claim?: Pick<Claim, 'id
     const body = { ...f, project: f.project || null };
     let id = claim?.id;
     if (id) await api.put(`${CLAIMS_URL}/${id}`, body);
-    else id = (await api.post<{ id: string }>(CLAIMS_URL, body)).id;
+    else id = (await api.post<ApiResponse<'/api/v1/expenses/claims', 'post'>>(CLAIMS_URL, body)).id;
     await invalidateApi(CLAIMS_URL);
     onSaved(id);
     onClose();

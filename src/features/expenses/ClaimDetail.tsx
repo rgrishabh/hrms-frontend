@@ -17,7 +17,7 @@ import { fmtDate, fmtNumber } from '../../format';
 import { invalidateApi, useApiQuery } from '../../lib/query';
 import { ClaimForm } from './ClaimList';
 import { ItemForm } from './ItemForm';
-import { CATEGORIES_URL, CLAIMS_URL, VEHICLE, type Claim, type ClaimItem, type ExpenseCategory } from './types';
+import { CATEGORIES_URL, CLAIMS_URL, VEHICLE, type Claim, type ClaimItem, type ExpenseCategories } from './types';
 
 type Confirming = 'submit' | 'cancel' | 'withdraw';
 
@@ -44,7 +44,7 @@ export function ClaimDetail({ id, onClose }: { id: string; onClose: () => void }
   const { me } = useAuth();
   const query = useApiQuery<Claim>(`${CLAIMS_URL}/${id}`);
   const c = query.data;
-  const cats = useApiQuery<{ items: ExpenseCategory[] }>(c?.editable ? CATEGORIES_URL : null);
+  const cats = useApiQuery<ExpenseCategories>(c?.editable ? CATEGORIES_URL : null);
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState(false);
   const [confirm, setConfirm] = useState<Confirming | null>(null);

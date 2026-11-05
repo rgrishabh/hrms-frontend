@@ -1,47 +1,23 @@
+import type { ApiItem, ApiResponse, Refine } from '../../lib/api-types';
+
 export const VEHICLE: Record<string, string> = { car: 'Car', two_wheeler: 'Two-wheeler' };
 
 export type ClaimScope = 'mine' | 'team';
 
-export interface ClaimRow {
-  id: string; title: string; status: string; employee_name: string; items: number; total: string | number; flagged: number;
-  created_at: string; submitted_at?: string | null; approved_at?: string | null; paid_at?: string | null;
-}
+export type ClaimRow = ApiItem<'/api/v1/expenses/claims'>;
+export type Claim = ApiResponse<'/api/v1/expenses/claims/{id}'>;
+export type ClaimItem = Claim['items'][number];
 
-export interface ClaimItem {
-  id: string; expense_date: string; category_name: string; description: string; amount: string | number; has_receipt: boolean;
-  calc?: 'per_diem' | 'mileage' | null; quantity?: string | number | null; rate?: string | number | null; tier?: string | null; vehicle?: string | null;
-  merchant?: string | null; invoice_number?: string | null; gstin?: string | null; duplicate_of?: string | null;
-}
+export type ExpenseCategory = Refine<ApiItem<'/api/v1/expenses/categories'>, { calc: 'per_diem' | 'mileage' | null }>;
+export type ExpenseCategories = Refine<ApiResponse<'/api/v1/expenses/categories'>, { items: ExpenseCategory[] }>;
 
-export interface Claim {
-  id: string; title: string; status: string; employee_id: string; employee_name: string; purpose: string; project: string | null; total: string | number;
-  payment_reference?: string | null; travel_request_id?: string | null; advance_adjusted?: string | number | null; editable: boolean; items: ClaimItem[];
-}
+export type Payable = ApiItem<'/api/v1/expenses/payables'>;
+export type Batch = ApiItem<'/api/v1/expenses/batches'>;
+export type Ageing = ApiResponse<'/api/v1/expenses/reports/ageing'>;
 
-export interface ExpenseCategory {
-  id: string; code: string; name: string; description: string | null; requires_receipt: boolean; max_amount: string | number | null; gst_applicable: boolean; status: string; calc: 'per_diem' | 'mileage' | null;
-}
-
-export interface Payable { id: string; employee_name: string; employee_code: string; title: string; payable: string | number; total: string | number; advance_adjusted: string | number; approved_at: string; age_days: number }
-
-export interface Batch {
-  id: string; status: string; total: string | number; claim_count: number; created_at: string; payment_reference?: string | null;
-  prepared_by: string; prepared_by_name: string; approved_by_name?: string | null; paid_by_name?: string | null;
-}
-
-export interface Ageing {
-  pipeline: { status: string; amount: string | number; claims: number }[];
-  approvedUnpaidByAge: { bucket: string; amount: string | number; claims: number }[];
-}
-
-export interface AllowanceRate {
-  id: string; kind: 'per_diem' | 'mileage'; tier: string | null; grade: string | null; vehicle: string | null; rate: string | number; effective_from: string;
-  state: 'current' | 'scheduled' | 'superseded'; note: string | null; created_by_name: string | null;
-}
-
-export interface AllowanceRates { items: AllowanceRate[]; tiers: string[]; canManage: boolean }
-
-export interface AllowanceQuote { rate: string | number | null; quantity?: string | number; amount?: string }
+export type AllowanceRate = Refine<ApiItem<'/api/v1/expenses/allowance-rates'>, { kind: 'per_diem' | 'mileage'; state: 'current' | 'scheduled' | 'superseded' }>;
+export type AllowanceRates = Refine<ApiResponse<'/api/v1/expenses/allowance-rates'>, { items: AllowanceRate[] }>;
+export type AllowanceQuote = ApiResponse<'/api/v1/expenses/allowance-quote'>;
 
 export const CLAIMS_URL = '/api/v1/expenses/claims';
 export const CATEGORIES_URL = '/api/v1/expenses/categories';
