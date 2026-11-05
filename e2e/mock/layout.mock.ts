@@ -126,6 +126,14 @@ test.describe('desktop shell', () => {
 });
 
 test.describe('above 860px', () => {
+  test('the icon rail adds no scrolling to a short page, with more links than fit', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 600 });
+    await mockApi(page, { persona: 'hr' });
+    await page.goto('/approvals');
+    await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible();
+    await page.waitForLoadState('networkidle');
+    expect(await page.evaluate(() => document.documentElement.scrollHeight - window.innerHeight)).toBeLessThanOrEqual(0);
+  });
   for (const width of [861, 1024, 1440, 1920]) {
     for (const expanded of [false, true]) {
       test(`the rail and top bar line up at ${width}, ${expanded ? 'expanded' : 'icons only'}`, async ({ page }) => {
