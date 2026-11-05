@@ -61,7 +61,7 @@ function HandOver({ onBehalf, onClose, onDone }: { onBehalf: boolean; onClose: (
         <Picker label="Approves instead" hint="Type at least two letters of a name or employee code" placeholder="Search people" queryKey="delegates" minChars={2} search={searchDelegates} required value={delegate} onChange={setDelegate} />
         <div className="columns-form">
           <DatePicker label="First day" required min={today} value={startsOn} onChange={(e) => { setStartsOn(e.target.value); if (e.target.value > endsOn) setEndsOn(e.target.value); }} />
-          <DatePicker label="Last day" hint="At most 90 days" required min={startsOn} max={addDays(startsOn, 89)} value={endsOn} onChange={(e) => setEndsOn(e.target.value)} />
+          <DatePicker label="Last day" hint="At most 90 days" required min={startsOn} max={startsOn ? addDays(startsOn, 89) : undefined} value={endsOn} onChange={(e) => setEndsOn(e.target.value)} />
         </div>
         <Input label="Note for them (optional)" maxLength={300} placeholder="On leave; urgent items to Meera" value={note} onChange={(e) => setNote(e.target.value)} />
         <InlineError error={error} />
