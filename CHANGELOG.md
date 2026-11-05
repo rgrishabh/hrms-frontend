@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Added
+
+* ID and business cards. The Employees page prints them for everyone, or a chosen branch or department; a profile prints one person's and takes the photo. Needs `employees.manage`.
+
 ### Removed
 
 * The permanent 232px sidebar on desktop. Above 860px a 56px icon rail takes its place, and its menu button expands it in place to the labelled menu, remembered per browser. Phones keep the drawer and bottom bar. The person's name, Account, Sign out, Install app and the support details moved from the foot of the menu to an account menu at the top right, on every screen size.

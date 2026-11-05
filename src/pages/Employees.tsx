@@ -16,6 +16,7 @@ import { FilterBar } from '../components/FilterBar';
 import { useDebouncedValue } from '../components/hooks';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { DownloadButton } from '../components/DownloadButton';
+import { EmployeeCards } from '../features/employees/EmployeeCards';
 import { Checkbox, Input } from '../components/Input';
 import { KeyValue } from '../components/KeyValue';
 import { Modal } from '../components/Modal';
@@ -83,7 +84,11 @@ export function Employees() {
       <PageHeader
         title="Employees"
         description={full ? 'Employee master' : 'Directory of active colleagues'}
-        actions={can('employees.manage') && <><Button onClick={() => setImporting(true)}>Bulk import</Button><Button variant="primary" onClick={() => setCreating(true)}>Add employee</Button></>}
+        actions={can('employees.manage') && <>
+          <DownloadButton size="md" url={`/api/v1/employees/cards/id-cards.pdf${qs({ branchId, departmentId })}`} fileName="id-cards.pdf" aria-label="ID cards for everyone shown by the branch and department filters">ID cards</DownloadButton>
+          <DownloadButton size="md" url={`/api/v1/employees/cards/business-cards.pdf${qs({ branchId, departmentId })}`} fileName="business-cards.pdf" aria-label="Business cards for everyone shown by the branch and department filters">Business cards</DownloadButton>
+          <Button onClick={() => setImporting(true)}>Bulk import</Button><Button variant="primary" onClick={() => setCreating(true)}>Add employee</Button>
+        </>}
       />
       <FilterBar
         search={{ label: 'Search employees', placeholder: 'Search name, code or email', value: search, onChange: onSearch }}
@@ -512,6 +517,7 @@ function ProfileBody({ employee: e, id }: { employee: Employee; id: string }) {
               ]} />
             </Card>
             {full && (self || canAny('employees.bank.read', 'employees.bank.approve')) && <BankPanel employeeId={id} />}
+            {full && can('employees.manage') && <EmployeeCards employeeId={id} />}
             {full && <LettersCard employeeId={id} self={self} />}
           </div>
         )}

@@ -26,6 +26,23 @@ const Opened = () => { const { id } = useParams(); return <p>Record {id}</p>; };
 const showList = () => renderPage(<Routes><Route path="/employees" element={<Employees />} /><Route path="/employees/:id" element={<Opened />} /></Routes>, '/employees');
 
 describe('employee list', () => {
+  it('HR can print cards for everyone, following the branch and department filters', async () => {
+    const f = mockPageApi(['employees.read', 'employees.manage'], api(list([ROW])));
+    showList();
+    await screen.findByRole('table', { name: 'Employees' });
+    await userEvent.selectOptions(screen.getByLabelText('Branch'), 'b2');
+    await waitFor(() => expect(reads(f, 'branchId=b2').length).toBeGreaterThan(0));
+    await userEvent.click(screen.getByRole('button', { name: /^ID cards for everyone/ }));
+    await waitFor(() => expect(reads(f, '/api/v1/employees/cards/id-cards.pdf?branchId=b2')).toHaveLength(1));
+    await userEvent.click(screen.getByRole('button', { name: /^Business cards for everyone/ }));
+    await waitFor(() => expect(reads(f, '/api/v1/employees/cards/business-cards.pdf?branchId=b2')).toHaveLength(1));
+  });
+  it('someone who only reads the master has no card buttons', async () => {
+    mockPageApi(['employees.read'], api(list([ROW])));
+    showList();
+    await screen.findByRole('table', { name: 'Employees' });
+    expect(screen.queryByRole('button', { name: /^ID cards/ })).toBeNull();
+  });
   it('an HR reader sees the master with status, branch and joining date', async () => {
     mockPageApi(['employees.read'], api(list([ROW, { ...ROW, id: 'e3', first_name: 'Bo', last_name: null, designation: null, department_name: null, branch_name: undefined, date_of_joining: undefined, status: undefined }])));
     showList();
