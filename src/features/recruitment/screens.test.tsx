@@ -558,7 +558,7 @@ describe('application', () => {
     expect(writes(f, '/applications/a1/interviews')).toHaveLength(0);
     await userEvent.click(within(dlg).getByRole('button', { name: 'Schedule' }));
     await waitFor(() => expect(writes(f, '/applications/a1/interviews')).toHaveLength(1));
-    expect(lastBody(f, '/applications/a1/interviews')).toEqual({ round: 3, kind: 'hr', scheduledAt: new Date('2027-01-20T10:30').toISOString(), durationMin: 60, location: 'Room 7', panelUserIds: ['u5'] });
+    expect(lastBody(f, '/applications/a1/interviews')).toEqual({ round: 3, kind: 'hr', scheduledAt: '2027-01-20T05:00:00.000Z', durationMin: 60, location: 'Room 7', panelUserIds: ['u5'] });
     expect(await screen.findByText('Interview scheduled; the panel was notified')).toBeTruthy();
   });
   it('feedback needs a rating, and a refusal stays open with the typed notes', async () => {
