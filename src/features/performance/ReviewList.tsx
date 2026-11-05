@@ -9,6 +9,7 @@ import { Modal } from '../../components/Modal';
 import { QueryState } from '../../components/QueryState';
 import { Select } from '../../components/Select';
 import { Table, type Column } from '../../components/Table';
+import type { ApiResponse } from '../../lib/api-types';
 import { useApiQuery } from '../../lib/query';
 import { ReviewDetail } from './ReviewDetail';
 import { REVIEW_STATUS, type Cycle, type ReviewRow } from './types';
@@ -19,7 +20,7 @@ export function ReviewList({ cycle, scope }: { cycle: Cycle; scope: 'team' | 'al
   const [status, setStatus] = useState('');
   const [search, setSearch] = useState('');
   const [open, setOpen] = useState<string | null>(null);
-  const query = useApiQuery<{ items: ReviewRow[] }>(`/api/v1/performance/reviews${qs({ cycleId: cycle.id, scope })}`);
+  const query = useApiQuery<ApiResponse<'/api/v1/performance/reviews'>>(`/api/v1/performance/reviews${qs({ cycleId: cycle.id, scope })}`);
   const columns: Column<ReviewRow>[] = [
     { key: 'employee', header: 'Employee', card: 'title', cell: (r) => <><Button variant="link" onClick={() => setOpen(r.id)}>{r.employee_name}</Button><div className="table__cell-sub mono">{r.employee_code}</div></> },
     { key: 'status', header: 'Status', card: 'status', cell: (r) => <StatusBadge status={r.status} /> },

@@ -10,7 +10,7 @@ import { TabPanel, Tabs, useTabParam, type TabItem } from '../components/Tabs';
 import { Cycles } from '../features/performance/Cycles';
 import { MyReview } from '../features/performance/ReviewDetail';
 import { ReviewList } from '../features/performance/ReviewList';
-import type { Cycle, ReviewRow } from '../features/performance/types';
+import type { ApiResponse } from '../lib/api-types';
 import { useApiQuery } from '../lib/query';
 import '../features/performance/Performance.css';
 
@@ -19,11 +19,11 @@ type Tab = 'mine' | 'team' | 'all' | 'cycles';
 export function Performance() {
   const { can, me } = useAuth();
   const manage = can('performance.manage');
-  const cycles = useApiQuery<{ items: Cycle[] }>('/api/v1/performance/cycles');
+  const cycles = useApiQuery<ApiResponse<'/api/v1/performance/cycles'>>('/api/v1/performance/cycles');
   const visible = (cycles.data?.items ?? []).filter((c) => c.status !== 'draft');
   const [picked, setPicked] = useState('');
   const cycle = visible.find((c) => c.id === picked) ?? visible.find((c) => c.status === 'active') ?? visible[0];
-  const team = useApiQuery<{ items: ReviewRow[] }>(cycle ? `/api/v1/performance/reviews${qs({ cycleId: cycle.id, scope: 'team' })}` : null);
+  const team = useApiQuery<ApiResponse<'/api/v1/performance/reviews'>>(cycle ? `/api/v1/performance/reviews${qs({ cycleId: cycle.id, scope: 'team' })}` : null);
   const tabs: TabItem<Tab>[] = [];
   if (me?.user.employeeId && can('performance.self')) tabs.push({ key: 'mine', label: 'My review' });
   // A failed load keeps the tab, so the failure is seen instead of a team silently vanishing. Going by the

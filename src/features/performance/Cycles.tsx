@@ -13,6 +13,7 @@ import { Table, type Column } from '../../components/Table';
 import { useToast } from '../../components/Toast';
 import { useSubmit } from '../../components/useSubmit';
 import { fmtDate, todayLocal } from '../../format';
+import type { ApiResponse } from '../../lib/api-types';
 import { invalidateApi } from '../../lib/query';
 import type { Cycle } from './types';
 
@@ -52,8 +53,14 @@ export function Cycles({ items }: { items: readonly Cycle[] }) {
           confirmLabel={confirm.action === 'activate' ? 'Activate' : 'Close cycle'}
           onClose={() => setConfirm(null)}
           onConfirm={async () => {
-            const r = await api.post<{ reviews?: number }>(`/api/v1/performance/cycles/${confirm.cycle.id}/${confirm.action}`);
-            toast(confirm.action === 'activate' ? `Activated: ${r.reviews} reviews created` : 'Cycle closed');
+            const url = `/api/v1/performance/cycles/${confirm.cycle.id}/${confirm.action}`;
+            if (confirm.action === 'activate') {
+              const r = await api.post<ApiResponse<'/api/v1/performance/cycles/{id}/activate', 'post'>>(url);
+              toast(`Activated: ${r.reviews} reviews created`);
+            } else {
+              await api.post<ApiResponse<'/api/v1/performance/cycles/{id}/close', 'post'>>(url);
+              toast('Cycle closed');
+            }
             await reload();
           }}
         />

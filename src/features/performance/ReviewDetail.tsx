@@ -17,14 +17,15 @@ import { Table, type Column } from '../../components/Table';
 import { useToast } from '../../components/Toast';
 import { useAction, useSubmit } from '../../components/useSubmit';
 import { fmtDate } from '../../format';
+import type { ApiResponse } from '../../lib/api-types';
 import { invalidateApi, useApiQuery } from '../../lib/query';
-import { RATING, ratingText, type Cycle, type GoalList, type Review, type ReviewGoal, type ReviewRow } from './types';
+import { RATING, ratingText, type Cycle, type GoalList, type Review, type ReviewGoal } from './types';
 
 const reload = () => invalidateApi('/api/v1/performance', '/api/v1/dashboard');
 const RATING_OPTIONS = [5, 4, 3, 2, 1].map((x) => ({ value: String(x), label: `${x} · ${RATING[x]}` }));
 
 export function MyReview({ cycle }: { cycle: Cycle }) {
-  const query = useApiQuery<{ items: ReviewRow[] }>(`/api/v1/performance/reviews${qs({ cycleId: cycle.id, scope: 'mine' })}`);
+  const query = useApiQuery<ApiResponse<'/api/v1/performance/reviews'>>(`/api/v1/performance/reviews${qs({ cycleId: cycle.id, scope: 'mine' })}`);
   return (
     <QueryState query={query} isEmpty={(d) => !d.items.length} empty={<EmptyState title={`You are not part of ${cycle.name}`} description="Reviews are created for staff who joined before the period ended." />}>
       {(d) => <ReviewDetail id={d.items[0]!.id} selfReview={cycle.self_review} />}
