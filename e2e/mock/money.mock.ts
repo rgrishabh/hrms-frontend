@@ -114,12 +114,12 @@ test.describe('travel', () => {
     expect(body.destination).toBe('Mumbai');
   });
 
-  test('a returned trip explains what to do and can be requested again in one press', async ({ page }) => {
+  test('a returned trip explains what to do and goes back through resubmit', async ({ page }) => {
     await mockApi(page, { persona: 'admin' });
     await page.goto('/travel');
-    await expect(page.getByText(/cannot be edited/)).toBeVisible();
-    await page.getByRole('button', { name: 'Request again' }).click();
-    await expect(page.getByRole('dialog', { name: 'Request travel' }).getByLabel('Purpose')).toHaveValue(/Returned for correction/);
+    await expect(page.getByText(/returned for correction/i).first()).toBeVisible();
+    await page.getByRole('button', { name: 'Correct and resubmit' }).click();
+    await expect(page.getByRole('dialog', { name: 'Correct and resubmit' }).getByLabel(/^Purpose/)).toHaveValue(/Returned for correction/);
   });
 
   test('advance returned: over the outstanding is refused inline, a server failure stays open', async ({ page }) => {

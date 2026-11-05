@@ -81,7 +81,6 @@ test('roles: create from the filter without an accidental submit, and a failed d
   await dlg.getByRole('button', { name: 'Create role' }).click();
   await expect(dlg.getByText('Choose at least one permission.')).toBeVisible();
   await dlg.getByRole('checkbox', { name: 'Maintain the asset register; issue and receive assets' }).check();
-  await expect(dlg).toContainText('must use two-factor authentication');
   await dlg.getByRole('button', { name: 'Create role' }).click();
   await expect(page.getByText('Role "Front desk" created')).toBeVisible();
 

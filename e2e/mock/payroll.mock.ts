@@ -36,7 +36,7 @@ test('a failed release stays open with the reason and the typed text; then it wo
   await dlg.getByRole('button', { name: 'Release pay' }).click();
   await expect(page.getByText('Released. Download the bank file for released pay.')).toBeVisible();
   await expect(dlg).toHaveCount(0);
-  await expect(run.getByRole('button', { name: 'Bank file for released pay' })).toBeVisible();
+  await expect(run.getByRole('button', { name: /Bank file for released pay/ })).toBeVisible();
 });
 
 test('reopen an approved run, with the attendance warning instead of a Finalize that would fail', async ({ page }) => {

@@ -7,7 +7,7 @@ const problem = (status: number, title: string) => ({ status, contentType: 'appl
 
 /** The admin persona plus compensation access, which offer work needs. */
 async function withCompensation(page: Page) {
-  await page.route('**/api/v1/auth/me', (route) => route.fulfill({ json: { user: { id: 'u1', email: 'i@example.test', displayName: 'Ishaan Verma', employeeId: 'e1' }, passwordChangeRequired: false, mfa: { enabled: false, pending: false, enrollmentRequired: false }, roles: PERSONAS.admin.roles, permissions: [...PERSONAS.admin.permissions, 'recruitment.compensation'], csrfToken: 'token', organization: { id: 'o1', name: 'Example Laboratories' }, preferences: { timezone: 'Asia/Kolkata', dateFormat: 'DD/MM/YYYY', emailNotifications: true } } }));
+  await page.route('**/api/v1/auth/me', (route) => route.fulfill({ json: { views: [], mode: 'multi', salaryLevel: 0, user: { id: 'u1', email: 'i@example.test', displayName: 'Ishaan Verma', employeeId: 'e1' }, passwordChangeRequired: false, mfa: { enabled: false, pending: false, enrollmentRequired: false }, roles: PERSONAS.admin.roles, permissions: [...PERSONAS.admin.permissions, 'recruitment.compensation'], csrfToken: 'token', organization: { id: 'o1', name: 'Example Laboratories' }, preferences: { timezone: 'Asia/Kolkata', dateFormat: 'DD/MM/YYYY', emailNotifications: true } } }));
 }
 
 test('requisition: a failed Hold stays open with the reason, then succeeds on retry', async ({ page }) => {

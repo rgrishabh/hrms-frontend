@@ -25,7 +25,7 @@ test.describe('camera selfie, real camera path under the production CSP', () => 
     await expect(dialog.getByRole('button', { name: 'Take photo' })).toBeEnabled();
     await expect.poll(() => dialog.getByLabel('Camera preview').evaluate((v: HTMLVideoElement) => v.videoWidth)).toBeGreaterThan(0);
     await dialog.getByRole('button', { name: 'Take photo' }).click();
-    await expect.poll(() => dialog.getByAltText('Your photo').evaluate((i: HTMLImageElement) => i.naturalWidth)).toBeGreaterThan(0);
+    await expect.poll(() => dialog.getByAltText('Your clock-in selfie').evaluate((i: HTMLImageElement) => i.naturalWidth)).toBeGreaterThan(0);
     await dialog.getByRole('button', { name: 'Use photo and clock in' }).click();
     await expect(page.getByText(/Clocked in at/)).toBeVisible();
     await expect(dialog).toHaveCount(0);
