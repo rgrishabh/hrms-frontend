@@ -25,7 +25,7 @@ const PAGE_SIZE = 25;
 function baseColumns(showEmployee: boolean): Column<Loan>[] {
   return [
     ...(showEmployee ? [{ key: 'employee', header: 'Employee', card: 'title', cell: (l: Loan) => <>{l.name}<div className="table__cell-sub mono">{l.employee_code}{l.department ? ` · ${l.department}` : ''}</div></> } as Column<Loan>] : []),
-    { key: 'kind', header: 'Kind', card: showEmployee ? 'subtitle' : 'title', cell: (l) => <>{KIND_LABEL[l.kind]}{l.purpose && <div className="table__cell-sub">{l.purpose}</div>}</> },
+    { key: 'kind', header: 'Kind', card: showEmployee ? 'subtitle' : 'title', cell: (l) => <>{KIND_LABEL[l.kind]}{isMaskedField(l, 'purpose') ? <div className="table__cell-sub">Purpose hidden</div> : l.purpose && <div className="table__cell-sub">{l.purpose}</div>}</> },
     { key: 'amount', header: 'Amount', align: 'right', cell: (l) => <Money value={l.amount} masked={isMaskedField(l, 'amount')} /> },
     { key: 'recovery', header: 'Recovery', cell: (l) => <>{terms(l)}{!!l.skip_periods?.length && <div className="table__cell-sub">Deferred: {l.skip_periods.map(fmtMonth).join(', ')}</div>}</> },
     { key: 'outstanding', header: 'Outstanding', align: 'right', cell: (l) => (['disbursed', 'closed'].includes(l.status) ? <Money value={l.outstanding} masked={isMaskedField(l, 'outstanding')} /> : '—') },

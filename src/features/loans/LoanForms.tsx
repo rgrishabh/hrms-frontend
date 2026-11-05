@@ -140,8 +140,8 @@ export function LoanDetail({ id, onClose }: { id: string; onClose: () => void })
           <div className="stack-4">
             <div className="cluster"><StatusBadge status={d.status} /><span className="text-sm text-2">{d.name} · {terms(d)}</span></div>
             <RevealToggle revealed={revealed} loading={query.isFetching} onChange={setRevealed} what="details" />
-            {d.purpose && <p>{d.purpose}</p>}
-            {d.disbursement_reference && <p className="text-sm text-2">Paid {fmtDateTime(d.disbursed_at)} · {d.disbursement_reference}</p>}
+            {isMaskedField(d, 'purpose') ? <p className="text-sm text-2">Purpose hidden</p> : d.purpose && <p>{d.purpose}</p>}
+            {(d.disbursement_reference || isMaskedField(d, 'disbursement_reference')) && <p className="text-sm text-2">Paid {fmtDateTime(d.disbursed_at)} · {d.disbursement_reference ?? 'Reference hidden'}</p>}
             <StatGrid label="Balance">
               <StatTile label="Outstanding" value={<Money value={d.balance?.outstanding} masked={isMaskedField(d, 'balance')} />} />
               <StatTile label="In payroll being processed" value={<Money value={d.balance?.inProgress} masked={isMaskedField(d, 'balance')} />} />

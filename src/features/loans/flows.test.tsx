@@ -151,6 +151,28 @@ describe('loan detail', () => {
     expect(await within(dlg).findByRole('table', { name: 'Schedule' })).toBeTruthy();
     expect(reads(f, '/requests/l1?reveal=1').length).toBeGreaterThan(0);
   });
+
+  it('a paid loan with its reference masked still says it was paid, and reads the reference as hidden', async () => {
+    const hidden = detail({ disbursed_at: '2026-11-02T05:00:00Z', disbursement_reference: null, purpose: null, installments: null, first_period: null, installment_amount: null, skip_periods: null, cancel_reason: null, masked: true, maskedFields: ['disbursement_reference', 'purpose', 'installments', 'first_period', 'installment_amount'] });
+    mockPageApi(SELF, BOTH, (url) => (url.includes('/requests/l1') ? hidden : paged([loan({ employee_id: 'e1' })])));
+    showPage(<Loans />, '/loans');
+    await userEvent.click(await screen.findByRole('button', { name: 'Details' }));
+    const dlg = await screen.findByRole('dialog');
+    expect(await within(dlg).findByText(/^Paid .* · Reference hidden$/)).toBeTruthy();
+    expect(within(dlg).getByText('Purpose hidden')).toBeTruthy();
+    expect(within(dlg).getByText(/Rohan Iyer · Hidden/)).toBeTruthy();
+    expect(dlg.textContent).not.toMatch(/null|undefined/);
+  });
+
+  it('a list row with its terms and purpose masked reads as hidden, not as empty or null', async () => {
+    const hidden = loan({ employee_id: 'e1', installments: null, first_period: null, installment_amount: null, skip_periods: null, purpose: null, disbursement_reference: null, masked: true, maskedFields: ['installments', 'first_period', 'installment_amount', 'skip_periods', 'purpose', 'disbursement_reference'] });
+    mockPageApi(SELF, BOTH, () => paged([hidden]));
+    showPage(<Loans />, '/loans');
+    const table = await screen.findByRole('table', { name: 'My advances and loans' });
+    expect(within(table).getByText('Purpose hidden')).toBeTruthy();
+    expect(within(table).getByText('Hidden')).toBeTruthy();
+    expect(table.textContent).not.toMatch(/null|undefined|Deferred/);
+  });
 });
 
 describe('everyone', () => {
