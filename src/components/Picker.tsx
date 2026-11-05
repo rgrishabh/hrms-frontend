@@ -27,13 +27,27 @@ export interface PickerProps {
  * Search and pick one record from a large list: the WAI-ARIA combobox pattern. What is selected is
  * always visible, as a chip, so a form can never submit an id the user cannot see.
  */
+const LIST_HEIGHT = 260;
+
 export function Picker({ label, hint, error, required, placeholder, queryKey, search, minChars = 0, value, onChange }: PickerProps) {
   const [text, setText] = useState('');
-  const [open, setOpen] = useState(false);
+  const [open, setOpenState] = useState(false);
+  const [up, setUp] = useState(false);
   const [active, setActive] = useState(0);
   const debounced = useDebouncedValue(text.trim());
   const listId = useId();
   const input = useRef<HTMLInputElement>(null);
+  /** Opens downward unless the list would be cut off by the dialog or window and there is more room above. */
+  const setOpen = (next: boolean) => {
+    if (next && input.current) {
+      const box = input.current.getBoundingClientRect();
+      const frame = input.current.closest('.dialog__body')?.getBoundingClientRect();
+      const below = (frame?.bottom ?? window.innerHeight) - box.bottom;
+      const above = box.top - (frame?.top ?? 0);
+      setUp(below < LIST_HEIGHT && above > below);
+    }
+    setOpenState(next);
+  };
   const enabled = open && debounced.length >= minChars;
   const results = useQuery({ queryKey: ['picker', queryKey, debounced], queryFn: () => search(debounced), enabled, staleTime: 30_000 });
   const items = enabled ? results.data ?? [] : [];
@@ -85,7 +99,7 @@ export function Picker({ label, hint, error, required, placeholder, queryKey, se
         />
       </Field>
       {/* Mouse down selects before the input's blur closes the list. */}
-      <ul id={listId} role="listbox" aria-label={label} className="picker__list" hidden={!open}>
+      <ul id={listId} role="listbox" aria-label={label} className={`picker__list${up ? ' picker__list--up' : ''}`} hidden={!open}>
         {items.map((item, i) => (
           <li key={item.id} id={`${listId}-${i}`} role="option" aria-selected={i === active} className="picker__option" onMouseDown={(e) => { e.preventDefault(); pick(item); }} onMouseEnter={() => setActive(i)}>
             <span className="picker__name">{item.label}</span>

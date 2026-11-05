@@ -37,6 +37,31 @@ describe('Picker', () => {
     await userEvent.keyboard('{ArrowDown}');
     expect(await screen.findAllByRole('option')).toHaveLength(2);
   });
+  it('opens upward only when there is no room below and more above', async () => {
+    const rect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({ top: window.innerHeight - 90, bottom: window.innerHeight - 50 } as DOMRect);
+    renderUi(<Harness search={async () => people} />);
+    await userEvent.click(screen.getByRole('combobox', { name: 'Employee' }));
+    expect(screen.getByRole('listbox').className).toContain('picker__list--up');
+    await userEvent.tab();
+    rect.mockReturnValue({ top: 10, bottom: 50 } as DOMRect);
+    await userEvent.click(screen.getByRole('combobox', { name: 'Employee' }));
+    expect(screen.getByRole('listbox').className).not.toContain('picker__list--up');
+    rect.mockRestore();
+  });
+  it('clicking the field again reopens the list after a pick closed it', async () => {
+    function Multi() {
+      const [count, setCount] = useState(0);
+      return <><Picker label="Employee" queryKey="reopen" search={async () => people} value={null} onChange={() => setCount(count + 1)} /><output data-testid="n">{count}</output></>;
+    }
+    renderUi(<Multi />);
+    const box = screen.getByRole('combobox', { name: 'Employee' });
+    await userEvent.click(box);
+    await userEvent.click(await screen.findByRole('option', { name: /Ben Roy/ }));
+    expect(screen.getByRole('listbox', { hidden: true }).hidden).toBe(true);
+    await userEvent.click(box);
+    expect(await screen.findByRole('option', { name: /Ben Roy/ })).toBeTruthy();
+    expect(screen.getByTestId('n').textContent).toBe('1');
+  });
   it('leaving the field closes the list', async () => {
     renderUi(<Harness search={async () => people} />);
     await userEvent.click(screen.getByRole('combobox', { name: 'Employee' }));

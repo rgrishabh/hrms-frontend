@@ -1,5 +1,6 @@
 .picker { position: relative; }
 .picker__list { position: absolute; z-index: var(--z-sticky); left: 0; right: 0; margin: var(--space-1) 0 0; padding: var(--space-1); max-height: 260px; overflow-y: auto; list-style: none; background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--radius); box-shadow: var(--shadow-md); }
+.picker__list--up { bottom: 100%; margin: 0 0 var(--space-1); }
 .picker__option { display: flex; flex-direction: column; min-height: var(--touch-target); justify-content: center; padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm); cursor: pointer; }
 .picker__option[aria-selected="true"] { background: var(--surface-2); }
 .picker__name { font-weight: var(--weight-medium); }
