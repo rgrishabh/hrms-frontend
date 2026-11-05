@@ -42,7 +42,7 @@ export function OfferForm({ applicationId, requisitionId, offer, onClose }: { ap
       const branch = org.data.branches.find((b) => b.id === offer.branch_id || b.name === offer.branch_name);
       setF((c) => ({ ...c, branchId: c.branchId || branch?.id || '', legalEntityId: c.legalEntityId || branch?.legal_entity_id || '', departmentId: offer.department_id !== undefined ? offer.department_id : r?.department_id ?? null }));
     } else if (r) {
-      setF((c) => ({ ...c, designation: r.designation ?? '', legalEntityId: r.legal_entity_id, branchId: r.branch_id, departmentId: r.department_id, employmentType: r.employment_type }));
+      setF((c) => ({ ...c, designation: c.designation || (r.designation ?? ''), legalEntityId: c.legalEntityId || r.legal_entity_id, branchId: c.branchId || r.branch_id, departmentId: c.departmentId ?? r.department_id, employmentType: r.employment_type }));
     }
   }, [org.data, req.data, req.isPending, offer]);
   const form = useSubmit(async () => {

@@ -27,6 +27,7 @@ export default defineConfig({
   projects: [
     { name: 'desktop', use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } } },
     // 360px, the narrowest phone we support. Chromium so the run needs one browser.
-    { name: 'mobile', use: { ...devices['Pixel 7'], viewport: { width: 360, height: 740 } } },
+    // The older per-module flows click through the desktop sidebar, so they run there. Journeys and the screen walk run on both.
+    { name: 'mobile', testIgnore: /e2e\/[^/]+\.e2e\.ts$/, use: { ...devices['Pixel 7'], viewport: { width: 360, height: 740 } } },
   ],
 });

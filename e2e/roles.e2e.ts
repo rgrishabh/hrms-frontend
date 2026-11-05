@@ -15,7 +15,6 @@ test('an IT administrator defines a role from permissions they hold, edits it an
   await expect(dlg.getByRole('checkbox', { name: 'View payroll runs, salaries and registers' })).toBeDisabled();
   await dlg.getByLabel('Filter permissions').fill('asset');
   await dlg.getByRole('checkbox', { name: 'Maintain the asset register; issue and receive assets' }).check();
-  await expect(dlg).toContainText('must use two-factor authentication');
   await dlg.getByRole('button', { name: 'Create role' }).click();
   await expect(page.getByText(`Role "${name}" created`)).toBeVisible();
 

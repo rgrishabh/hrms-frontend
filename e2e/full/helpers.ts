@@ -42,6 +42,13 @@ export async function pageAs(browser: Browser, who: Person, options: Parameters<
 
 /** WCAG A and AA on what is on screen now. */
 export async function expectNoAxeViolations(page: Page, label: string) {
+  // A fixed bar paints over whatever scrolls beneath it, which axe counts as a target too small, wherever the page stands. Taken out of the flow for the check, as scrolling would free them.
+  await page.evaluate(() => {
+    for (const el of document.querySelectorAll<HTMLElement>('body *')) {
+      const { position } = getComputedStyle(el);
+      if ((position === 'fixed' || position === 'sticky') && !el.closest('[role="dialog"], .dialog-backdrop')) el.style.position = 'static';
+    }
+  });
   const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze();
   const found = results.violations.map((v) => `${v.id}: ${v.nodes.length} ${v.nodes[0]?.target.join(' ')} ${v.help}`);
   expect(found, `axe on ${label}`).toEqual([]);

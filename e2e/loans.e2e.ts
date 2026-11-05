@@ -34,6 +34,8 @@ test('a loan: apply, manager and finance approve, payroll disburses, the schedul
   await login(page, 'payroll');
   await page.goto('/loans');
   await page.getByRole('tab', { name: 'Everyone' }).click();
+  // The purpose is masked until shown, as the amounts are.
+  await page.getByRole('button', { name: 'Show amounts' }).click();
   const row = page.getByRole('table', { name: 'Advances and loans' }).getByRole('row').filter({ hasText: 'Aditya Joshi' }).filter({ hasText: 'Laptop' });
   await row.getByRole('button', { name: 'Disburse' }).click();
   const pay = page.getByRole('dialog', { name: 'Disburse' });

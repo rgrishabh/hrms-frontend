@@ -76,6 +76,7 @@ test('two-factor by authenticator: enrol, a wrong code is refused, the right one
   const secret = (await page.getByTestId('totp-secret').innerText()).replace(/\s/g, '');
   await page.getByLabel('Code from the app').fill(totp(secret));
   await page.getByRole('button', { name: 'Turn on two-factor authentication' }).click();
+  const recovery = await page.locator('.auth-codes span').first().innerText();
   await page.getByLabel('I have saved my recovery codes').check();
   await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page.getByText('On: Authenticator app')).toBeVisible();
@@ -94,7 +95,7 @@ test('two-factor by authenticator: enrol, a wrong code is refused, the right one
   await page.goto('/account');
   await page.getByRole('button', { name: 'Turn off' }).click();
   await page.getByLabel(/^Password/).fill(STRONG);
-  await page.getByLabel(/Code from your app/).fill(totp(secret, Date.now() + 60_000));
+  await page.getByLabel(/Code from your app/).fill(recovery);
   await page.getByRole('button', { name: 'Turn off' }).click();
   await expect(page.getByText('Two-factor authentication is off')).toBeVisible();
 });

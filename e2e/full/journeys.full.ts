@@ -21,6 +21,42 @@ test('attendance: clocking in or out changes what comes next', async ({ browser,
   await page.context().close();
 });
 
+test('leave: an employee applies, the manager approves, and the balance and status follow', async ({ browser, viewport }, info) => {
+  const page = await pageAs(browser, 'analyst', { viewport });
+  // A free weekday next month, different per project, so reruns and the other project do not clash.
+  const d = new Date();
+  d.setMonth(d.getMonth() + 1, info.project.name === 'desktop' ? 8 : 15);
+  while ([0, 6].includes(d.getDay())) d.setDate(d.getDate() + 1);
+  const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const reason = `Family function ${Date.now().toString(36)}`;
+  await page.goto('/leave');
+  await page.getByRole('button', { name: 'Apply for leave' }).click();
+  const form = page.getByRole('dialog', { name: 'Apply for leave' });
+  const cl = await form.getByLabel('Leave type').locator('option', { hasText: /^Casual Leave/ }).getAttribute('value');
+  await form.getByLabel('Leave type').selectOption(cl!);
+  await form.getByLabel(/^From/).fill(date);
+  await form.getByLabel(/^To\b/).fill(date);
+  await expect(form.getByText('1 day(s)')).toBeVisible();
+  await form.getByLabel(/^Reason/).fill(reason);
+  await form.getByRole('button', { name: 'Submit for approval' }).click();
+  await expect(page.getByText(/Leave requested/)).toBeVisible();
+  await page.context().close();
+
+  const manager = await pageAs(browser, 'lab.manager', { viewport });
+  await manager.goto('/approvals');
+  const row = manager.getByRole('row').filter({ hasText: date }).or(manager.getByRole('listitem').filter({ hasText: date }));
+  await row.getByRole('button', { name: 'Approve' }).first().click();
+  const decide = manager.getByRole('dialog', { name: 'Approve request' });
+  await decide.getByRole('button', { name: 'Approve' }).click();
+  await expect(decide).toHaveCount(0);
+  await manager.context().close();
+
+  const after = await pageAs(browser, 'analyst', { viewport });
+  await after.goto('/leave');
+  await expect(after.getByRole('row').filter({ hasText: reason }).or(after.getByRole('listitem').filter({ hasText: reason })).getByText('Approved')).toBeVisible();
+  await after.context().close();
+});
+
 test('employee: HR adds someone, the record opens, and a directory reader sees no status or branch', async ({ browser, viewport }) => {
   const page = await pageAs(browser, 'hr.head', { viewport });
   const code = `E2E-${Date.now().toString(36).toUpperCase()}`;

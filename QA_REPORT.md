@@ -67,6 +67,8 @@ Bugs found and fixed during the revamp. Each has a test that was run and seen to
 | QA-061 | Salaries, statutory | High | Edit statutory details with the fields masked | The form was built from masked nulls, so saving would have cleared UAN and ESI numbers | Edit needs the details shown first | `statutory-mask.test.tsx` |
 | QA-062 | Accounting, loans, payroll | High | Open a list with L4 masked | `formatMoney(null)` read as ₹0.00, and masked `warnings`, `lines`, `balance` and `schedule` would have thrown | `Money masked`, null-safe screens | `e2e/full/journeys.full.ts`, payroll and loans tests |
 | QA-063 | Policies | Low | Have an overdue policy | A reminder used the error surface, so it read as a failure | Warning notice | `e2e/full/walk.full.ts` |
+| QA-064 | Recruitment (found by running end to end) | Med | Draft an offer and type a designation before the requisition has loaded | The fill from the requisition overwrote what was typed, so the form then refused to submit | Only empty fields are filled | `OfferForms.test.tsx` |
+| QA-065 | Reports (found by axe on the real stack) | Low | Open Reports on a phone | The tile link's own box was 21px high, under the 24px minimum | Minimum height | `e2e/full/walk.full.ts` |
 
 ## Audit claims that needed correcting
 
