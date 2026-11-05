@@ -6,7 +6,7 @@ export const STATUSES = ['pending', 'approved', 'completed', 'closed', 'returned
 
 export interface Trip {
   id: string; employee_id: string; name: string; employee_code: string; department: string | null; start_date: string; end_date: string; origin: string; destination: string; purpose: string; project?: string | null;
-  travel_mode: string; trip_type: string; estimate_total: string | number; advance_requested: string | number; advance_paid_at: string | null; advance_reference: string | null; status: string;
+  travel_mode: string; trip_type: string; accommodation?: boolean; mark_on_duty?: boolean; estimate_travel?: string | number | null; estimate_stay?: string | number | null; estimate_local?: string | number | null; estimate_meals?: string | number | null; estimate_other?: string | number | null; estimate_total: string | number; advance_requested: string | number; advance_paid_at: string | null; advance_reference: string | null; status: string;
 }
 
 export interface Settlement {

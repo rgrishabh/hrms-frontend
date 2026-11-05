@@ -45,9 +45,11 @@ function PerDiemHelper({ from, to, onUse }: { from: string; to: string; onUse: (
 export function RequestForm({ from, resubmit, onClose }: { from?: Trip; resubmit?: boolean; onClose: () => void }) {
   const toast = useToast();
   const today = todayLocal();
-  const [f, setF] = useState({ purpose: from?.purpose ?? '', tripType: from?.trip_type ?? 'domestic', origin: from?.origin ?? '', destination: from?.destination ?? '', startDate: from && from.start_date > today ? from.start_date : today, endDate: from && from.end_date > today ? from.end_date : today, travelMode: from?.travel_mode ?? 'rail', accommodation: false, project: from?.project ?? '', markOnDuty: true });
-  const [est, setEst] = useState<Record<string, string>>({ travel: '', stay: '', local: '', meals: '', other: '' });
-  const [advance, setAdvance] = useState('');
+  const [f, setF] = useState({ purpose: from?.purpose ?? '', tripType: from?.trip_type ?? 'domestic', origin: from?.origin ?? '', destination: from?.destination ?? '', startDate: from && from.start_date > today ? from.start_date : today, endDate: from && from.end_date > today ? from.end_date : today, travelMode: from?.travel_mode ?? 'rail', accommodation: from?.accommodation ?? false, project: from?.project ?? '', markOnDuty: from?.mark_on_duty ?? true });
+  // A zero reads as an empty box, and only a figure the person gave comes across.
+  const given = (v: string | number | null | undefined) => (v === null || v === undefined || Number(v) === 0 ? '' : String(v));
+  const [est, setEst] = useState<Record<string, string>>({ travel: given(from?.estimate_travel), stay: given(from?.estimate_stay), local: given(from?.estimate_local), meals: given(from?.estimate_meals), other: given(from?.estimate_other) });
+  const [advance, setAdvance] = useState(given(from?.advance_requested));
   const set = (p: Partial<typeof f>) => setF((x) => { const n = { ...x, ...p }; if (p.startDate && n.endDate < p.startDate) n.endDate = p.startDate; return n; });
   const total = Object.values(est).reduce((s, v) => s + (Number(v) || 0), 0);
   const symbol = currencySymbol();

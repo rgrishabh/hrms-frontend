@@ -63,6 +63,7 @@ Bugs found and fixed during the revamp. Each has a test that was run and seen to
 | QA-057 | Approvals, Delegations | High | Approvals > While I'm away > Hand over my approvals, then clear or partly delete First day | `addDays('', 89)` for the Last day `max` threw during render, so the screen crashed | No `max` until First day has a date | `Delegations.test.tsx` |
 | QA-058 | Payroll, run adjustments | Med | Open a draft or computed run without revealing amounts, Remove an adjustment, press Undo in the toast | The API masks adjustment `amount` and `note` by default, so Undo posted `amount: 0, note: null`, which the server refuses | No Undo while the amount is masked; a revealed adjustment keeps it | `payroll.flows.test.tsx` |
 | QA-059 | Cases, Internal Committee | Med | Edit membership, add a person, open the picker again and pick them again; or remove someone and look for them | Picker results were cached under one fixed key for 30 seconds, so the filter on current members did not re-run: the person added could be added twice, and the person removed was not offered back | The query key includes the current member ids | `Committee.test.tsx` |
+| QA-060 | Travel (found in this batch) | High | Correct a returned trip, changing only the purpose | The form starts with blank estimate and advance, so resubmitting sent all zeros and lost the figures the approver had seen | Starts from the request's estimate, advance, accommodation and on-duty | `travel.test.tsx` |
 
 ## Audit claims that needed correcting
 
