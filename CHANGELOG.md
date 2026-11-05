@@ -4,7 +4,7 @@
 
 ### Added
 
-* ID and business cards. The Employees page prints them for everyone, or a chosen branch or department; a profile prints one person's and takes the photo. Needs `employees.manage`.
+* ID and business cards. The Employees page prints them for everyone, or a chosen branch or department; a profile prints one person's and takes the photo. Needs `employees.manage`. Settings, General sets the wording on the back of the ID card, using a new text area control.
 
 ### Removed
 
