@@ -1,0 +1,64 @@
+name: Lighthouse
+# Audits the real nginx image, run the way dev runs it (read-only root, /tmp only), with no API attached.
+# So /api/v1/config/public answers 404 and the page audited is the app's "This address is not configured" card,
+# not the sign-in form. That 404 also appears in the browser console.
+# lighthouserc.json skips is-crawlable: public/robots.txt disallows everything on purpose, as an HRMS should.
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop, main]
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: lighthouse-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  lighthouse:
+    name: Lighthouse CI
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - name: Build the image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          push: false
+          load: true
+          tags: hrms-frontend:lighthouse
+          build-args: |
+            VERSION=ci
+            REVISION=${{ github.sha }}
+          cache-from: type=gha,scope=hrms-frontend
+          cache-to: type=gha,mode=max,scope=hrms-frontend
+      - name: Run it
+        run: |
+          docker run -d --name hrms-web --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges:true \
+            -p 127.0.0.1:8080:8080 \
+            -e BRAND_PRODUCT_NAME=HRMS -e BRAND_NAME=HRMS -e BRAND_PRIMARY_COLOR='#2b3a4a' \
+            -e APP_ENVIRONMENT=ci -e HSTS=false \
+            hrms-frontend:lighthouse
+          for _ in $(seq 1 30); do curl -fs http://127.0.0.1:8080/healthz > /dev/null && exit 0; sleep 1; done
+          docker logs hrms-web; exit 1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+      - name: Lighthouse, with the assertions in lighthouserc.json
+        run: npx --yes @lhci/cli@0.16.0 autorun --config=lighthouserc.json
+      - if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: lighthouse
+          path: .lighthouseci/
+          include-hidden-files: true
+          retention-days: 7
+          if-no-files-found: ignore
