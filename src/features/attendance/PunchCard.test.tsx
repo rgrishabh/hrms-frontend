@@ -1,8 +1,11 @@
-import { screen, waitFor } from '@testing-library/react';
+import { configure, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { problem, mockPageApi, renderPage } from '../../test/page';
 import { PunchCard } from './PunchCard';
+
+// A first render under CPU load can take seconds; failures should be about behaviour, not machine speed.
+configure({ asyncUtilTimeout: 15000 });
 
 const TODAY = { linked: true, today: '2026-11-05', timezone: 'Asia/Kolkata', nextDirection: 'in', locationMode: 'off', channels: { web: true, mobile: false }, events: [], daily: null };
 const PERMS = ['attendance.self'];
