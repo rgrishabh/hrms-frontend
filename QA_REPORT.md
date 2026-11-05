@@ -105,13 +105,13 @@ Bugs found and fixed during the revamp. Each has a test that was run and seen to
 
 ## Last full run
 
-Commit e5466ef on a clean export, against the backend at f87f316 on a private Postgres 17 cluster and spare ports; unit, coverage and lint repeated at e89487d.
+Fresh build at 1b9a402, against the backend at b93865b on a private Postgres 17 cluster and spare ports. The full profile, after one spec step followed the shared picker, and lint again at a52484f. No `src` change between the two.
 
 | Suite | Result |
 |---|---|
-| Unit, with thresholds | 1414 passed: statements 98.88%, branches 95.16%, functions 98.73%, lines 99.45% |
+| Unit, with thresholds | 1420 passed: statements 98.88%, branches 95.2%, functions 98.73%, lines 99.45% |
 | Lint | Clean |
 | Mocked browser suite | 1290 passed, 16 skipped: 14 visual tests that need `E2E_TODAY`, and 2 screenshot steps |
-| Visual baselines, `npm run e2e:visual` | 14 passed on darwin. Linux regenerated in the Playwright image and not compared again after that |
-| Full stack: full, off, single | 226, 4 and 2 passed |
-| Lighthouse | Passed: performance 1, accessibility 1, best practices 0.96, SEO 1, LCP about 910ms. Same nginx, config and build, from a scratch Dockerfile because this machine has no buildx |
+| Visual baselines, `npm run e2e:visual` | 14 passed on darwin. Linux baselines not compared in this run |
+| Full stack: full, off, single | 228, 4 and 2 passed |
+| Lighthouse | Not run again. Last at e5466ef: performance 1, accessibility 1, best practices 0.96, SEO 1 |
