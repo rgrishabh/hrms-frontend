@@ -297,6 +297,42 @@ describe('candidates', () => {
     expect(screen.queryByRole('button', { name: 'New candidate' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Erase personal data' })).toBeNull();
   });
+  it('a resume is replaced from the detail with a PUT, and saving with no file is refused first', async () => {
+    const f = mockPageApi(MANAGE, [], (url, init) => (init.method === 'PUT' ? { ok: true, resumeName: 'new.pdf' } : base()(url, init)));
+    showPage(<Recruitment />, CAND_ROUTE);
+    await userEvent.click(await screen.findByRole('button', { name: 'Kavya Das' }));
+    const dlg = await dialog('Kavya Das');
+    await userEvent.click(await within(dlg).findByRole('button', { name: 'Replace resume' }));
+    const upload = await dialog('Replace resume');
+    expect(within(upload).getByText(/current resume is deleted/)).toBeTruthy();
+    await userEvent.click(within(upload).getByRole('button', { name: 'Save' }));
+    expect(await within(upload).findByText('Choose a file.')).toBeTruthy();
+    expect(writes(f, '/recruitment/candidates/c1/resume')).toHaveLength(0);
+    await userEvent.upload(within(upload).getByLabelText(/Resume/), new File(['%PDF-1.7'], 'new.pdf', { type: 'application/pdf' }));
+    await userEvent.click(within(upload).getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(writes(f, '/recruitment/candidates/c1/resume')).toHaveLength(1));
+    const call = writes(f, '/recruitment/candidates/c1/resume')[0]!;
+    expect((call[1] as RequestInit).method).toBe('PUT');
+    expect(((call[1] as RequestInit).body as FormData).get('resume')).toBeInstanceOf(File);
+    expect(await screen.findByText('Resume replaced')).toBeTruthy();
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Replace resume' })).toBeNull());
+  });
+  it('someone who can only read gets no upload button', async () => {
+    mockPageApi(['recruitment.read'], [], base());
+    showPage(<Recruitment />, CAND_ROUTE);
+    await userEvent.click(await screen.findByRole('button', { name: 'Kavya Das' }));
+    const dlg = await dialog('Kavya Das');
+    expect(await within(dlg).findByRole('button', { name: 'Download resume' })).toBeTruthy();
+    expect(within(dlg).queryByRole('button', { name: /(Add|Replace) resume/ })).toBeNull();
+  });
+  it('a candidate with no resume offers Add instead of Replace', async () => {
+    mockPageApi(MANAGE, [], base({ cand: { has_resume: false } }));
+    showPage(<Recruitment />, CAND_ROUTE);
+    await userEvent.click(await screen.findByRole('button', { name: 'Kavya Das' }));
+    const dlg = await dialog('Kavya Das');
+    expect(await within(dlg).findByRole('button', { name: 'Add resume' })).toBeTruthy();
+    expect(within(dlg).queryByRole('button', { name: 'Replace resume' })).toBeNull();
+  });
   it('detail hides expected CTC until reveal, which asks with ?reveal=1, and lists the applications', async () => {
     const f = mockPageApi(MANAGE, [], (url, init) => (url.includes('/candidates/c1?reveal=1') ? { ...CAND, expected_ctc: 750000, masked: false, maskedFields: [] } : base()(url, init)));
     showPage(<Recruitment />, CAND_ROUTE);

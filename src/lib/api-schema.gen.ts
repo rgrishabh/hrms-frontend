@@ -4269,7 +4269,7 @@ export interface paths {
             cookie?: never;
         };
         get: operations["get /api/v1/recruitment/candidates/:id/resume"];
-        put?: never;
+        put: operations["put /api/v1/recruitment/candidates/:id/resume"];
         post?: never;
         delete?: never;
         options?: never;
@@ -23579,6 +23579,53 @@ export interface operations {
                 };
                 content: {
                     "*/*": string;
+                };
+            };
+            /** @description An RFC 7807 problem */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        code: string;
+                        detail: string;
+                        errors: {
+                            message: string;
+                            path: string;
+                        }[];
+                        instance: string;
+                        status: number;
+                        title: string;
+                        type: string;
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
+    "put /api/v1/recruitment/candidates/:id/resume": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ok: boolean;
+                        resumeName: string;
+                    };
                 };
             };
             /** @description An RFC 7807 problem */

@@ -135,11 +135,34 @@ export function CandidateForm({ onClose, onSaved }: { onClose: () => void; onSav
   );
 }
 
+function ResumeUpload({ id, replacing, onClose }: { id: string; replacing: boolean; onClose: () => void }) {
+  const toast = useToast();
+  const [file, setFile] = useState<File | null>(null);
+  const form = useSubmit(async () => {
+    const body = new FormData();
+    if (file) body.append('resume', file);
+    await api.upload(`${CANDIDATES}/${id}/resume`, body, 'PUT');
+    toast(replacing ? 'Resume replaced' : 'Resume added');
+    await invalidateApi(CANDIDATES);
+    onClose();
+  }, { validate: (): Record<string, string> => (file ? {} : { resume: 'Choose a file.' }) });
+  return (
+    <Modal title={replacing ? 'Replace resume' : 'Add resume'} size="sm" onClose={onClose}>
+      <form noValidate onSubmit={(e) => void form.submit(e)} className="stack-3">
+        {replacing && <p className="text-sm text-2">The current resume is deleted when you save.</p>}
+        <FileUpload label="Resume" hint="PDF, Word (DOCX) or image" accept=".pdf,.docx,.png,.jpg,.jpeg" file={file} onChange={setFile} required error={form.errors.resume} />
+        <FormActions error={form.error} busy={form.busy} submitLabel="Save" onCancel={onClose} />
+      </form>
+    </Modal>
+  );
+}
+
 function CandidateDetail({ id, onClose, onOpenApp }: { id: string; onClose: () => void; onOpenApp: (id: string) => void }) {
   const { can, canAny } = useAuth();
   const toast = useToast();
   const { query, revealed, setRevealed } = useRevealable<Candidate>(`${CANDIDATES}/${id}`);
   const [erase, setErase] = useState(false);
+  const [resume, setResume] = useState(false);
   type App = Candidate['applications'][number];
   const columns: Column<App>[] = [
     { key: 'requisition', header: 'Requisition', card: 'title', cell: (a) => <><Button variant="link" onClick={() => onOpenApp(a.id)}>{a.title}</Button><div className="table__cell-sub mono">{a.requisition_code}</div></> },
@@ -163,6 +186,7 @@ function CandidateDetail({ id, onClose, onOpenApp }: { id: string; onClose: () =
             ]} />
             <div className="cluster">
               {c.has_resume && <DownloadButton url={`${CANDIDATES}/${id}/resume`} fileName="resume">Download resume</DownloadButton>}
+              {can('recruitment.manage') && c.status === 'active' && <Button size="sm" onClick={() => setResume(true)}>{c.has_resume ? 'Replace resume' : 'Add resume'}</Button>}
               {canAny('recruitment.manage', 'data_rights.manage') && <DownloadButton url={`/api/v1/tenant/data-rights/candidates/${id}/export`} fileName="candidate-data.json">Export their data</DownloadButton>}
               {can('recruitment.manage') && c.status === 'active' && <Button size="sm" variant="danger-ghost" onClick={() => setErase(true)}>Erase personal data</Button>}
             </div>
@@ -170,6 +194,7 @@ function CandidateDetail({ id, onClose, onOpenApp }: { id: string; onClose: () =
           </div>
         )}
       </QueryState>
+      {resume && <ResumeUpload id={id} replacing={query.data?.has_resume === true} onClose={() => setResume(false)} />}
       {erase && (
         <ConfirmDialog
           title="Erase candidate data"

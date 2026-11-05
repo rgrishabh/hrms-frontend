@@ -148,8 +148,8 @@ function request<T>(method: string, url: string, body?: unknown): Promise<T> {
 }
 
 /** multipart/form-data upload (browser sets the boundary); CSRF header included. */
-function upload<T>(url: string, form: FormData): Promise<T> {
-  return send<T>(url, { method: 'POST', body: form, headers: csrfToken ? { 'x-csrf-token': csrfToken } : {} }, false);
+function upload<T>(url: string, form: FormData, method: 'POST' | 'PUT' = 'POST'): Promise<T> {
+  return send<T>(url, { method, body: form, headers: csrfToken ? { 'x-csrf-token': csrfToken } : {} }, false);
 }
 
 /** A file from the API. Failures throw like any other call, so a problem body is never saved as the file. */
@@ -177,7 +177,7 @@ async function blob(url: string): Promise<{ blob: Blob; fileName: string | null;
 
 export const api = {
   blob,
-  upload: <T = unknown>(url: string, form: FormData) => upload<T>(url, form),
+  upload: <T = unknown>(url: string, form: FormData, method?: 'POST' | 'PUT') => upload<T>(url, form, method),
   get: <T = unknown>(url: string) => request<T>('GET', url),
   post: <T = unknown>(url: string, body: unknown = {}) => request<T>('POST', url, body),
   put: <T = unknown>(url: string, body: unknown = {}) => request<T>('PUT', url, body),
