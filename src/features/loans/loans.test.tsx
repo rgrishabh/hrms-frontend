@@ -12,6 +12,8 @@ const paged = (items: unknown[], over = {}) => ({ items, page: 1, pageSize: 25, 
 
 afterEach(() => vi.restoreAllMocks());
 
+const HIDDEN_LOAN = { id: 'l9', employee_id: 'e9', employee_code: 'E9', name: 'Rohan', department: null, kind: 'loan', amount: null, installments: null, installment_amount: null, first_period: null, skip_periods: null, purpose: null, status: 'disbursed', outstanding: null, recorded_by_other: false, disbursed_at: null, disbursement_reference: null, masked: true, maskedFields: ['amount', 'installments', 'installment_amount', 'first_period', 'skip_periods', 'purpose', 'outstanding'] };
+
 describe('Loans', () => {
   it('a kind whose flag is off is not offered', async () => {
     mockPageApi(SELF, ['FEATURE_LOANS'], () => paged([]));
@@ -80,5 +82,11 @@ describe('Loans', () => {
     const dlg = await screen.findByRole('dialog', { name: 'Withdraw application' });
     await userEvent.click(within(dlg).getByRole('button', { name: 'Withdraw' }));
     expect((await within(dlg).findByRole('alert')).textContent).toContain('Already decided');
+  });
+
+  it('a list with terms masked too reads as hidden, not as a crash', async () => {
+    mockPageApi(['loans.self', 'loans.team.read'], ['FEATURE_LOANS'], () => ({ items: [HIDDEN_LOAN], page: 1, pageSize: 25, total: 1 }));
+    showPage(<Loans />, '/loans?tab=team');
+    expect((await screen.findAllByText('Hidden')).length).toBeGreaterThan(0);
   });
 });

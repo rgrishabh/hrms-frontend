@@ -15,6 +15,7 @@ import { KeyValue } from '../../components/KeyValue';
 import { Modal } from '../../components/Modal';
 import type { PickerItem } from '../../components/Picker';
 import { QueryState } from '../../components/QueryState';
+import { MaskableText } from '../../components/RevealToggle';
 import { Select } from '../../components/Select';
 import { SkeletonRows } from '../../components/Skeleton';
 import { Table, type Column } from '../../components/Table';
@@ -129,7 +130,7 @@ function SeparationDetail({ id, onClose }: { id: string; onClose: () => void }) 
               { label: 'Notice date', value: fmtDate(d.notice_date) }, { label: 'Last working day', value: fmtDate(d.approved_lwd ?? d.requested_lwd) }, { label: 'Initiated by', value: d.initiated_by_name },
               { label: 'Notice required', value: `${d.notice_days_required} days` }, { label: 'F&F', value: `${statusLabel(d.fnf_status)}${d.fnf_note ? `: ${d.fnf_note}` : ''}` },
             ]} />
-            <p className="lifecycle-note">{d.reason}</p>
+            <p className="lifecycle-note"><MaskableText row={d} field="reason" reason="Only the person, HR above them and who decides it can see this." /></p>
             <div className="cluster">
               {d.status === 'pending' && d.initiated_by === me?.user.id && <Button size="sm" onClick={() => setPanel('withdraw')}>Withdraw request</Button>}
               {d.status === 'pending' && manage && <Button size="sm" onClick={() => setPanel('lwd')}>Set last working day</Button>}
@@ -143,7 +144,7 @@ function SeparationDetail({ id, onClose }: { id: string; onClose: () => void }) 
                 <p className="text-sm text-2">{d.checklist.tasks.filter((t) => t.status !== 'pending').length}/{d.checklist.tasks.length} cleared</p>
               </Card>
             )}
-            {d.leaveBalances.length > 0 && <p className="text-sm"><strong>Leave balance at exit:</strong> {d.leaveBalances.map((l) => `${l.code} ${l.balance}`).join(' · ')}</p>}
+            {!!d.leaveBalances?.length && <p className="text-sm"><strong>Leave balance at exit:</strong> {d.leaveBalances.map((l) => `${l.code} ${l.balance}`).join(' · ')}</p>}
             {d.exit_interview && Object.keys(recordedAnswers(d.exit_interview)).length > 0 && (
               <Card headingLevel={3} title="Exit interview">
                 <KeyValue columns="one" items={Object.entries(recordedAnswers(d.exit_interview)).map(([k, v]) => ({ label: questionLabel(k), value: v }))} />

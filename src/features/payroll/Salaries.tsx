@@ -27,7 +27,7 @@ import { SalaryAmounts } from './parts';
 import { COMPONENTS_URL, type PayComponent, type Salary, type Statutory } from './types';
 
 export function Salaries() {
-  const { can, hasFeature } = useAuth();
+  const { can, hasFeature, me } = useAuth();
   const [employee, setEmployee] = useState<PickerItem | null>(null);
   return (
     <div className="stack-4">
@@ -38,7 +38,8 @@ export function Salaries() {
           // Keyed by person, so nothing belonging to one employee can show or pre-fill under another.
           <div key={employee.id} className="stack-4">
             <SalaryHistory employee={employee} manage={can('payroll.manage')} />
-            {hasFeature('FEATURE_PAYROLL_STATUTORY') && <StatutoryCard employee={employee} manage={can('payroll.manage')} />}
+            {/* The server refuses changes to your own record, so the buttons do not offer them. */}
+            {hasFeature('FEATURE_PAYROLL_STATUTORY') && <StatutoryCard employee={employee} manage={can('payroll.manage') && employee.id !== me?.user.employeeId} />}
           </div>
         )}
     </div>
