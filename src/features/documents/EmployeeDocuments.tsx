@@ -6,14 +6,14 @@ import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { QueryState } from '../../components/QueryState';
 import { useToast } from '../../components/Toast';
 import { invalidateApi, useApiQuery } from '../../lib/query';
-import { DocumentTable, UploadDialog, type DocumentCategory, type DocumentRow } from './DocumentTable';
+import { DocumentTable, UploadDialog, type DocumentCategoryList, type DocumentList, type DocumentRow } from './DocumentTable';
 
 /** Documents tab on an employee profile. */
 export function EmployeeDocuments({ employeeId }: { employeeId: string }) {
   const { can, me } = useAuth();
   const toast = useToast();
-  const cats = useApiQuery<{ items: DocumentCategory[] }>('/api/v1/documents/categories');
-  const docs = useApiQuery<{ items: DocumentRow[] }>(`/api/v1/documents${qs({ employeeId, pageSize: 100 })}`);
+  const cats = useApiQuery<DocumentCategoryList>('/api/v1/documents/categories');
+  const docs = useApiQuery<DocumentList>(`/api/v1/documents${qs({ employeeId, pageSize: 100 })}`);
   const [uploading, setUploading] = useState(false);
   const [archive, setArchive] = useState<DocumentRow | null>(null);
   const self = me?.user.employeeId === employeeId;

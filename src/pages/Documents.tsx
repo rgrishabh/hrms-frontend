@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { api, qs, type Paged } from '../api';
+import { api, qs } from '../api';
 import { useAuth } from '../auth';
 import { StatusBadge } from '../components/Badge';
 import { Button } from '../components/Button';
@@ -14,7 +14,7 @@ import { Select } from '../components/Select';
 import { Table, type Column } from '../components/Table';
 import { TabPanel, Tabs, useTabParam, type TabItem } from '../components/Tabs';
 import { useToast } from '../components/Toast';
-import { DocumentTable, UploadDialog, type DocumentCategory, type DocumentRow } from '../features/documents/DocumentTable';
+import { DocumentTable, UploadDialog, type DocumentCategory, type DocumentCategoryList, type DocumentList, type DocumentRow } from '../features/documents/DocumentTable';
 import { invalidateApi, useApiQuery } from '../lib/query';
 
 type Tab = 'mine' | 'company' | 'all' | 'categories';
@@ -35,9 +35,9 @@ export function Documents() {
   const [archive, setArchive] = useState<DocumentRow | null>(null);
   // A page number or hidden filter from one tab must not narrow the next one.
   const setTab = (t: Tab) => { setTabRaw(t); setPage(1); setExpiring(false); };
-  const cats = useApiQuery<{ items: DocumentCategory[] }>(CATEGORIES_URL);
+  const cats = useApiQuery<DocumentCategoryList>(CATEGORIES_URL);
   const url = tab === 'categories' ? null : `/api/v1/documents${qs({ scope: tab === 'all' ? undefined : tab, expiringWithinDays: expiring ? 30 : undefined, page, pageSize: 25 })}`;
-  const docs = useApiQuery<Paged<DocumentRow>>(url, { placeholderData: (previous) => previous });
+  const docs = useApiQuery<DocumentList>(url, { placeholderData: (previous) => previous });
   const categories = cats.data?.items ?? [];
   const canUploadMine = categories.some((c) => c.employee_upload && c.status === 'active');
   const canUpload = (tab === 'mine' && canUploadMine) || (can('documents.manage') && tab === 'company');
@@ -85,7 +85,7 @@ interface CategoryForm { id?: string; code: string; name: string; scope: 'employ
 const BLANK: CategoryForm = { code: '', name: '', scope: 'employee', employeeVisible: true, employeeUpload: false, restricted: false, requiresExpiry: false, payrollRelated: false, status: 'active' };
 
 function Categories() {
-  const query = useApiQuery<{ items: DocumentCategory[] }>(CATEGORIES_URL);
+  const query = useApiQuery<DocumentCategoryList>(CATEGORIES_URL);
   const [edit, setEdit] = useState<CategoryForm | null>(null);
   const columns: Column<DocumentCategory>[] = [
     { key: 'name', header: 'Name', card: 'title', cell: (c) => c.name },

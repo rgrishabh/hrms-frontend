@@ -12,18 +12,20 @@ import { Select } from '../../components/Select';
 import { Table, type Column } from '../../components/Table';
 import { useToast } from '../../components/Toast';
 import { addDays, fmtDate, fmtDateTime, todayLocal } from '../../format';
+import type { ApiResponse, Refine } from '../../lib/api-types';
 
-export interface DocumentRow {
-  id: string; title: string; file_name: string; size_bytes: number; category_name: string; restricted: boolean; employee_name: string | null;
-  expires_on: string | null; created_at: string; uploaded_by_name: string | null; status: string;
-}
-export interface DocumentCategory {
-  id: string; code: string; name: string; scope: 'employee' | 'company'; status: string; restricted: boolean; requires_expiry: boolean; employee_visible: boolean; employee_upload: boolean; payroll_related?: boolean;
-}
+type DocumentsAnswer = ApiResponse<'/api/v1/documents'>;
+/** The uploader comes from a left join, so a removed user is null, whatever the schema says. */
+export type DocumentRow = Refine<DocumentsAnswer['items'][number], { uploaded_by_name: string | null }>;
+export type DocumentList = Refine<DocumentsAnswer, { items: DocumentRow[] }>;
+type CategoriesAnswer = ApiResponse<'/api/v1/documents/categories'>;
+/** The schema says `scope` is a string. The category form holds one of these two. */
+export type DocumentCategory = Refine<CategoriesAnswer['items'][number], { scope: 'employee' | 'company' }>;
+export type DocumentCategoryList = Refine<CategoriesAnswer, { items: DocumentCategory[] }>;
 
 const kb = (n: number) => (n > 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} MB` : `${Math.ceil(n / 1024)} KB`);
 
-function Expiry({ on }: { on: string | null }) {
+function Expiry({ on }: { on: string | null | undefined }) {
   if (!on) return <>—</>;
   const today = todayLocal();
   const expired = on < today;
