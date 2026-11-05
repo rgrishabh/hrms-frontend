@@ -9,8 +9,9 @@ import { QueryState } from '../../components/QueryState';
 import { Select } from '../../components/Select';
 import { Table, type Column } from '../../components/Table';
 import { fmtDate } from '../../format';
+import type { ApiResponse } from '../../lib/api-types';
 import { useApiQuery } from '../../lib/query';
-import { ACTIVITY, ACTIVITY_SHORT, AUTH_URL, type MatrixCell, type MatrixData, type MatrixRow, type Method } from './types';
+import { ACTIVITY, ACTIVITY_SHORT, AUTH_URL, type MatrixCell, type MatrixData, type MatrixRow } from './types';
 
 const tone = (c: MatrixCell): BadgeTone => (c.inForce ? 'ok' : c.status === 'pending' ? 'warn' : 'danger');
 const mark = (c: MatrixCell) => (c.inForce ? '✓' : c.status === 'pending' ? '…' : '!');
@@ -41,7 +42,7 @@ function PersonMethods({ row, methods }: { row: MatrixRow; methods: MatrixData['
 export function Matrix() {
   const [discipline, setDiscipline] = useState('');
   const phone = useMediaQuery(CARD_LIST_QUERY);
-  const methods = useApiQuery<{ items: Method[] }>(`${AUTH_URL}/methods`);
+  const methods = useApiQuery<ApiResponse<'/api/v1/competency/methods'>>(`${AUTH_URL}/methods`);
   const query = useApiQuery<MatrixData>(`${AUTH_URL}/matrix${qs({ discipline })}`, { placeholderData: (p) => p });
   const disciplines = [...new Set((methods.data?.items ?? []).map((m) => m.discipline).filter((d): d is string => !!d))];
   return (

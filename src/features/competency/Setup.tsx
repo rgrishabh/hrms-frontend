@@ -14,6 +14,7 @@ import { Select } from '../../components/Select';
 import { Table, type Column } from '../../components/Table';
 import { useToast } from '../../components/Toast';
 import { useSubmit } from '../../components/useSubmit';
+import type { ApiResponse } from '../../lib/api-types';
 import { invalidateApi, useApiQuery } from '../../lib/query';
 import { asOptions, AUTH_URL, COURSE_KIND, LAB_COURSE_KIND, type Course, type Method } from './types';
 
@@ -24,8 +25,8 @@ const METHODS_URL = `${AUTH_URL}/methods`;
 export function Setup() {
   const { can, hasFeature } = useAuth();
   const lab = hasFeature('FEATURE_LAB_COMPETENCY');
-  const courses = useApiQuery<{ items: Course[] }>(COURSES_URL);
-  const methods = useApiQuery<{ items: Method[] }>(lab ? METHODS_URL : null);
+  const courses = useApiQuery<ApiResponse<'/api/v1/competency/courses'>>(COURSES_URL);
+  const methods = useApiQuery<ApiResponse<'/api/v1/competency/methods'>>(lab ? METHODS_URL : null);
   const [course, setCourse] = useState<Course | 'new' | null>(null);
   const [method, setMethod] = useState<Method | 'new' | null>(null);
   const kinds = { ...COURSE_KIND, ...(lab ? LAB_COURSE_KIND : {}) };

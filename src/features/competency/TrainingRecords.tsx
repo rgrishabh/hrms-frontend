@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { GraduationCap } from 'lucide-react';
-import { api, qs, type Paged } from '../../api';
+import { api, qs } from '../../api';
 import { useAuth } from '../../auth';
 import { Badge, statusLabel } from '../../components/Badge';
 import { Button } from '../../components/Button';
@@ -19,6 +19,7 @@ import { useToast } from '../../components/Toast';
 import { useTableState } from '../../components/useTableState';
 import { useSubmit, type FieldErrors } from '../../components/useSubmit';
 import { fmtDate, todayLocal } from '../../format';
+import type { ApiResponse } from '../../lib/api-types';
 import { invalidateApi, useApiQuery } from '../../lib/query';
 import { EmployeeField } from '../employees/EmployeeField';
 import { AUTH_URL, validityTone, type Course, type TrainingRecord } from './types';
@@ -31,7 +32,7 @@ export function TrainingRecords() {
   const manage = can('training.manage');
   const [adding, setAdding] = useState(false);
   const [revoke, setRevoke] = useState<TrainingRecord | null>(null);
-  const courses = useApiQuery<{ items: Course[] }>(manage ? `${AUTH_URL}/courses` : null);
+  const courses = useApiQuery<ApiResponse<'/api/v1/competency/courses'>>(manage ? `${AUTH_URL}/courses` : null);
   const columns: Column<TrainingRecord>[] = [
     { key: 'employee', header: 'Employee', card: 'title', required: true, cell: (t) => <>{t.employee_name} <span className="table__cell-sub mono">{t.employee_code}</span></> },
     { key: 'status', header: 'Status', card: 'status', cell: (t) => <Badge tone={validityTone(t.validity)}>{statusLabel(t.validity)}</Badge> },
@@ -43,7 +44,7 @@ export function TrainingRecords() {
   ];
   const table = useTableState('competency-training', columns);
   const expiring = table.filters['expiring'] === 'yes';
-  const query = useApiQuery<Paged<TrainingRecord>>(`${AUTH_URL}/training-records${qs({ page: table.page, pageSize: 25, expiringWithinDays: expiring ? 30 : undefined })}`, { placeholderData: (p) => p });
+  const query = useApiQuery<ApiResponse<'/api/v1/competency/training-records'>>(`${AUTH_URL}/training-records${qs({ page: table.page, pageSize: 25, expiringWithinDays: expiring ? 30 : undefined })}`, { placeholderData: (p) => p });
   const active = courses.data?.items.filter((c) => c.status === 'active') ?? [];
   return (
     <div className="stack-3">
@@ -74,7 +75,7 @@ function TrainingForm({ courses, onClose }: { courses: readonly Course[]; onClos
   const [employee, setEmployee] = useState<PickerItem | null>(null);
   const [f, setF] = useState({ courseId: courses[0]?.id ?? '', completedOn: todayLocal(), result: 'passed', trainer: '', provider: '', hours: '', notes: '' });
   const { busy, errors, error, submit } = useSubmit(async () => {
-    const r = await api.post<{ expiresOn: string | null }>(`${AUTH_URL}/training-records`, { ...f, employeeId: employee!.id, hours: f.hours ? Number(f.hours) : null });
+    const r = await api.post<ApiResponse<'/api/v1/competency/training-records', 'post'>>(`${AUTH_URL}/training-records`, { ...f, employeeId: employee!.id, hours: f.hours ? Number(f.hours) : null });
     toast(r.expiresOn ? `Recorded; valid until ${fmtDate(r.expiresOn)}` : 'Recorded');
     await invalidateApi(`${AUTH_URL}/training-records`);
     onClose();

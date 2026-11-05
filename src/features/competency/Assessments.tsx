@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ClipboardCheck } from 'lucide-react';
-import { api, qs, type Paged } from '../../api';
+import { api, qs } from '../../api';
 import { useAuth } from '../../auth';
 import { Badge } from '../../components/Badge';
 import { Button } from '../../components/Button';
@@ -16,6 +16,7 @@ import { Table, type Column } from '../../components/Table';
 import { useToast } from '../../components/Toast';
 import { useAction, useSubmit, type FieldErrors } from '../../components/useSubmit';
 import { fmtDate, todayLocal } from '../../format';
+import type { ApiResponse } from '../../lib/api-types';
 import { invalidateApi, useApiQuery } from '../../lib/query';
 import { EmployeeField } from '../employees/EmployeeField';
 import { ACTIVITY, APPROACH, asOptions, AUTH_URL, RESULT_LABEL, type AssessmentRow, type Method } from './types';
@@ -26,8 +27,8 @@ export function Assessments() {
   const [page, setPage] = useState(1);
   const [adding, setAdding] = useState(false);
   const mayAssess = can('competency.assess');
-  const methods = useApiQuery<{ items: Method[] }>(mayAssess ? `${AUTH_URL}/methods` : null);
-  const query = useApiQuery<Paged<AssessmentRow>>(`${AUTH_URL}/assessments${qs({ page, pageSize: 25 })}`, { placeholderData: (p) => p });
+  const methods = useApiQuery<ApiResponse<'/api/v1/competency/methods'>>(mayAssess ? `${AUTH_URL}/methods` : null);
+  const query = useApiQuery<ApiResponse<'/api/v1/competency/assessments'>>(`${AUTH_URL}/assessments${qs({ page, pageSize: 25 })}`, { placeholderData: (p) => p });
   const columns: Column<AssessmentRow>[] = [
     { key: 'employee', header: 'Employee', card: 'title', cell: (s) => s.employee_name },
     { key: 'result', header: 'Result', card: 'status', cell: (s) => <Badge tone={s.result === 'competent' ? 'ok' : 'danger'}>{RESULT_LABEL[s.result] ?? s.result}</Badge> },

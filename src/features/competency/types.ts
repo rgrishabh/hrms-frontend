@@ -1,3 +1,4 @@
+import type { ApiItem, ApiResponse, Refine } from '../../lib/api-types';
 import type { BadgeTone } from '../../components/Badge';
 
 export const ACTIVITY: Record<string, string> = { sampling: 'Sampling', perform: 'Perform test', review: 'Review results', authorize_report: 'Authorize reports' };
@@ -13,28 +14,29 @@ export const LAB_COURSE_KIND: Record<string, string> = { method: 'Method', instr
 const VALIDITY_TONE: Record<string, BadgeTone> = { valid: 'ok', expiring: 'warn', expired: 'danger', failed: 'danger', revoked: 'neutral' };
 export const validityTone = (v: string): BadgeTone => VALIDITY_TONE[v] ?? 'neutral';
 
-export interface MyAuthorization { id: string; method_code: string; method_name: string; standard_ref: string | null; activity: string; status: string; valid_from: string | null; review_due: string | null }
-export interface MyTraining { id: string; course_code: string; course_name: string; completed_on: string; expires_on: string | null; result: string; validity: string }
-export interface Mine { authorizations: MyAuthorization[]; training: MyTraining[] }
+type ApiMine = ApiResponse<'/api/v1/competency/me'>;
+/** The spec has review dates as strings, but an authorization still pending has none. */
+export type MyAuthorization = Refine<ApiMine['authorizations'][number], { review_due: string | null }>;
+export type MyTraining = ApiMine['training'][number];
+export type Mine = Refine<ApiMine, { authorizations: MyAuthorization[] }>;
 
-export interface MatrixMethod { id: string; code: string; name: string; discipline: string | null; matrix: string | null }
+type ApiMatrix = ApiResponse<'/api/v1/competency/matrix'>;
+export type MatrixMethod = ApiMatrix['methods'][number];
+/** The schema names the activities it saw; really a cell for each method, then each activity. */
 export interface MatrixCell { status: string; reviewDue: string | null; inForce: boolean }
-export interface MatrixRow { employeeId: string; employeeCode: string; name: string; cells: Record<string, Record<string, MatrixCell>> }
-export interface MatrixData { methods: MatrixMethod[]; rows: MatrixRow[] }
+export type MatrixRow = Refine<ApiMatrix['rows'][number], { cells: Record<string, Record<string, MatrixCell>> }>;
+export type MatrixData = Refine<ApiMatrix, { rows: MatrixRow[] }>;
 
-export interface AuthorizationRow { id: string; employee_id: string; employee_code: string; employee_name: string; method_code: string; method_name: string; activity: string; status: string; review_due: string | null; missing_training: number }
-export interface AuthorizationDetailData {
-  id: string; employee_id: string; employee_name: string; method_code: string; method_name: string; activity: string; status: string; review_due: string | null; requested_by: string | null;
-  check: { authorized: boolean; reasons: string[]; reviewDue: string | null } | null;
-  assessment: { approach: string; assessed_on: string; result: string; evidence: string; assessor_name: string } | null;
-  events: { action: string; reason: string | null; at: string; actor_name: string | null }[];
-}
+export type AuthorizationRow = Refine<ApiItem<'/api/v1/competency/authorizations'>, { review_due: string | null; valid_from: string | null }>;
+export type AuthorizationPage = Refine<ApiResponse<'/api/v1/competency/authorizations'>, { items: AuthorizationRow[] }>;
+type ApiAuthorization = ApiResponse<'/api/v1/competency/authorizations/{id}'>;
+export type AuthorizationDetailData = Refine<ApiAuthorization, { check: Refine<NonNullable<ApiAuthorization['check']>, { reviewDue: string | null }> | null }>;
 
-export interface AssessmentRow { id: string; employee_id: string; employee_name: string; employee_code: string; method_code: string; method_name: string; activity: string; approach: string; assessed_on: string; result: string; evidence: string; assessor_name: string; used: boolean }
+export type AssessmentRow = ApiItem<'/api/v1/competency/assessments'>;
 
-export interface TrainingRecord { id: string; employee_id: string; employee_code: string; employee_name: string; course_code: string; course_name: string; completed_on: string; expires_on: string | null; validity: string; status: string; trainer: string | null; provider: string | null }
+export type TrainingRecord = ApiItem<'/api/v1/competency/training-records'>;
 
-export interface Course { id: string; code: string; name: string; kind: string; description: string | null; validity_months: number | null; status: string; records: number }
-export interface Method { id: string; code: string; name: string; standard_ref: string | null; discipline: string | null; matrix: string | null; review_months: number; status: string; requirements: { id: string; code: string; name: string }[] }
+export type Course = ApiItem<'/api/v1/competency/courses'>;
+export type Method = ApiItem<'/api/v1/competency/methods'>;
 
 export const AUTH_URL = '/api/v1/competency';

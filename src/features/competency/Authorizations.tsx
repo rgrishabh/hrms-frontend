@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ShieldCheck } from 'lucide-react';
-import { api, qs, type Paged } from '../../api';
+import { api, qs } from '../../api';
 import { useAuth } from '../../auth';
 import { Alert } from '../../components/Alert';
 import { Badge, StatusBadge } from '../../components/Badge';
@@ -17,7 +17,7 @@ import { useToast } from '../../components/Toast';
 import { useTableState } from '../../components/useTableState';
 import { fmtDate, fmtDateTime } from '../../format';
 import { invalidateApi, useApiQuery } from '../../lib/query';
-import { ACTIVITY, APPROACH, AUTH_URL, type AuthorizationDetailData, type AuthorizationRow } from './types';
+import { ACTIVITY, APPROACH, AUTH_URL, type AuthorizationDetailData, type AuthorizationPage, type AuthorizationRow } from './types';
 
 const SHOW = [{ value: 'in_force', label: 'In force or suspended' }, { value: 'pending', label: 'Awaiting approval' }, { value: 'review_due', label: 'Review due in 30 days' }, { value: 'suspended', label: 'Suspended' }, { value: 'ended', label: 'Ended' }, { value: 'all', label: 'All' }];
 const INITIAL = { filters: { status: 'in_force' } };
@@ -34,7 +34,7 @@ export function Authorizations() {
   ];
   const table = useTableState('competency-authorizations', columns, INITIAL);
   const status = table.filters['status'] ?? 'in_force';
-  const query = useApiQuery<Paged<AuthorizationRow>>(`${AUTH_URL}/authorizations${qs({ status: status === 'all' ? undefined : status, page: table.page, pageSize: 25 })}`, { placeholderData: (p) => p });
+  const query = useApiQuery<AuthorizationPage>(`${AUTH_URL}/authorizations${qs({ status: status === 'all' ? undefined : status, page: table.page, pageSize: 25 })}`, { placeholderData: (p) => p });
   return (
     <div className="stack-3">
       <FilterBar activeCount={table.activeFilterCount} onClear={table.clearFilters}>
