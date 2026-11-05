@@ -14,10 +14,13 @@ import { Select } from '../../components/Select';
 import { useToast } from '../../components/Toast';
 import { ArrowUp } from 'lucide-react';
 import { fmtDate, fmtDateTime } from '../../format';
+import type { ApiResponse, Refine } from '../../lib/api-types';
 import { invalidateApi, useApiQuery } from '../../lib/query';
 
-type SectionKey = 'contacts' | 'addresses' | 'nominees' | 'education' | 'experience';
-type Item = Record<string, string | number | null>;
+type ProfileAnswer = ApiResponse<'/api/v1/employees/{id}/profile'>;
+type SectionKey = keyof ProfileAnswer['sections'];
+/** One entry of any section: the fields differ by section, so summaries and the form reach them by name. */
+type Item = Record<string, string | number | null | undefined>;
 interface FieldDef { key: string; label: string; type?: 'text' | 'date' | 'number' | 'select' | 'tel'; options?: [string, string][]; required?: boolean; wide?: boolean; hint?: string }
 interface SectionDef { key: SectionKey; title: string; fields: FieldDef[]; blank: Item; summary: (x: Item) => string; empty: string; max: number }
 
@@ -64,12 +67,13 @@ function toItems(section: SectionKey, rows: Item[]) {
   })));
 }
 
-interface Profile {
-  missing: string[];
-  sections: Record<SectionKey, Item[]>;
+/** The schema gives `edit` as strings, though null means this viewer cannot edit, and pending entries the shape of one section only. */
+type Profile = Refine<ProfileAnswer, {
   edit: Record<SectionKey, 'direct' | 'approval' | null>;
-  pending: { id: string; section: SectionKey; created_at: string; requested_by_name: string; items: Item[]; note: string | null }[];
-}
+  pending: Refine<ProfileAnswer['pending'][number], { section: SectionKey; items: Item[] }>[];
+}>;
+/** As above for `items`, and the schema says only `object` for `current`. */
+type ProfileChange = Refine<ApiResponse<'/api/v1/employees/profile-changes/{changeId}'>, { section: SectionKey; items: Item[]; current: Item[] }>;
 
 function Editor({ employeeId, section, mode, initial, onClose }: { employeeId: string; section: SectionKey; mode: 'direct' | 'approval'; initial: Item[]; onClose: () => void }) {
   const def = SECTION[section];
@@ -84,7 +88,7 @@ function Editor({ employeeId, section, mode, initial, onClose }: { employeeId: s
     setBusy(true);
     setErr(null);
     try {
-      const r = await api.put<{ applied: boolean }>(`/api/v1/employees/${employeeId}/profile/${section}`, { items: toItems(section, rows), note: note || undefined });
+      const r = await api.put<ApiResponse<'/api/v1/employees/{id}/profile/{section}', 'put'>>(`/api/v1/employees/${employeeId}/profile/${section}`, { items: toItems(section, rows), note: note || undefined });
       toast(r.applied ? `${def.title} saved` : `${def.title} sent to HR for approval`);
       await invalidateApi(`/api/v1/employees/${employeeId}/profile`);
       onClose();
@@ -194,7 +198,7 @@ export function PersonalDetails({ employeeId }: { employeeId: string }) {
 
 /** For an approver: the proposed section next to what is recorded now. */
 export function ProfileChangeView({ changeId }: { changeId: string }) {
-  const query = useApiQuery<{ section: SectionKey; items: Item[]; current: Item[]; note: string | null }>(`/api/v1/employees/profile-changes/${changeId}`);
+  const query = useApiQuery<ProfileChange>(`/api/v1/employees/profile-changes/${changeId}`);
   return (
     <QueryState query={query} compact>
       {(data) => {

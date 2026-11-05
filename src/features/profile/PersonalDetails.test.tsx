@@ -49,6 +49,15 @@ describe('reading personal details', () => {
     expect(screen.queryByRole('button', { name: 'Edit' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Add' })).toBeNull();
   });
+  it('previous employment with no reason for leaving prints no null, on record or in a pending change', async () => {
+    const job = { employer: 'Gamma', designation: 'Lead', fromDate: '2016-01-02', toDate: '2017-01-01', reasonForLeaving: null };
+    mockPageApi(['employees.read'], api(profile({ sections: { ...EMPTY, experience: [job] }, pending: [{ id: 'c1', section: 'experience', created_at: '2026-10-01T04:30:00Z', requested_by_name: 'Asha', items: [{ ...job, employer: 'Delta' }], note: null, approval_id: 'a1' }] })));
+    show();
+    const card = await section('Previous employment');
+    expect(within(card).getByText(/^Lead, Gamma · 02\/01\/2016 – 01\/01\/2017$/)).toBeTruthy();
+    expect(within(card).getByText(/^Lead, Delta · /)).toBeTruthy();
+    expect(card.textContent).not.toMatch(/null|undefined/);
+  });
   it('an empty section says so and offers Add', async () => {
     mockPageApi(['employees.read'], api(profile()));
     show();
