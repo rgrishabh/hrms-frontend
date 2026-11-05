@@ -1,11 +1,10 @@
-import { configure, screen, waitFor, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { bodyOf, mockPageApi, problem, reads, renderPage, writes, type Handler } from '../test/page';
 import { TeamAttendance } from './TeamAttendance';
 
 // A first render under CPU load can take seconds; failures should be about behaviour, not machine speed.
-configure({ asyncUtilTimeout: 15000 });
 
 const row = (over = {}) => ({ employee_id: 'e9', employee_code: 'E9', name: 'Bela Roy', branch_name: 'HQ', status: 'present', first_in: '2026-11-05T04:00:00.000Z', last_out: '2026-11-05T12:30:00.000Z', worked_minutes: 480, late_minutes: 12, exceptions: ['late_arrival', 'new_code'], locked: true, shift_code: 'GEN', selfie_id: 'sf1', ...over });
 const page = (items: unknown[], over = {}) => ({ items, page: 1, pageSize: 50, total: items.length, summary: [{ status: 'present', count: 3 }, { status: 'absent', count: 1 }], ...over });

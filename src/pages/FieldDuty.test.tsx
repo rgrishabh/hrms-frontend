@@ -1,4 +1,4 @@
-import { configure, screen, waitFor, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fmtDate } from '../format';
@@ -6,7 +6,6 @@ import { bodyOf, mockPageApi, problem, reads, renderPage, writes, type Handler }
 import { FieldDuty } from './FieldDuty';
 
 // A first render under CPU load can take seconds; failures should be about behaviour, not machine speed.
-configure({ asyncUtilTimeout: 15000 });
 
 const duty = (over = {}) => ({ id: 'f1', employee_id: 'e9', start_date: '2026-11-10', end_date: '2026-11-10', day_part: 'full', purpose: 'client_visit', place: 'Pune', client_name: null, reference: null, reason: 'Visit', status: 'pending', outcome: null, outcome_note: null, cancel_reason: null, recorded_by_other: false, name: 'Bela Roy', employee_code: 'E9', department: null, ...over });
 const TODAY = '2026-11-05';

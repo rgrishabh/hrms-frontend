@@ -1,5 +1,8 @@
-import { cleanup } from '@testing-library/react';
+import { cleanup, configure } from '@testing-library/react';
 import { afterEach, vi } from 'vitest';
+
+/** The default wait of one second fails good tests when the machine is busy. A test that fails still fails, only later. */
+configure({ asyncUtilTimeout: 15000 });
 
 afterEach(() => {
   if (typeof document === 'undefined') return;

@@ -1,11 +1,10 @@
-import { configure, fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { todayLocal } from '../../format';
 import { Cases } from '../../pages/Cases';
 import { bodyOf, mockPageApi, problem, reads, renderPage, writes } from '../../test/page';
 
-configure({ asyncUtilTimeout: 10000 });
 afterEach(() => vi.restoreAllMocks());
 
 const FULL = { members: [{ user_id: 'u2', display_name: 'Priya Shah', role: 'presiding_officer' }, { user_id: 'u3', display_name: 'Ravi Nair', role: 'member' }], external: [{ id: 'x1', name: 'Dr Mehta', organization: 'Sakhi NGO', since: '2026-01-10' }], warnings: ['At least half the members must be women'] };

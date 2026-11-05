@@ -1,11 +1,10 @@
-import { configure, fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { Competency } from '../../pages/Competency';
 import { resetViewport, setViewport } from '../../test/render';
 import { bodyOf, mockPageApi, problem, reads, showPage, writes, type Handler } from '../../test/page';
 
-configure({ asyncUtilTimeout: 20000 });
 
 const LAB = ['FEATURE_TRAINING', 'FEATURE_LAB_COMPETENCY'];
 const TRAINING = ['FEATURE_TRAINING'];

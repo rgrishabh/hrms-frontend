@@ -1,11 +1,10 @@
-import { configure, screen, within } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fmtDate } from '../format';
 import { mockPageApi, problem, reads, renderPage, type Handler } from '../test/page';
 import { MyAttendance } from './MyAttendance';
 
 // A first render under CPU load can take seconds; failures should be about behaviour, not machine speed.
-configure({ asyncUtilTimeout: 15000 });
 
 const REG = { id: 'r1', work_date: '2026-10-05', requested_in: '2026-10-05T04:00:00.000Z', requested_out: null, reason: 'Forgot to punch', status: 'pending' };
 const TODAY = { linked: true, today: '2026-11-05', timezone: 'Asia/Kolkata', nextDirection: 'in', locationMode: 'off', channels: { web: true, mobile: false }, events: [], daily: null };

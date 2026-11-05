@@ -1,10 +1,9 @@
-import { configure, screen, waitFor, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { bodyOf, mockPageApi, problem, reads, renderPage, writes } from '../../test/page';
 import { EmployeeDocuments } from './EmployeeDocuments';
 
-configure({ asyncUtilTimeout: 10000 });
 afterEach(() => vi.restoreAllMocks());
 
 const category = (over: object = {}) => ({ id: 'k1', code: 'CERT', name: 'Certificates', scope: 'employee', status: 'active', restricted: false, requires_expiry: false, employee_visible: true, employee_upload: true, ...over });

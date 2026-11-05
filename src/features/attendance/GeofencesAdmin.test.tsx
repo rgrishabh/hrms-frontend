@@ -1,11 +1,10 @@
-import { configure, screen, waitFor, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { bodyOf, mockPageApi, problem, renderPage, writes, type Handler } from '../../test/page';
 import { GeofencesAdmin, validateGeofence } from './GeofencesAdmin';
 
 // A first render under CPU load can take seconds; failures should be about behaviour, not machine speed.
-configure({ asyncUtilTimeout: 15000 });
 
 const FENCE = { branch_id: 'b1', branch_name: 'HQ', latitude: '19.076000', longitude: 72.8777, radius_m: 1500, updated_at: '2026-10-01T04:00:00.000Z' };
 const ORG = { legalEntities: [], departments: [], branches: [{ id: 'b1', name: 'HQ' }, { id: 'b2', name: 'Pune' }] };

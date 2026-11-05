@@ -1,4 +1,4 @@
-import { configure, screen, waitFor, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fmtDate, fmtDateTime } from '../../format';
@@ -6,7 +6,6 @@ import { bodyOf, mockPageApi, problem, renderPage, writes, type Handler } from '
 import { LocksAdmin } from './LocksAdmin';
 
 // A first render under CPU load can take seconds; failures should be about behaviour, not machine speed.
-configure({ asyncUtilTimeout: 15000 });
 
 const LOCK = { id: 'l1', period_start: '2026-09-01', period_end: '2026-09-30', locked_by: 'Asha HR', locked_at: '2026-10-02T04:00:00.000Z' };
 const api = (extra: Handler = () => undefined, items: unknown[] = [LOCK]) => mockPageApi(['attendance.lock'], (url, init) => extra(url, init) ?? (init.method !== 'GET' ? { rowsLocked: 120 } : { items }));

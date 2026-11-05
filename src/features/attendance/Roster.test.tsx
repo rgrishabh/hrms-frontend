@@ -1,4 +1,4 @@
-import { configure, screen, waitFor, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fmtDate } from '../../format';
@@ -7,7 +7,6 @@ import { resetViewport, setViewport } from '../../test/render';
 import { RosterGrid, RosterPage, RosterSetup } from './Roster';
 
 // A first render under CPU load can take seconds; failures should be about behaviour, not machine speed.
-configure({ asyncUtilTimeout: 15000 });
 
 const GEN = { id: 's1', code: 'GEN', name: 'General', start_time: '09:30:00', end_time: '18:00:00', status: 'active' };
 const NGT = { id: 's2', code: 'NGT', name: 'Night', start_time: '22:00:00', end_time: '06:00:00', status: 'active' };

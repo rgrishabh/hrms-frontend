@@ -1,4 +1,4 @@
-import { configure, screen, waitFor, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fmtDate } from '../format';
@@ -6,7 +6,6 @@ import { bodyOf, mockPageApi, problem, reads, renderPage, writes, type Handler }
 import { Overtime } from './Overtime';
 
 // A first render under CPU load can take seconds; failures should be about behaviour, not machine speed.
-configure({ asyncUtilTimeout: 15000 });
 
 const claim = (over = {}) => ({ id: 'c1', work_date: '2026-10-01', minutes: 90, recorded_minutes: 120, payout: 'pay', status: 'pending', reason: 'Month end', name: 'Bela Roy', employee_code: 'E9', payroll_period: null, payroll_status: null, comp_off_days: null, cancel_reason: null, ...over });
 const DAY = { work_date: '2026-10-05', overtime_minutes: 120, first_in: '2026-10-05T04:00:00.000Z', last_out: '2026-10-05T15:00:00.000Z', worked_minutes: 600, shift_code: 'GEN' };

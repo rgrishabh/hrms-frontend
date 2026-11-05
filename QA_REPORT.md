@@ -58,6 +58,11 @@ Bugs found and fixed during the revamp. Each has a test that was run and seen to
 | QA-052 | Cases | Low | Annual report fails | Hidden | Shown | `Cases.test.tsx` |
 | QA-053 | Competency | Med | Revoke a record | `window.prompt` | `ConfirmDialog` with a comment | `Competency.test.tsx` |
 | QA-054 | Deployment header (found in this batch) | High | Use the selfie in a deployed container | `Permissions-Policy: camera=()` blocks `getUserMedia` | `camera=(self)`. No test: the header is rendered by the container script, which was not started here | Not separately tested |
+| QA-055 | Attendance, Rosters | High | Attendance setup > Rosters > Assign on a pattern, then clear the From date, as when retyping it | The preview ran `addDays('', i)` on every render, which throws `RangeError: Invalid time value`, so the screen crashed | The preview is empty until there is a date | `Roster.test.tsx` |
+| QA-056 | Settings, Organization | High | Settings > Organization > Grades or Designations > Add or Edit | `OrgForm` drew inputs only for legal entities, branches and departments, so these forms showed only Status and Save sent `code: null, name: null`, which the API requires | Required Code and Name inputs for both kinds | `screens-admin.test.tsx` |
+| QA-057 | Approvals, Delegations | High | Approvals > While I'm away > Hand over my approvals, then clear or partly delete First day | `addDays('', 89)` for the Last day `max` threw during render, so the screen crashed | No `max` until First day has a date | `Delegations.test.tsx` |
+| QA-058 | Payroll, run adjustments | Med | Open a draft or computed run without revealing amounts, Remove an adjustment, press Undo in the toast | The API masks adjustment `amount` and `note` by default, so Undo posted `amount: 0, note: null`, which the server refuses | No Undo while the amount is masked; a revealed adjustment keeps it | `payroll.flows.test.tsx` |
+| QA-059 | Cases, Internal Committee | Med | Edit membership, add a person, open the picker again and pick them again; or remove someone and look for them | Picker results were cached under one fixed key for 30 seconds, so the filter on current members did not re-run: the person added could be added twice, and the person removed was not offered back | The query key includes the current member ids | `Committee.test.tsx` |
 
 ## Audit claims that needed correcting
 

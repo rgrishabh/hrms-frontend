@@ -1,10 +1,9 @@
-import { configure, fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Policies } from '../../pages/Policies';
 import { bodyOf, mockPageApi, problem, reads, renderPage, writes } from '../../test/page';
 
-configure({ asyncUtilTimeout: 10000 });
 afterEach(() => vi.restoreAllMocks());
 beforeEach(() => {
   URL.createObjectURL = vi.fn(() => 'blob:x');

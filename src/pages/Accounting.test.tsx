@@ -1,11 +1,10 @@
-import { configure, screen, waitFor, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { Accounting } from './Accounting';
 import { queryClient } from '../lib/query';
 import { bodyOf, mockPageApi, problem, reads, renderPage, writes, type Handler } from '../test/page';
 
-configure({ asyncUtilTimeout: 10000 });
 
 const EXPORT = ['accounting.export'];
 const BOTH = ['accounting.export', 'accounting.configure'];

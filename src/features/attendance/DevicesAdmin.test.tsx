@@ -1,4 +1,4 @@
-import { configure, screen, waitFor, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fmtDateTime } from '../../format';
@@ -6,7 +6,6 @@ import { bodyOf, mockPageApi, problem, reads, renderPage, writes, type Handler }
 import { DevicesAdmin } from './DevicesAdmin';
 
 // A first render under CPU load can take seconds; failures should be about behaviour, not machine speed.
-configure({ asyncUtilTimeout: 15000 });
 
 const GATE = { id: 'd1', name: 'Gate', serial_number: 'SN-1', api_key_prefix: 'k_ab', branch_name: 'HQ', status: 'active', last_sync_at: '2026-11-01T04:00:00.000Z', last_clock_drift_seconds: 12, last_error: 'Clock skew', unmapped_events: 3 };
 const SIDE = { ...GATE, id: 'd2', name: 'Side door', status: 'disabled', last_sync_at: null, last_clock_drift_seconds: null, last_error: null, unmapped_events: 0 };

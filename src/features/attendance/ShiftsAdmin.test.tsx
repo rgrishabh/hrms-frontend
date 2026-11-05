@@ -1,11 +1,10 @@
-import { configure, screen, waitFor, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { bodyOf, mockPageApi, problem, renderPage, writes, type Handler } from '../../test/page';
 import { ShiftsAdmin } from './ShiftsAdmin';
 
 // A first render under CPU load can take seconds; failures should be about behaviour, not machine speed.
-configure({ asyncUtilTimeout: 15000 });
 
 const GEN = { id: 's1', code: 'GEN', name: 'General', start_time: '09:30:00', end_time: '18:00:00', break_minutes: 30, grace_minutes: 10, early_exit_grace_minutes: 5, half_day_min_minutes: 240, full_day_min_minutes: 450, overtime_after_minutes: 540, overnight: false, status: 'active' };
 const NGT = { ...GEN, id: 's2', code: 'NGT', name: 'Night', start_time: '22:00:00', end_time: '06:00:00', overtime_after_minutes: null, overnight: true, status: 'inactive' };

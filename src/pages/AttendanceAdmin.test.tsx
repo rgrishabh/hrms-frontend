@@ -1,11 +1,10 @@
-import { configure, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mockPageApi, renderPage } from '../test/page';
 import { AttendanceAdmin } from './AttendanceAdmin';
 
 // A first render under CPU load can take seconds; failures should be about behaviour, not machine speed.
-configure({ asyncUtilTimeout: 15000 });
 
 const ALL = ['FEATURE_SHIFTS', 'FEATURE_HOLIDAYS', 'FEATURE_ATTENDANCE_BIOMETRIC', 'FEATURE_ATTENDANCE_GEOFENCE'];
 const api = (perms: string[], flags: string[]) => mockPageApi(perms, flags, () => ({ items: [], branches: [], departments: [], legalEntities: [], from: '2026-11-02', to: '2026-11-15', dates: [], shifts: [], canEdit: false }));

@@ -1,10 +1,9 @@
-import { configure, screen, waitFor, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Cases } from '../../pages/Cases';
 import { bodyOf, mockPageApi, problem, reads, renderPage, writes } from '../../test/page';
 
-configure({ asyncUtilTimeout: 10000 });
 afterEach(() => vi.restoreAllMocks());
 
 const CASE = { id: 'c1', kind: 'grievance', reference: 'GR-0001', category: 'pay', status: 'open', anonymous: false, role: 'complainant', version: 3, complainantName: 'Asha', respondentName: null, respondentText: null, incidentDate: null, description: 'Pay was short by two days this month.', lateReason: null, outcome: null, receivedAt: '2026-11-01T04:30:00Z', inquiryDue: null, reportDue: null, slaDue: '2026-11-20', assigneeName: null, allowedMoves: [], events: [] };

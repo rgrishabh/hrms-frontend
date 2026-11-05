@@ -1,11 +1,10 @@
-import { configure, fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { addDays, todayLocal } from '../../format';
 import { Cases } from '../../pages/Cases';
 import { bodyOf, mockPageApi, problem, reads, renderPage, writes } from '../../test/page';
 
-configure({ asyncUtilTimeout: 10000 });
 afterEach(() => vi.restoreAllMocks());
 
 const BOTH = ['FEATURE_GRIEVANCE', 'FEATURE_POSH'];

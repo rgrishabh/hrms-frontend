@@ -1,4 +1,4 @@
-import { configure, screen, waitFor, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fmtDate, fmtDateTime } from '../../format';
@@ -6,7 +6,6 @@ import { bodyOf, mockPageApi, problem, reads, renderPage, writes, type Handler }
 import { AttendanceCalendar } from './AttendanceCalendar';
 
 // A first render under CPU load can take seconds; failures should be about behaviour, not machine speed.
-configure({ asyncUtilTimeout: 15000 });
 
 const FLAGS = ['FEATURE_ATTENDANCE', 'FEATURE_ATTENDANCE_REGULARIZATION'];
 const result = (over = {}) => ({ work_date: '2026-11-03', status: 'present', shift_code: 'GEN', first_in: '2026-11-03T04:00:00.000Z', last_out: '2026-11-03T12:30:00.000Z', worked_minutes: 480, late_minutes: 12, early_exit_minutes: 7, overtime_minutes: 45, leave_fraction: 0, leave_type_code: null, duty_fraction: 0, exceptions: [], locked: false, ...over });

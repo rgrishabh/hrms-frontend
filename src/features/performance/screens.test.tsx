@@ -1,10 +1,9 @@
-import { configure, fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { Performance } from '../../pages/Performance';
 import { bodyOf, mockPageApi, problem, reads, showPage, writes, type Handler } from '../../test/page';
 
-configure({ asyncUtilTimeout: 20000 });
 
 const SELF = ['performance.self'];
 const MANAGE = ['performance.self', 'performance.manage'];

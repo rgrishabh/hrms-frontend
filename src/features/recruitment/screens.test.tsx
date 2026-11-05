@@ -1,10 +1,9 @@
-import { configure, fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { Recruitment } from '../../pages/Recruitment';
 import { bodyOf, mockPageApi, problem, reads, showPage, writes, type Handler } from '../../test/page';
 
-configure({ asyncUtilTimeout: 20000 });
 
 const MANAGE = ['recruitment.manage', 'recruitment.read', 'recruitment.requisition', 'recruitment.compensation', 'employees.manage'];
 const ORG = { legalEntities: [{ id: 'l1', name: 'Acme Labs' }, { id: 'l2', name: 'Acme Trading' }], branches: [{ id: 'b1', name: 'Pune', legal_entity_id: 'l1' }, { id: 'b2', name: 'Delhi', legal_entity_id: 'l2' }], departments: [{ id: 'd1', name: 'Quality' }] };

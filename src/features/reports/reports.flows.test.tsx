@@ -1,10 +1,9 @@
-import { configure, fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { Reports } from '../../pages/Reports';
 import { bodyOf, mockPageApi, problem, reads, renderPage, writes, type Handler } from '../../test/page';
 
-configure({ asyncUtilTimeout: 10000 });
 
 const PAY = { key: 'pay', name: 'Payroll cost', description: 'Cost by department', category: 'Pay', scope: 'all', params: [{ key: 'month', label: 'Month', type: 'month', default: '2026-10' }, { key: 'dept', label: 'Department', type: 'select', default: 'all', options: [{ value: 'all', label: 'All' }, { value: 'ops', label: 'Ops' }] }, { key: 'days', label: 'Days', type: 'int', default: 30, min: 1, max: 90 }, { key: 'from', label: 'From', type: 'date', default: '2026-10-01' }] };
 const LEAVE = { key: 'leave', name: 'Leave used', description: 'By person', category: 'Leave', scope: 'team', params: [] };

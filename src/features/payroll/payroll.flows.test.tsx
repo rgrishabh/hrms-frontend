@@ -1,11 +1,10 @@
-import { configure, fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { Payroll } from '../../pages/Payroll';
 import { Payslips } from '../../pages/Payslips';
 import { bodyOf, mockPageApi, problem, reads, showPage, writes, type Handler } from '../../test/page';
 
-configure({ asyncUtilTimeout: 10000 });
 
 const FLAGS = ['FEATURE_PAYROLL', 'FEATURE_PAYROLL_STATUTORY'];
 const MANAGE = ['payroll.read', 'payroll.manage', 'payroll.approve', 'payroll.statutory'];

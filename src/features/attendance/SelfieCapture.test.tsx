@@ -1,10 +1,9 @@
-import { configure, render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { SelfieCapture } from './SelfieCapture';
 
 // A first render under CPU load can take seconds; failures should be about behaviour, not machine speed.
-configure({ asyncUtilTimeout: 15000 });
 
 const track = () => ({ stop: vi.fn() });
 const camera = (impl: Mock) => Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia: impl } });

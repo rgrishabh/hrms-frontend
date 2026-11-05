@@ -1,11 +1,10 @@
-import { configure, fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { Lifecycle } from '../../pages/Lifecycle';
 import { addDays, todayLocal } from '../../format';
 import { bodyOf, mockPageApi, problem, reads, showPage, writes, type Handler } from '../../test/page';
 
-configure({ asyncUtilTimeout: 10000 });
 
 const FLAGS = ['FEATURE_ONBOARDING', 'FEATURE_OFFBOARDING'];
 const HR = ['lifecycle.manage', 'lifecycle.read', 'lifecycle.self'];

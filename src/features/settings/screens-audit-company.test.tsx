@@ -1,4 +1,4 @@
-import { configure, screen, waitFor, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { bodyOf, mockPageApi, problem, reads, renderPage, writes } from '../../test/page';
@@ -8,7 +8,6 @@ import { CompanySettings } from './Company';
 import { DataRights } from './DataRights';
 
 // The default one-second wait is too short when the machine is busy.
-configure({ asyncUtilTimeout: 15000 });
 
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 

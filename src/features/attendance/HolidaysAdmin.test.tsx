@@ -1,4 +1,4 @@
-import { configure, screen, waitFor, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fmtDate } from '../../format';
@@ -6,7 +6,6 @@ import { bodyOf, mockPageApi, problem, reads, renderPage, writes, type Handler }
 import { HolidaysAdmin } from './HolidaysAdmin';
 
 // A first render under CPU load can take seconds; failures should be about behaviour, not machine speed.
-configure({ asyncUtilTimeout: 15000 });
 
 const DIWALI = { id: 'h1', holiday_date: '2026-11-08T00:00:00.000Z', name: 'Diwali', branch_id: 'b1', branch_name: 'HQ', optional: true };
 const NEW_YEAR = { id: 'h2', holiday_date: '2026-01-01', name: 'New Year', branch_name: null, optional: false };

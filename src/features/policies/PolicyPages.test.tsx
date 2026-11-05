@@ -1,10 +1,9 @@
-import { configure, screen, waitFor, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Policies } from '../../pages/Policies';
 import { bodyOf, mockPageApi, problem, reads, renderPage, writes } from '../../test/page';
 
-configure({ asyncUtilTimeout: 10000 });
 afterEach(() => vi.restoreAllMocks());
 
 const mine = (over: object = {}) => ({ id: 'v1', title: 'Leave policy', category: 'hr', version_no: 3, effective_from: '2026-01-15', change_summary: 'Carry forward', requires_ack: true, acknowledged_at: null, due_on: '2026-12-01', ...over });
