@@ -36,7 +36,7 @@ export function MyTrips() {
   const [act, setAct] = useState<Act | null>(null);
   const today = query.data?.today ?? todayLocal();
   const reload = () => invalidateApi(TRIPS_URL, '/api/v1/approvals', '/api/v1/dashboard');
-  const claim = (t: Trip) => run(t.id, async () => { const r = await api.post<{ id: string }>(`${TRIPS_URL}/${t.id}/claim`); nav(`/expenses?tab=mine&claim=${r.id}`); });
+  const claim = (t: Trip) => run(t.id, async () => { const r = await api.post<{ id: string }>(`${TRIPS_URL}/${t.id}/claim`); void nav(`/expenses?tab=mine&claim=${r.id}`); });
   const columns: Column<Trip>[] = [
     { key: 'when', header: 'When', card: 'subtitle', cell: tripWhen },
     { key: 'route', header: 'Route', card: 'title', cell: (t) => <>{tripRoute(t)}<div className="table__cell-sub">{MODE[t.travel_mode] ?? t.travel_mode}{t.trip_type === 'international' ? ' · international' : ''}</div></> },

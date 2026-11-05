@@ -13,7 +13,7 @@ import { useDebouncedValue } from '../../components/hooks';
 import { Input, Textarea } from '../../components/Input';
 import { KeyValue } from '../../components/KeyValue';
 import { Modal } from '../../components/Modal';
-import { Money, formatMoney } from '../../components/Money';
+import { Money } from '../../components/Money';
 import { RevealToggle } from '../../components/RevealToggle';
 import { isMaskedField, useRevealable } from '../../lib/masking';
 import { QueryState } from '../../components/QueryState';

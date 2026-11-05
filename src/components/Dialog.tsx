@@ -84,6 +84,7 @@ export function Dialog({ title, description, onClose, children, footer, persiste
   const onBackdropUp = (e: MouseEvent) => { if (pressStartedOnBackdrop.current && e.target === e.currentTarget) dismiss(); pressStartedOnBackdrop.current = false; };
 
   return createPortal(
+    // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- a pointer convenience: the keyboard path is Esc and the close button
     <div className={`dialog-backdrop dialog-backdrop--${kind} dialog-backdrop--${side}`} onMouseDown={onBackdropDown} onMouseUp={onBackdropUp}>
       <div
         ref={panel}

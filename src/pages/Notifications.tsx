@@ -22,7 +22,7 @@ export function Notifications() {
   const query = useApiQuery<NotificationPage>(`/api/v1/notifications${qs({ unread: unreadOnly || undefined, page, pageSize: 20 })}`, { placeholderData: (previous) => previous });
   const open = async (n: NotificationItem) => {
     if (!n.read_at) await markRead(n.id).catch(() => undefined);
-    if (n.link) nav(n.link);
+    if (n.link) void nav(n.link);
   };
   return (
     <div className="stack-4">

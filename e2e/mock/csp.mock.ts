@@ -7,6 +7,8 @@ for (const { path, persona } of SCREENS) {
   test(`no CSP violation on ${path}`, async ({ page }) => {
     const violations: string[] = [];
     page.on('console', (m) => { if (/Content Security Policy/i.test(m.text())) violations.push(m.text()); });
+    // Runs in the browser, and the listener below reads it from the console.
+    // eslint-disable-next-line no-console
     await page.addInitScript(() => document.addEventListener('securitypolicyviolation', (e) => { console.error(`Content Security Policy: ${e.violatedDirective} ${e.blockedURI}`); }));
     await mockApi(page, { persona });
     const res = await page.goto(path);

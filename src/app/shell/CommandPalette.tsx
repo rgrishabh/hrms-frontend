@@ -70,6 +70,7 @@ function Palette({ onClose }: { onClose: () => void }) {
       </div>
       <ul id="palette-list" ref={listRef} role="listbox" aria-label="Results" className="palette__list list-plain">
         {results.map((c, i) => (
+          // eslint-disable-next-line jsx-a11y/click-events-have-key-events -- keys go to the combobox input, which holds focus and moves aria-activedescendant
           <li key={c.id} id={`palette-${c.id}`} role="option" aria-selected={i === active} className="palette__item" onMouseEnter={() => setActive(i)} onClick={() => run(c)}>
             <c.icon aria-hidden="true" /><span className="grow">{c.label}</span><span className="text-xs text-3">{c.section}</span>
           </li>

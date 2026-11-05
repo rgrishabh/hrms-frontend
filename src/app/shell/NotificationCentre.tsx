@@ -32,7 +32,7 @@ export function NotificationCentre({ onClose }: { onClose: () => void }) {
   const query = useApiQuery<NotificationPage>(`/api/v1/notifications${qs({ page: 1, pageSize: 15 })}`);
   const open = async (n: NotificationItem) => {
     if (!n.read_at) await markRead(n.id).catch(() => undefined);
-    if (n.link) { onClose(); nav(n.link); }
+    if (n.link) { onClose(); void nav(n.link); }
   };
   return (
     <Drawer

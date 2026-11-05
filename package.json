@@ -4,7 +4,7 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "tsc -p tsconfig.json --noEmit && vite build",
-    "lint": "tsc -p tsconfig.json --noEmit && tsc -p e2e/tsconfig.json",
+    "lint": "tsc -p tsconfig.json --noEmit && tsc -p e2e/tsconfig.json && npm run lint:eslint",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "preview": "vite preview",
@@ -12,10 +12,13 @@
     "e2e:mock": "playwright test -c playwright.mock.config.ts",
     "api:generate": "node scripts/generate-api.mjs",
     "api:check": "node scripts/generate-api.mjs --check",
-    "e2e:stack": "node e2e/full/stack.mjs up --reset"
+    "e2e:stack": "node e2e/full/stack.mjs up --reset",
+    "lint:eslint": "test -d tools/lint/node_modules || npm --prefix tools/lint ci --no-audit --no-fund; tools/lint/node_modules/.bin/eslint -c tools/lint/eslint.config.mjs src e2e scripts --max-warnings 0",
+    "test:coverage": "vitest run --coverage"
   },
   "type": "module",
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
     "@fontsource-variable/inter": "^5.3.0",
     "@fontsource-variable/noto-sans": "^5.3.0",
     "@fontsource-variable/source-sans-3": "^5.3.1",
@@ -28,6 +31,7 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.2.1",
+    "@vitest/coverage-v8": "^5.1.0",
     "axe-core": "^4.14.0",
     "jsdom": "^30.1.3",
     "typescript": "^7.0.2",

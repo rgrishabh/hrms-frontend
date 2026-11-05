@@ -31,6 +31,7 @@ export function Tabs<T extends string>({ label, tabs, value, onChange, idBase }:
     list.current?.querySelector<HTMLElement>(`#${CSS.escape(tabId(base, t.key))}`)?.focus();
   };
   return (
+    // eslint-disable-next-line jsx-a11y/interactive-supports-focus -- roving tabindex: focus sits on the tabs inside, whose key presses bubble here
     <div ref={list} role="tablist" aria-label={label} className="tabs-bar" onKeyDown={onKeyDown}>
       {tabs.map((t) => (
         <button

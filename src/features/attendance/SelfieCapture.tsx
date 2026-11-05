@@ -77,7 +77,7 @@ export function SelfieCapture({ confirmLabel, busy, error, onConfirm, onClose }:
     <Modal title="Take a selfie to clock in" description="Your organization asks for a photo at clock-in. It is kept for a limited time and used only to confirm attendance." onClose={onClose}>
       <div className="stack-3">
         {photo
-          ? <img className="selfie__frame" src={photo.preview} alt="Your photo" />
+          ? <img className="selfie__frame" src={photo.preview} alt="Your clock-in selfie" />
           : <video ref={video} className={`selfie__frame${noCamera ? ' selfie__frame--off' : ''}`} autoPlay playsInline muted aria-label="Camera preview" />}
         {!photo && stage === 'blocked' && <Alert tone="warn">The camera is blocked for this site. Allow it in your browser's site settings and try again, or choose a photo below.</Alert>}
         {!photo && stage === 'unavailable' && <Alert tone="warn">No camera could be started on this device. Choose a photo below.</Alert>}

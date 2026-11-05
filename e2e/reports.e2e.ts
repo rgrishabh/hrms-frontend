@@ -36,7 +36,7 @@ test('HR runs headcount, regroups it and downloads the CSV and Excel', async ({ 
 
   const [download] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Download CSV' }).click()]);
   expect(download.suggestedFilename()).toMatch(/^headcount-\d{4}-\d{2}-\d{2}\.csv$/);
-  const csv = (await readFile((await download.path())!, 'utf8')).replace(/^﻿/, '');
+  const csv = (await readFile((await download.path())!, 'utf8')).replace(/^\uFEFF/, '');
   const lines = csv.trim().split(/\r\n/);
   expect(lines[0]).toMatch(/^Branch,Headcount,/);
   expect(lines.at(-1)).toMatch(new RegExp(`^Total,${total},`));

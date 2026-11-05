@@ -4,7 +4,6 @@ import { api, qs, type Paged } from '../../api';
 import { useAuth } from '../../auth';
 import { StatusBadge } from '../../components/Badge';
 import { Button } from '../../components/Button';
-import { Card } from '../../components/Card';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { EmptyState } from '../../components/EmptyState';
 import { FilterBar } from '../../components/FilterBar';
@@ -113,7 +112,7 @@ export function LoanList({ scope }: { scope: 'team' | 'all' }) {
   ];
   return (
     <div className="stack-3">
-      <FilterBar activeCount={table.activeFilterCount} onClear={table.clearFilters} actions={manage && <Button variant="primary" onClick={() => setRecord(true)}>Record for an employee</Button>}>
+      <FilterBar activeCount={table.activeFilterCount} onClear={table.clearFilters} actions={<><RevealToggle revealed={revealed} loading={list.isFetching} onChange={setRevealed} />{manage && <Button variant="primary" onClick={() => setRecord(true)}>Record for an employee</Button>}</>}>
         <Select label="Status" hideLabel placeholder="Any status" value={table.filters['status']} options={STATUSES.map((s) => ({ value: s, label: s[0]!.toUpperCase() + s.slice(1) }))} onChange={(e) => table.setFilter('status', e.target.value)} />
         {kinds.length > 1 && <Select label="Kind" hideLabel placeholder="Both kinds" value={table.filters['kind']} options={kinds.map((k) => ({ value: k, label: `${KIND_LABEL[k]}s` }))} onChange={(e) => table.setFilter('kind', e.target.value)} />}
       </FilterBar>

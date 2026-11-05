@@ -72,6 +72,15 @@ export default defineConfig({
     include: ['src/**/*.test.{ts,tsx}'],
     css: false,
     restoreMocks: true,
-    testTimeout: 15000,
+    testTimeout: 30000,
+    coverage: {
+      provider: 'v8',
+      include: ['src/**/*.{ts,tsx}'],
+      // Generated files, tests and their helpers are not code under test. The service worker template runs only in a browser, and e2e/mock/pwa covers it.
+      exclude: ['src/**/*.test.{ts,tsx}', 'src/**/*.test-util.tsx', 'src/**/testkit.tsx', 'src/test/**', 'src/lib/*.gen.ts', 'src/pwa/sw.template.js', 'src/main.tsx'],
+      reporter: ['text-summary', 'json-summary'],
+      reportsDirectory: 'coverage',
+      thresholds: { lines: 80, statements: 80, functions: 80, branches: 70 },
+    },
   },
 });

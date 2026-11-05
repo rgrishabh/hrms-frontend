@@ -1,4 +1,4 @@
-import { lazy, StrictMode, Suspense, useState } from 'react';
+import { lazy, StrictMode, Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, useLocation } from 'react-router-dom';

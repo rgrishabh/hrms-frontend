@@ -91,7 +91,7 @@ function Sessions() {
 }
 
 export function Account() {
-  const { me, logout, refresh, hasFeature, config } = useAuth();
+  const { me, refresh, hasFeature, config } = useAuth();
   const toast = useToast();
   const [theme, setTheme] = useState<ThemePreference>(getThemePreference);
   if (!me) return null;

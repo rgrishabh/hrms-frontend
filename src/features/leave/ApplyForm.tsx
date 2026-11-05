@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent, useMemo } from 'react';
 import { api, errorMessage } from '../../api';
 import { Alert } from '../../components/Alert';
 import { Button } from '../../components/Button';
@@ -24,7 +24,7 @@ export function ApplyForm({ types, onClose, onDone }: { types: readonly LeaveBal
   const type = types.find((t) => t.id === f.leaveTypeId);
   const endDate = f.endDate < f.startDate ? f.startDate : f.endDate;
   const single = f.startDate === endDate;
-  const body = { leaveTypeId: f.leaveTypeId, startDate: f.startDate, endDate, startHalf: f.startHalf, endHalf: f.endHalf };
+  const body = useMemo(() => ({ leaveTypeId: f.leaveTypeId, startDate: f.startDate, endDate, startHalf: f.startHalf, endHalf: f.endHalf }), [f.leaveTypeId, f.startDate, endDate, f.startHalf, f.endHalf]);
   useEffect(() => {
     let alive = true;
     const t = setTimeout(() => {
@@ -33,7 +33,7 @@ export function ApplyForm({ types, onClose, onDone }: { types: readonly LeaveBal
         .catch((e: unknown) => { if (alive) { setPreview(null); setPreviewError(errorMessage(e)); } });
     }, 250);
     return () => { alive = false; clearTimeout(t); };
-  }, [f.leaveTypeId, f.startDate, endDate, f.startHalf, f.endHalf]);
+  }, [body]);
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     setBusy(true);

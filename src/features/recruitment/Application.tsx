@@ -16,7 +16,7 @@ import { SkeletonRows } from '../../components/Skeleton';
 import { useToast } from '../../components/Toast';
 import { useAction } from '../../components/useSubmit';
 import { fmtDate, fmtDateTime } from '../../format';
-import { invalidateApi, useApiQuery } from '../../lib/query';
+import { invalidateApi } from '../../lib/query';
 import { FeedbackForm, ScheduleInterview } from './InterviewForms';
 import { HireForm, OfferForm } from './OfferForms';
 import { KINDS, personName, RECOMMENDATION, STAGE_LABEL, years, type Application, type Interview, type Offer, type PanelMember } from './types';
