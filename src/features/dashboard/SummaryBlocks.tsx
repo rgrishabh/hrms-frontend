@@ -5,13 +5,14 @@ import { QueryState } from '../../components/QueryState';
 import { Skeleton } from '../../components/Skeleton';
 import { StatGrid, StatTile, type StatTone } from '../../components/StatTile';
 import { fmtDate, fmtNumber } from '../../format';
+import type { ApiResponse, Refine } from '../../lib/api-types';
 import { useApiQuery } from '../../lib/query';
 import './SummaryBlocks.css';
 
-interface Tile { key: string; label: string; value: number | string; detail?: string; href?: string; tone?: StatTone }
-interface Section { key: string; title: string; tiles: Tile[] }
-interface ListBlock { key: string; title: string; items: { primary: string; secondary?: string; date?: string }[]; href?: string; more?: number }
-interface Summary { today: string; sections: Section[]; lists: ListBlock[] }
+type SummaryAnswer = ApiResponse<'/api/v1/dashboard'>;
+type SectionAnswer = SummaryAnswer['sections'][number];
+/** The schema says `tone` is a string. The server sends one of these. */
+type Summary = Refine<SummaryAnswer, { sections: Refine<SectionAnswer, { tiles: Refine<SectionAnswer['tiles'][number], { tone?: StatTone }>[] }>[] }>;
 
 /** Role-specific numbers from the server. Each tile links to the screen behind its number. */
 export function SummaryBlocks() {

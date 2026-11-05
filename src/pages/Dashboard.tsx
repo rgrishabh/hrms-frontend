@@ -8,17 +8,16 @@ import { PageHeader } from '../components/PageHeader';
 import { StatGrid, StatTile } from '../components/StatTile';
 import { PunchCard } from '../features/attendance/PunchCard';
 import { SummaryBlocks } from '../features/dashboard/SummaryBlocks';
+import type { ApiResponse } from '../lib/api-types';
 import { useApiQuery } from '../lib/query';
-
-interface ApprovalList { items: { status?: string }[] }
 
 export function Dashboard() {
   const { me, hasFeature, can } = useAuth();
-  const inbox = useApiQuery<ApprovalList>('/api/v1/approvals/inbox');
-  const mine = useApiQuery<ApprovalList>('/api/v1/approvals/mine');
+  const inbox = useApiQuery<ApiResponse<'/api/v1/approvals/inbox'>>('/api/v1/approvals/inbox');
+  const mine = useApiQuery<ApiResponse<'/api/v1/approvals/mine'>>('/api/v1/approvals/mine');
   const hasEmployee = !!me?.user.employeeId;
   const showPolicies = hasFeature('FEATURE_POLICIES') && can('policies.self') && hasEmployee;
-  const policies = useApiQuery<{ pending: number; overdue: number }>(showPolicies ? '/api/v1/policies/mine' : null);
+  const policies = useApiQuery<ApiResponse<'/api/v1/policies/mine'>>(showPolicies ? '/api/v1/policies/mine' : null);
   const attendance = hasFeature('FEATURE_ATTENDANCE') && can('attendance.self');
   const awaiting = inbox.data?.items.length ?? 0;
   const pendingMine = mine.data?.items.filter((x) => x.status === 'pending').length ?? 0;
