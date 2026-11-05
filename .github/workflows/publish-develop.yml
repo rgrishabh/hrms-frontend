@@ -1,12 +1,12 @@
 name: Publish (develop)
-# Push to develop: re-run CI, then push ghcr.io/<owner>/hrms-frontend:sha-<short> and :develop
-# (SBOM + provenance + cosign signature) and ask hrms-deployment to deploy it to dev.
+# Push to develop: CI and security must pass, then the shared workflow pushes ghcr.io/<owner>/hrms-frontend:sha-<short>
+# and :develop for both architectures, scans and signs them, and sends repository_dispatch "deploy-dev" to hrms-deployment.
+# Stay on _app-publish.yml@main: deploy-prod and rollback-prod verify the cosign identity of exactly that workflow and ref.
 on:
   push:
     branches: [develop]
   workflow_dispatch:
-permissions:
-  contents: read
+permissions: {}
 concurrency:
   group: publish-develop
   cancel-in-progress: false
@@ -14,12 +14,16 @@ jobs:
   ci:
     permissions:
       contents: read
-      pull-requests: write
-    uses: rgrishabh/hrms-deployment/.github/workflows/_app-ci.yml@main
-    with:
-      app: frontend
+      pull-requests: write # only the PR comment job asks for it, and it does not run on a push
+    uses: ./.github/workflows/ci.yml
+  security:
+    permissions:
+      contents: read
+      pull-requests: read
+      security-events: write
+    uses: ./.github/workflows/security.yml
   publish:
-    needs: ci
+    needs: [ci, security]
     permissions:
       contents: read
       packages: write
@@ -28,4 +32,7 @@ jobs:
     with:
       app: frontend
       mode: develop
-    secrets: inherit
+      platforms: linux/amd64,linux/arm64
+    secrets:
+      DEPLOY_APP_PRIVATE_KEY: ${{ secrets.DEPLOY_APP_PRIVATE_KEY }}
+      DEPLOY_REPO_TOKEN: ${{ secrets.DEPLOY_REPO_TOKEN }}

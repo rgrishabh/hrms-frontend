@@ -1,14 +1,14 @@
 name: Release
 # Push to main: release-please opens/updates the release PR (Conventional Commits).
-# Merging it tags vX.Y.Z; this workflow then publishes :vX.Y.Z and :latest (signed) and
-# asks hrms-deployment to open the production version PR. A manually pushed v* tag does the same.
+# Merging it tags vX.Y.Z; this workflow then publishes :vX.Y.Z and :latest for both architectures (signed) and
+# sends repository_dispatch "release-prod": hrms-deployment opens the production version PR. A manually pushed v* tag does the same.
+# Stay on _app-publish.yml@main: deploy-prod and rollback-prod verify the cosign identity of exactly that workflow and ref.
 on:
   push:
     branches: [main]
     tags: ["v*"]
   workflow_dispatch:
-permissions:
-  contents: read
+permissions: {}
 concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
@@ -25,7 +25,7 @@ jobs:
       tag: ${{ steps.rp.outputs.tag_name }}
     steps:
       - id: rp
-        uses: googleapis/release-please-action@5c625bfb5d1ff62eadeeb3772007f7f66fdcf071 # v4.4.1
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         with:
           # A PAT/App token makes CI run on the release PR; with GITHUB_TOKEN an admin merges it (ruleset bypass).
           token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
@@ -43,4 +43,7 @@ jobs:
       app: frontend
       mode: release
       version: ${{ github.ref_type == 'tag' && github.ref_name || needs.release-please.outputs.tag }}
-    secrets: inherit
+      platforms: linux/amd64,linux/arm64
+    secrets:
+      DEPLOY_APP_PRIVATE_KEY: ${{ secrets.DEPLOY_APP_PRIVATE_KEY }}
+      DEPLOY_REPO_TOKEN: ${{ secrets.DEPLOY_REPO_TOKEN }}
