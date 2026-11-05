@@ -40,6 +40,8 @@
 * Tenant jobs are queued: the toast says so and Settings follows the run until it finishes.
 * The push toggle uses the real `/notifications/push/{public-key,subscribe,unsubscribe}` routes.
 * `Permissions-Policy` now allows `camera=(self)`, needed for the clock-in selfie. It was `camera=()`.
+* Exit interview is disabled, with the reason on screen, when answers are on file but hidden from the reader. Nothing on file, it opens as before.
+* Offer edit starts from the saved legal entity, branch, department and contract end.
 
 ### Added
 
@@ -56,6 +58,7 @@
 * Recruitment: edit an offer. Onboarding: cancel a checklist. Competency: cancel an authorization. Policies: edit details. Approvals: reassign. Leave: balance history. Cases: "Assigned to me".
 * `Money`, the one path for amounts on screen, plus `useSubmit`, `useAction`, `FormActions`, `DownloadButton`, `EmployeeField`, `useOrg`, and an undo action on toasts.
 * Browser validation messages now show inline at the field, with focus on the first problem.
+* Recruitment: add or replace a candidate's resume from their detail, with a full-stack journey over both downloads.
 
 ## [1.1.0](https://github.com/rgrishabh/hrms-frontend/compare/v1.0.0...v1.1.0) (2026-11-04)
 
