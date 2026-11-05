@@ -10,15 +10,16 @@ import type { NavLabel } from './nav-labels';
 import { lazyRoute } from './lazyRoute';
 
 /** A task-based view of the product. A person sees only the views their permissions give them. */
-export type ViewId = 'employee' | 'manager' | 'hr' | 'admin' | 'super';
-export const VIEW_LABEL: Record<ViewId, string> = { employee: 'Employee', manager: 'Manager', hr: 'HR', admin: 'Admin', super: 'Super-admin' };
+export type ViewId = 'employee' | 'manager' | 'hr' | 'payroll' | 'admin' | 'super';
+export const VIEW_LABEL: Record<ViewId, string> = { employee: 'Employee', manager: 'Manager', hr: 'HR', payroll: 'Payroll', admin: 'Admin', super: 'Super-admin' };
 
-const VIEW_PRIORITY: readonly ViewId[] = ['super', 'hr', 'admin', 'manager', 'employee'];
+const VIEW_PRIORITY: readonly ViewId[] = ['super', 'hr', 'payroll', 'admin', 'manager', 'employee'];
 
 /** Who holds a view. Permissions only, never role keys: custom roles can combine anything. */
 const VIEW_GATE: Record<Exclude<ViewId, 'employee'>, { any?: readonly string[]; all?: readonly string[] }> = {
   manager: { any: ['attendance.team.read', 'leave.team.read', 'expenses.team.read', 'overtime.team.read', 'field_duty.team.read', 'travel.team.read', 'loans.team.read'] },
-  hr: { any: ['employees.read', 'employees.manage', 'payroll.read', 'payroll.manage', 'payroll.approve', 'lifecycle.read', 'lifecycle.manage', 'recruitment.read', 'recruitment.manage', 'leave.read', 'leave.manage', 'expenses.read', 'expenses.pay', 'policies.manage', 'competency.manage', 'competency.authorize', 'grievance.manage', 'performance.manage'] },
+  payroll: { any: ['payroll.read', 'payroll.manage', 'payroll.approve', 'payroll.statutory', 'accounting.export'] },
+  hr: { any: ['employees.read', 'employees.manage', 'lifecycle.read', 'lifecycle.manage', 'recruitment.read', 'recruitment.manage', 'leave.read', 'leave.manage', 'expenses.read', 'expenses.pay', 'policies.manage', 'competency.manage', 'competency.authorize', 'grievance.manage', 'performance.manage'] },
   admin: { any: ['settings.read', 'settings.manage', 'security.manage', 'users.manage', 'audit.read', 'attendance.devices.manage'] },
   super: { all: ['users.manage', 'settings.manage', 'security.manage', 'employees.manage', 'payroll.manage'] },
 };
@@ -49,7 +50,7 @@ export interface RouteDef {
 export interface Viewer { permissions: ReadonlySet<string>; hasEmployee: boolean }
 
 const HOME = 'Home';
-const everywhere: NavPlacement[] = (['employee', 'manager', 'hr', 'admin', 'super'] as const).map((view) => ({ view, group: HOME }));
+const everywhere: NavPlacement[] = (['employee', 'manager', 'hr', 'payroll', 'admin', 'super'] as const).map((view) => ({ view, group: HOME }));
 
 const route = (d: RouteDef) => d;
 
@@ -69,9 +70,9 @@ export const ROUTES: readonly RouteDef[] = [
   route({ id: 'payslips', path: '/payslips', label: 'Payslips', icon: Receipt, flags: ['FEATURE_PAYSLIPS'], access: { self: ['payslips.self'] }, nav: [{ view: 'employee', group: 'Pay', self: ['payslips.self'] }], keywords: 'salary', load: () => import('../pages/Payslips').then((m) => m.Payslips) }),
   route({ id: 'expenses', path: '/expenses', label: 'Expenses', icon: Wallet, flags: ['FEATURE_EXPENSE_CLAIMS'], access: { any: ['expenses.self', 'expenses.team.read', 'expenses.read', 'expenses.pay', 'expenses.manage'] }, nav: [{ view: 'employee', group: 'Pay', any: ['expenses.self'] }, { view: 'manager', group: 'Team', any: ['expenses.team.read'] }, { view: 'hr', group: 'Pay', any: ['expenses.read', 'expenses.pay', 'expenses.manage'] }], keywords: 'claims reimbursement', load: () => import('../pages/Expenses').then((m) => m.Expenses) }),
   route({ id: 'travel', path: '/travel', label: 'Travel', icon: Plane, flags: ['FEATURE_TRAVEL'], access: { self: ['travel.self'], any: ['travel.team.read', 'travel.read', 'travel.approve', 'expenses.pay'] }, nav: [{ view: 'employee', group: 'Pay', self: ['travel.self'] }, { view: 'manager', group: 'Team', any: ['travel.team.read'] }, { view: 'hr', group: 'Pay', any: ['travel.read', 'travel.approve', 'expenses.pay'] }], load: () => import('../pages/Travel').then((m) => m.Travel) }),
-  route({ id: 'loans', path: '/loans', label: 'Advances & loans', icon: HandCoins, flags: ['FEATURE_LOANS', 'FEATURE_SALARY_ADVANCE'], access: { self: ['loans.self'], any: ['loans.team.read', 'loans.read', 'loans.approve', 'loans.manage'] }, nav: [{ view: 'employee', group: 'Pay', self: ['loans.self'] }, { view: 'manager', group: 'Team', any: ['loans.team.read'] }, { view: 'hr', group: 'Pay', any: ['loans.read', 'loans.approve', 'loans.manage'] }], load: () => import('../pages/Loans').then((m) => m.Loans) }),
-  route({ id: 'payroll', path: '/payroll', label: 'Payroll', icon: Banknote, flags: ['FEATURE_PAYROLL'], access: { any: ['payroll.read', 'payroll.manage', 'payroll.approve', 'payroll.statutory'] }, nav: [{ view: 'hr', group: 'Pay', any: ['payroll.read', 'payroll.manage', 'payroll.approve', 'payroll.statutory'] }], keywords: 'salary runs statutory', load: () => import('../pages/Payroll').then((m) => m.Payroll) }),
-  route({ id: 'accounting', path: '/accounting', label: 'Accounting', icon: Landmark, flags: ['FEATURE_ACCOUNTING_EXPORTS'], access: { any: ['accounting.export', 'accounting.configure'] }, nav: [{ view: 'hr', group: 'Pay', any: ['accounting.export', 'accounting.configure'] }], keywords: 'journal ledger tally', load: () => import('../pages/Accounting').then((m) => m.Accounting) }),
+  route({ id: 'loans', path: '/loans', label: 'Advances & loans', icon: HandCoins, flags: ['FEATURE_LOANS', 'FEATURE_SALARY_ADVANCE'], access: { self: ['loans.self'], any: ['loans.team.read', 'loans.read', 'loans.approve', 'loans.manage'] }, nav: [{ view: 'employee', group: 'Pay', self: ['loans.self'] }, { view: 'manager', group: 'Team', any: ['loans.team.read'] }, { view: 'hr', group: 'Pay', any: ['loans.read', 'loans.approve', 'loans.manage'] }, { view: 'payroll', group: 'Pay', any: ['loans.read', 'loans.approve', 'loans.manage'] }], load: () => import('../pages/Loans').then((m) => m.Loans) }),
+  route({ id: 'payroll', path: '/payroll', label: 'Payroll', icon: Banknote, flags: ['FEATURE_PAYROLL'], access: { any: ['payroll.read', 'payroll.manage', 'payroll.approve', 'payroll.statutory'] }, nav: [{ view: 'hr', group: 'Pay', any: ['payroll.read', 'payroll.manage', 'payroll.approve', 'payroll.statutory'] }, { view: 'payroll', group: 'Pay', any: ['payroll.read', 'payroll.manage', 'payroll.approve', 'payroll.statutory'] }], keywords: 'salary runs statutory', load: () => import('../pages/Payroll').then((m) => m.Payroll) }),
+  route({ id: 'accounting', path: '/accounting', label: 'Accounting', icon: Landmark, flags: ['FEATURE_ACCOUNTING_EXPORTS'], access: { any: ['accounting.export', 'accounting.configure'] }, nav: [{ view: 'hr', group: 'Pay', any: ['accounting.export', 'accounting.configure'] }, { view: 'payroll', group: 'Pay', any: ['accounting.export', 'accounting.configure'] }], keywords: 'journal ledger tally', load: () => import('../pages/Accounting').then((m) => m.Accounting) }),
 
   route({ id: 'employees', path: '/employees', label: 'Employees', icon: Users, access: { any: ['employees.read', 'employees.directory'] }, nav: [{ view: 'employee', group: 'Work', any: ['employees.directory'] }, { view: 'manager', group: 'Team', any: ['employees.directory', 'employees.read'] }, { view: 'hr', group: 'People', any: ['employees.read', 'employees.manage'] }], keywords: 'people directory staff', load: () => import('../pages/Employees').then((m) => m.Employees) }),
   route({ id: 'employee-profile', path: '/employees/:id', label: 'Employees', icon: Users, parent: 'employees', access: { any: ['employees.read', 'employees.directory'], self: ['profile.self'] }, nav: [], load: () => import('../pages/Employees').then((m) => m.EmployeeProfile) }),
@@ -85,7 +86,7 @@ export const ROUTES: readonly RouteDef[] = [
   // Everyone can sit on an interview panel, so the page stays reachable; only requisition owners and HR see it in navigation.
   route({ id: 'recruitment', path: '/recruitment', label: 'Recruitment', icon: Briefcase, flags: ['FEATURE_RECRUITMENT'], nav: [{ view: 'manager', group: 'Team', any: ['recruitment.requisition'] }, { view: 'hr', group: 'People', any: ['recruitment.read', 'recruitment.manage', 'recruitment.approve'] }], keywords: 'hiring candidates interviews offers', load: () => import('../pages/Recruitment').then((m) => m.Recruitment) }),
 
-  route({ id: 'reports', path: '/reports', label: 'Reports', icon: BarChart3, access: { any: ['employees.read', 'attendance.read', 'attendance.team.read', 'leave.read', 'leave.team.read', 'payroll.read', 'expenses.read', 'competency.read', 'training.manage'] }, nav: [{ view: 'manager', group: 'Team', any: ['attendance.team.read', 'leave.team.read'] }, { view: 'hr', group: 'Insights', any: ['employees.read', 'attendance.read', 'leave.read', 'payroll.read', 'expenses.read', 'competency.read', 'training.manage'] }], load: () => import('../pages/Reports').then((m) => m.Reports) }),
+  route({ id: 'reports', path: '/reports', label: 'Reports', icon: BarChart3, access: { any: ['employees.read', 'attendance.read', 'attendance.team.read', 'leave.read', 'leave.team.read', 'payroll.read', 'expenses.read', 'competency.read', 'training.manage'] }, nav: [{ view: 'manager', group: 'Team', any: ['attendance.team.read', 'leave.team.read'] }, { view: 'hr', group: 'Insights', any: ['employees.read', 'attendance.read', 'leave.read', 'payroll.read', 'expenses.read', 'competency.read', 'training.manage'] }, { view: 'payroll', group: 'Insights', any: ['payroll.read'] }], load: () => import('../pages/Reports').then((m) => m.Reports) }),
   route({ id: 'settings', path: '/settings', splat: true, label: 'Settings', icon: Settings, access: { any: ['settings.read', 'users.manage', 'audit.read', 'org.read'] }, nav: [{ view: 'hr', group: 'Organization', any: ['settings.read', 'org.manage'] }, { view: 'admin', group: 'Organization', any: ['settings.read', 'users.manage', 'audit.read'] }], keywords: 'users roles audit jobs configuration', load: () => import('../pages/Settings').then((m) => m.SettingsCenter) }),
 
   route({ id: 'profile', path: '/profile', label: 'My profile', icon: UserRound, access: { self: ['profile.self'] }, nav: [{ view: 'employee', group: 'Work', self: ['profile.self'] }], keywords: 'contacts nominee address', load: () => import('../pages/PersonalDetails').then((m) => m.MyProfile) }),
@@ -110,9 +111,16 @@ const placementVisible = (p: NavPlacement, v: Viewer) => {
   return holdsAny(v, p.any) || (v.hasEmployee && holdsAny(v, p.self));
 };
 
-export function viewsFor(v: Viewer, mode: ManagementMode): ViewId[] {
+/**
+ * The views to offer. `/auth/me` lists the ones the server sees (`server`, with `owner` for Super-admin), and those
+ * always count. Permissions can add more, because a custom role can hold recruitment alone and the server's list has no
+ * view for it. Single-person modes have no Manager view, whatever a person's permissions say.
+ */
+export function viewsFor(v: Viewer, mode: ManagementMode, server: readonly string[] = []): ViewId[] {
+  const named = new Set(server.map((k) => (k === 'owner' ? 'super' : k)));
   const allowed = VIEW_PRIORITY.filter((view) => {
     if (view === 'employee') return v.hasEmployee;
+    if (named.has(view) && (view !== 'manager' || mode === 'multi')) return true;
     if (view === 'manager' && mode !== 'multi') return false; // no reporting-line approvals in single modes
     const gate = VIEW_GATE[view];
     return (gate.any ? holdsAny(v, gate.any) : true) && (gate.all ? gate.all.every((p) => v.permissions.has(p)) : true);

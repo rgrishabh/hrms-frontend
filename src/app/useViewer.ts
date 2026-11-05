@@ -20,14 +20,15 @@ export interface Navigation { views: ViewId[]; view: ViewId; setView: (v: ViewId
 
 /** The views this person has, the chosen one, and its navigation. A stale choice falls back safely. */
 export function useNavigationModel(): Navigation {
-  const { config } = useAuth();
+  const { config, me } = useAuth();
   const viewer = useViewer();
   const stored = useSyncExternalStore((l) => { listeners.add(l); return () => { listeners.delete(l); }; }, readStored);
   const mode = config?.mode ?? 'multi';
   const features = config?.features;
+  const server = me?.views;
   return useMemo(() => {
-    const views = viewsFor(viewer, mode);
+    const views = viewsFor(viewer, mode, server?.map((x) => x.key));
     const view = stored && views.includes(stored) ? stored : views[0]!;
     return { views, view, setView: writeStored, groups: navFor(view, viewer, features ?? {}) };
-  }, [viewer, mode, features, stored]);
+  }, [viewer, mode, features, stored, server]);
 }
