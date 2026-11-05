@@ -14,7 +14,8 @@
     "api:check": "node scripts/generate-api.mjs --check",
     "e2e:stack": "node e2e/full/stack.mjs up --reset",
     "lint:eslint": "test -d tools/lint/node_modules || npm --prefix tools/lint ci --no-audit --no-fund; tools/lint/node_modules/.bin/eslint -c tools/lint/eslint.config.mjs src e2e scripts --max-warnings 0",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "check:bundle": "node scripts/check-bundle.mjs"
   },
   "type": "module",
   "devDependencies": {
