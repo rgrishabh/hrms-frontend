@@ -75,7 +75,7 @@ function PayslipView({ id, onClose }: { id: string; onClose: () => void }) {
             {isMaskedField(s, 'net') ? <p className="text-sm text-2">Amounts are hidden until you ask to see them.</p> : <PayLines lines={s.lines ?? []} gross={s.gross} deductions={s.deductions} net={s.net} />}
             <div className="cluster-between no-print">
               <RevealToggle revealed={revealed} loading={query.isFetching} onChange={setRevealed} what="pay details" />
-              <DownloadButton url={`/api/v1/payroll/payslips/${s.id}/payslip.pdf`} fileName={`payslip-${s.period}.pdf`}>Download PDF</DownloadButton>
+              <DownloadButton url={`/api/v1/payroll/payslips/${id}/payslip.pdf`} fileName={`payslip-${s.period}.pdf`}>Download PDF</DownloadButton>
             </div>
           </div>
         )}

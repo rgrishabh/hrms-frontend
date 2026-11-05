@@ -385,6 +385,13 @@ describe('salaries', () => {
     expect(screen.getByText(/50,000/)).toBeTruthy();
     expect(screen.getByText('Kim')).toBeTruthy();
   });
+  it('a salary not yet approved has no approval date, and that prints nothing odd', async () => {
+    mockPageApi(MANAGE, FLAGS, salaryApi({ salaries: [{ ...SALARY, approved_at: null, status: 'pending' }] }));
+    showPage(<Payroll />, '/payroll?tab=salaries');
+    await pick();
+    const table = await screen.findByRole('table', { name: 'Salary history' });
+    expect(table.textContent).not.toMatch(/null|undefined|NaN/);
+  });
   it('masked salary stays hidden until reveal, and reveal asks with reveal=1', async () => {
     const f = mockPageApi(MANAGE, FLAGS, salaryApi({ extra: (url) => (url.includes('/salaries') && !url.includes('reveal=1') ? { items: [{ ...SALARY, amounts: null, masked: true, maskedFields: ['amounts'] }] } : undefined) }));
     showPage(<Payroll />, '/payroll?tab=salaries');
@@ -626,7 +633,9 @@ describe('statutory rules', () => {
 
 describe('my payslips', () => {
   const ROW = { id: 'ps1', period: '2026-01', kind: 'regular', gross: null, deductions: null, net: null, masked: true, maskedFields: ['gross', 'deductions', 'net'] };
-  const FULL = { ...ROW, gross: 1000, deductions: 100, net: 900, masked: false, maskedFields: [], legal_entity: 'Co', name: 'Asha Rao', employee_code: 'E1', designation: 'Engineer', department: 'Tech', branch: 'Pune', date_of_joining: '2025-01-01', paid_days: 29, days_in_period: 31, lop_days: 2, uan: '123456789012', pan: 'ABCDE1234F', account: 'XX1234', ifsc: 'HDFC0001', lines: [{ kind: 'earning', name: 'Basic', amount: 1000 }] };
+  // The detail answer carries no id of its own: see PayslipData in the backend.
+  const { id: _rowId, ...ROW_FIELDS } = ROW;
+  const FULL = { ...ROW_FIELDS, gross: 1000, deductions: 100, net: 900, masked: false, maskedFields: [], legal_entity: 'Co', name: 'Asha Rao', employee_code: 'E1', designation: 'Engineer', department: 'Tech', branch: 'Pune', date_of_joining: '2025-01-01', paid_days: 29, days_in_period: 31, lop_days: 2, uan: '123456789012', pan: 'ABCDE1234F', account: 'XX1234', ifsc: 'HDFC0001', lines: [{ kind: 'earning', name: 'Basic', amount: 1000 }] };
   const HIDDEN = { ...FULL, gross: null, deductions: null, net: null, uan: null, pan: null, account: null, ifsc: null, lop_days: 0, designation: null, department: null, masked: true, maskedFields: ['gross', 'deductions', 'net', 'uan', 'pan', 'account', 'ifsc'] };
   const slipApi: Handler = (url) => {
     if (url.endsWith('/payslips/mine')) return { items: [ROW] };
@@ -695,6 +704,15 @@ describe('my payslips', () => {
     expect(await within(dlg).findByText('Payslip, 2026-01 (full and final)')).toBeTruthy();
     expect(within(dlg).getByText('— / —')).toBeTruthy();
     expect(within(dlg).getAllByText('—').length).toBeGreaterThan(0);
+  });
+  it('the download inside the slip asks for the slip that is open', async () => {
+    const f = mockPageApi([], slipApi);
+    showPage(<Payslips />);
+    await userEvent.click(await screen.findByRole('button', { name: 'View payslip for 2026-01' }));
+    const dlg = await screen.findByRole('dialog', { name: 'Payslip 2026-01' });
+    await userEvent.click(await within(dlg).findByRole('button', { name: 'Download PDF' }));
+    await waitFor(() => expect(reads(f, '/payslip.pdf')).toHaveLength(1));
+    expect(reads(f, '/payslips/ps1/payslip.pdf')).toHaveLength(1);
   });
   it('a failed slip download says why and stays on the page', async () => {
     mockPageApi([], (url) => (url.endsWith('/payslip.pdf') ? problem(404, 'Payslip not published') : slipApi(url, {})));
