@@ -85,8 +85,8 @@ export function Employees() {
         title="Employees"
         description={full ? 'Employee master' : 'Directory of active colleagues'}
         actions={can('employees.manage') && <>
-          <DownloadButton size="md" url={`/api/v1/employees/cards/id-cards.pdf${qs({ branchId, departmentId })}`} fileName="id-cards.pdf" aria-label="ID cards for everyone shown by the branch and department filters">ID cards</DownloadButton>
-          <DownloadButton size="md" url={`/api/v1/employees/cards/business-cards.pdf${qs({ branchId, departmentId })}`} fileName="business-cards.pdf" aria-label="Business cards for everyone shown by the branch and department filters">Business cards</DownloadButton>
+          <DownloadButton size="md" url={`/api/v1/employees/cards/id-cards.pdf${qs({ branchId, departmentId })}`} fileName="id-cards.pdf" aria-label="ID cards for everyone in the current filters">ID cards</DownloadButton>
+          <DownloadButton size="md" url={`/api/v1/employees/cards/business-cards.pdf${qs({ branchId, departmentId })}`} fileName="business-cards.pdf" aria-label="Business cards for everyone in the current filters">Business cards</DownloadButton>
           <Button onClick={() => setImporting(true)}>Bulk import</Button><Button variant="primary" onClick={() => setCreating(true)}>Add employee</Button>
         </>}
       />
