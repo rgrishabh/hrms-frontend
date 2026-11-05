@@ -13,6 +13,14 @@ export type Persona = 'director' | 'hr.head' | 'hr.exec' | 'payroll' | 'finance'
 // One sign-in per persona per run (the API allows few sign-ins per minute per IP); later tests reuse the session cookie.
 const sessions = new Map<Persona, Cookie[]>();
 const nav = (page: Page) => page.getByLabel('Main navigation');
+const menuButton = (page: Page) => page.getByRole('button', { name: 'Open menu' });
+
+/** Navigation lives in a drawer behind the menu button. Opens it if it is closed, and returns it. */
+export async function openMenu(page: Page) {
+  if (!(await nav(page).isVisible())) await menuButton(page).click();
+  await expect(nav(page)).toBeVisible();
+  return nav(page);
+}
 
 export async function login(page: Page, who: Persona) {
   if (!PASSWORD) throw new Error('Set E2E_PASSWORD to the demo password (demo-credentials.txt)');
@@ -22,14 +30,14 @@ export async function login(page: Page, who: Persona) {
   if (saved) {
     await ctx.addCookies(saved);
     await page.goto('/');
-    if (await nav(page).waitFor({ timeout: 5000 }).then(() => true, () => false)) return;
+    if (await menuButton(page).waitFor({ timeout: 5000 }).then(() => true, () => false)) return;
     await ctx.clearCookies();
   }
   await page.goto('/');
   await page.getByLabel('Work email').fill(`${who}@${DOMAIN}`);
   await page.getByLabel('Password').fill(PASSWORD);
   await page.getByRole('button', { name: 'Sign in' }).click();
-  await expect(nav(page)).toBeVisible();
+  await expect(menuButton(page)).toBeVisible();
   sessions.set(who, await ctx.cookies());
 }
 
@@ -40,6 +48,7 @@ const viewSwitcher = (page: Page) => page.getByLabel('Switch view');
 
 /** Click a navigation link, switching view first if the current view does not list it. */
 export async function open(page: Page, link: NavLabel, heading: string = link) {
+  await openMenu(page);
   const target = nav(page).getByRole('link', { name: link, exact: true });
   if (!(await target.count()) && (await viewSwitcher(page).count())) {
     const views = await viewSwitcher(page).locator('option').evaluateAll((os) => os.map((o) => (o as HTMLOptionElement).value));
@@ -73,8 +82,11 @@ export async function noErrors(page: Page) {
 
 /** A hidden link only proves something if the label is a real one. */
 export async function expectNavHidden(page: Page, labels: readonly string[]) {
+  await openMenu(page);
   for (const label of labels) {
     expect(NAV_LABELS as readonly string[], `"${label}" is not a navigation label`).toContain(label);
     await expect(nav(page).getByRole('link', { name: label, exact: true })).toHaveCount(0);
   }
+  await page.keyboard.press('Escape');
+  await expect(nav(page)).toHaveCount(0);
 }

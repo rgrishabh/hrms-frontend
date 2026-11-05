@@ -97,6 +97,7 @@ test.describe('desktop shell', () => {
   test('the role switcher lists only held views and changes the menu', async ({ page }) => {
     await mockApi(page, { persona: 'manager' });
     await page.goto('/');
+    await page.getByRole('button', { name: 'Open menu' }).click();
     const sw = page.getByLabel('Switch view');
     await expect(sw.locator('option')).toHaveText(['Manager', 'Employee']);
     const nav = page.getByLabel('Main navigation');
@@ -109,6 +110,8 @@ test.describe('desktop shell', () => {
     await mockApi(page, { persona: 'employee' });
     await page.goto('/');
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await page.getByRole('button', { name: 'Open menu' }).click();
+    await expect(page.getByLabel('Main navigation')).toBeVisible();
     await expect(page.getByLabel('Switch view')).toHaveCount(0);
   });
   test('the notification centre lists items and links to the full page', async ({ page }) => {

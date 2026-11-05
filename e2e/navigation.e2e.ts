@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { expectNavHidden, login, noErrors, settled, type Persona } from './helpers';
+import { expectNavHidden, login, noErrors, openMenu, settled, type Persona } from './helpers';
 
 // Every persona can open every page in their menu without an error, and sees only what their role allows.
 const CASES: { who: Persona; sees: string[]; hidden: string[] }[] = [
@@ -15,12 +15,14 @@ for (const c of CASES) {
     const errors: string[] = [];
     page.on('pageerror', (e) => errors.push(e.message));
     await login(page, c.who);
-    const nav = page.getByLabel('Main navigation');
+    const nav = await openMenu(page);
     for (const name of c.sees) await expect(nav.getByRole('link', { name, exact: true })).toBeVisible();
     await expectNavHidden(page, c.hidden);
     // Client-side navigation through the menu, as a user would.
+    await openMenu(page);
     const hrefs = await nav.getByRole('link').evaluateAll((as) => as.map((a) => a.getAttribute('href')!).filter(Boolean));
     for (const href of hrefs) {
+      await openMenu(page);
       await nav.locator(`a[href="${href}"]`).click();
       await expect(page).toHaveURL((u) => u.pathname === href || u.pathname.startsWith(`${href.replace(/\/$/, '')}/`)); // e.g. /settings → /settings/general
       await expect(page.getByRole('heading', { level: 1 }).first(), `page ${href}`).toBeVisible();

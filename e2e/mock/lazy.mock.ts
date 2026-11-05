@@ -17,6 +17,7 @@ test('feature chunks are not requested when their flag is off, even by URL', asy
     await page.goto(path);
     await expect(page.getByRole('heading', { level: 1, name: 'Page not found' })).toBeVisible();
   }
+  await page.getByRole('button', { name: 'Open menu' }).click();
   const nav = page.getByLabel('Main navigation');
   await expect(nav.getByRole('link', { name: 'Payroll', exact: true })).toHaveCount(0);
   for (const chunk of ['Payroll', 'Payslips', 'Recruitment']) expect(seen, chunk).not.toContain(chunk);
@@ -28,6 +29,7 @@ test('the same chunk is requested when the flag is on, and only on visiting the 
   await page.goto('/');
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   expect(seen).not.toContain('Payroll');
+  await page.getByRole('button', { name: 'Open menu' }).click();
   await page.getByLabel('Main navigation').getByRole('link', { name: 'Payroll', exact: true }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Payroll' })).toBeVisible();
   expect(seen).toContain('Payroll');

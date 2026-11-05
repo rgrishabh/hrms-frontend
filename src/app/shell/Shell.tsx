@@ -54,16 +54,16 @@ export function Shell({ children }: { children: ReactNode }) {
   return (
     <div className="shell">
       <a className="skip-link" href="#main" onClick={(e) => { e.preventDefault(); main.current?.focus(); }}>Skip to content</a>
-      {!mobile && <aside className="shell__rail"><SidebarContent /></aside>}
-      {mobile && drawer && (
+      {drawer && (
         <Drawer title={config.brand.productName} side="left" size="sm" onClose={() => setDrawer(false)} className="shell__drawer">
           <SidebarContent onNavigate={() => setDrawer(false)} />
         </Drawer>
       )}
       <div className="shell__body">
         <header className="topbar">
-          {mobile && <Button variant="ghost" iconOnly aria-label="Open menu" aria-expanded={drawer} icon={<Menu aria-hidden="true" />} onClick={() => setDrawer(true)} />}
-          {mobile ? <span className="topbar__brand"><BrandMark cfg={config} /><span>{config.brand.productName}</span></span> : <Breadcrumbs />}
+          <Button variant="ghost" iconOnly aria-label="Open menu" aria-expanded={drawer} icon={<Menu aria-hidden="true" />} onClick={() => setDrawer(true)} />
+          <span className="topbar__brand"><BrandMark cfg={config} /><span>{config.brand.productName}</span></span>
+          {!mobile && <Breadcrumbs />}
           <span className="topbar__spacer" />
           {mobile
             ? <Button variant="ghost" iconOnly aria-label="Search" icon={<Search aria-hidden="true" />} onClick={() => setPalette(true)} />

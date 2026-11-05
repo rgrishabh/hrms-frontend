@@ -22,14 +22,24 @@ const show = (route = '/leave', unread = 0) => {
 afterEach(() => { resetViewport(); vi.restoreAllMocks(); });
 
 describe('on a desktop', () => {
-  it('shows the rail, the crumbs and the page, and titles the tab after the page', async () => {
+  it('keeps the navigation behind the menu, shows the crumbs and the page, and titles the tab after the page', async () => {
     show();
     expect(await screen.findByText('Page body')).toBeTruthy();
-    expect(screen.getByRole('navigation', { name: 'Main navigation' })).toBeTruthy();
+    expect(screen.queryByRole('navigation', { name: 'Main navigation' })).toBeNull();
     expect(within(screen.getByRole('navigation', { name: 'Breadcrumb' })).getByText('Leave').getAttribute('aria-current')).toBe('page');
     await waitFor(() => expect(document.title).toBe('Leave · Acme HR'));
-    expect(screen.queryByRole('button', { name: 'Open menu' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Open menu' })).toBeTruthy();
     expect(screen.queryByRole('navigation', { name: 'Quick navigation' })).toBeNull();
+  });
+  it('the menu opens a drawer, and following a link closes it', async () => {
+    vi.stubGlobal('scrollTo', vi.fn());
+    show();
+    await userEvent.click(await screen.findByRole('button', { name: 'Open menu' }));
+    const drawer = await screen.findByRole('dialog', { name: 'Acme HR' });
+    await userEvent.click(within(drawer).getByRole('link', { name: 'Payslips' }));
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Acme HR' })).toBeNull());
+    expect(document.title).toBe('Payslips · Acme HR');
+    vi.unstubAllGlobals();
   });
   it('an unknown address titles the tab with the product only', async () => {
     show('/nowhere');
@@ -70,6 +80,7 @@ describe('on a desktop', () => {
     const scroll = vi.fn();
     vi.stubGlobal('scrollTo', scroll);
     show();
+    await userEvent.click(await screen.findByRole('button', { name: 'Open menu' }));
     const nav = await screen.findByRole('navigation', { name: 'Main navigation' });
     expect(scroll).not.toHaveBeenCalled();
     await userEvent.click(within(nav).getByRole('link', { name: 'Payslips' }));
@@ -94,7 +105,7 @@ describe('on a desktop', () => {
     mockPageApi(SELF, FLAGS, api());
     renderPage(<Shell><Crash /></Shell>, '/leave');
     expect((await screen.findByRole('alert')).textContent).toContain('Something went wrong on this page');
-    expect(screen.getByRole('navigation', { name: 'Main navigation' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Open menu' })).toBeTruthy();
   });
 });
 

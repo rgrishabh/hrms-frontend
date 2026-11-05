@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 import { inflateRawSync } from 'node:zlib';
-import { login, noErrors } from './helpers';
+import { login, noErrors, openMenu } from './helpers';
 
 /** The text of one part of a downloaded .xlsx (a ZIP), read from its central directory. */
 function xlsxPart(buf: Buffer, name: string): string {
@@ -20,7 +20,7 @@ function xlsxPart(buf: Buffer, name: string): string {
 
 test('HR runs headcount, regroups it and downloads the CSV and Excel', async ({ page }) => {
   await login(page, 'hr.head');
-  await page.getByLabel('Main navigation').getByRole('link', { name: 'Reports', exact: true }).click();
+  await (await openMenu(page)).getByRole('link', { name: 'Reports', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'People' })).toBeVisible();
   await page.getByRole('link', { name: 'Headcount', exact: true }).click();
   const table = page.getByRole('table', { name: 'Headcount' });

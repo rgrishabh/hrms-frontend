@@ -9,6 +9,7 @@ test('flags off: no menu item, no route, no chunk and no API call for what is of
   page.on('request', (r) => requested.push(new URL(r.url()).pathname));
   await signedIn(page, 'hr.head');
   if (!isMobile) {
+    await page.getByRole('button', { name: 'Open menu' }).click();
     const nav = page.getByLabel('Main navigation');
     await expect(nav.getByRole('link', { name: 'Leave', exact: true })).toBeVisible();
     for (const label of OFF_LINKS) await expect(nav.getByRole('link', { name: label, exact: true })).toHaveCount(0);
