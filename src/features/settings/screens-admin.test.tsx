@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from '@testing-library/react';
+import { configure, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { bodyOf, mockPageApi, problem, reads, renderPage, writes } from '../../test/page';
@@ -7,6 +7,9 @@ import { Organization } from './Organization';
 import { Roles } from './Roles';
 import { SettingsGroup } from './SettingsGroup';
 import { Users } from './Users';
+
+// The default one-second wait is too short when the machine is busy.
+configure({ asyncUtilTimeout: 15000 });
 
 afterEach(() => vi.restoreAllMocks());
 

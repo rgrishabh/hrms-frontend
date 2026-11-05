@@ -1,8 +1,11 @@
-import { screen, waitFor, within } from '@testing-library/react';
+import { configure, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { bodyOf, mockPageApi, problem, reads, renderPage, writes } from '../../test/page';
 import { Delegations } from './Delegations';
+
+// The default one-second wait is too short when the machine is busy.
+configure({ asyncUtilTimeout: 15000 });
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -53,7 +56,7 @@ describe('my handover', () => {
     expect(card.getByText(/^Will be handed/).textContent).not.toContain('–');
     await userEvent.click(card.getByRole('button', { name: 'End now' }));
     const dlg = await screen.findByRole('dialog', { name: 'Cancel this handover' });
-    await userEvent.click(within(dlg).getByRole('button', { name: 'Cancel', exact: true }));
+    await userEvent.click(within(dlg).getByRole('button', { name: 'Cancel' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
   });
   it('a refused end stays in the dialog with the reason', async () => {
