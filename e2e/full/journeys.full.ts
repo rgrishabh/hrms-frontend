@@ -83,6 +83,54 @@ test('employee: HR adds someone, the record opens, and a directory reader sees n
   await directory.context().close();
 });
 
+test('recruitment: a resume is added, downloaded, replaced and downloaded again, byte for byte', async ({ browser, viewport }) => {
+  const pdf = Buffer.from('%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\ntrailer\n<< /Root 1 0 R >>\n%%EOF\n');
+  const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64');
+  const page = await pageAs(browser, 'hr.head', { viewport });
+  const lastName = `Resume${Date.now().toString(36)}`;
+  await page.goto('/recruitment?tab=candidates');
+  await page.getByRole('button', { name: 'New candidate' }).click();
+  const form = page.getByRole('dialog', { name: 'New candidate' });
+  await form.getByLabel('First name').fill('Meher');
+  await form.getByLabel('Last name').fill(lastName);
+  await form.getByLabel('Email').fill(`${lastName.toLowerCase()}@example.test`);
+  await form.getByRole('checkbox', { name: /agreed to us processing/ }).check();
+  await form.getByLabel('How consent was obtained').fill('Applied on the careers page');
+  await form.getByRole('button', { name: 'Save' }).click();
+
+  // Saving opens the new candidate, who has no resume yet.
+  const detail = page.getByRole('dialog', { name: `Meher ${lastName}` });
+  await expect(detail.getByRole('button', { name: 'Add resume' })).toBeVisible();
+  await expect(detail.getByRole('button', { name: 'Download resume' })).toHaveCount(0);
+
+  const upload = async (open: string, file: { name: string; mimeType: string; buffer: Buffer }, done: string) => {
+    await detail.getByRole('button', { name: open }).click();
+    const dialog = page.getByRole('dialog', { name: open });
+    await dialog.getByLabel('Resume').setInputFiles(file);
+    await dialog.getByRole('button', { name: 'Save' }).click();
+    await expect(dialog).toHaveCount(0);
+    await expect(page.getByText(done)).toBeVisible();
+  };
+  const downloaded = async () => {
+    const download = page.waitForEvent('download');
+    await detail.getByRole('button', { name: 'Download resume' }).click();
+    const file = await download;
+    return { name: file.suggestedFilename(), bytes: await readFile((await file.path())!) };
+  };
+
+  await upload('Add resume', { name: 'meher.pdf', mimeType: 'application/pdf', buffer: pdf }, 'Resume added');
+  await expect(detail.getByRole('button', { name: 'Replace resume' })).toBeVisible();
+  const first = await downloaded();
+  expect(first.name).toMatch(/\.pdf$/);
+  expect(first.bytes.equals(pdf)).toBe(true);
+
+  await upload('Replace resume', { name: 'meher.png', mimeType: 'image/png', buffer: png }, 'Resume replaced');
+  const second = await downloaded();
+  expect(second.name).toMatch(/\.png$/);
+  expect(second.bytes.equals(png)).toBe(true);
+  await page.context().close();
+});
+
 test('payroll: run, masked until shown, approved, finalized, payslip revealed and downloaded as PDF', async ({ browser, viewport, playwright }, info) => {
   test.slow();
   const period = lastMonths(info.project.name === 'desktop' ? 1 : 2);
