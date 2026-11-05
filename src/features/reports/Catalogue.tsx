@@ -4,6 +4,7 @@ import { QueryState } from '../../components/QueryState';
 import { Skeleton } from '../../components/Skeleton';
 import { Table, type Column } from '../../components/Table';
 import { fmtDateTime, fmtNumber } from '../../format';
+import type { ApiResponse } from '../../lib/api-types';
 import { useApiQuery } from '../../lib/query';
 import type { ReportInfo, Snapshot } from './types';
 
@@ -16,7 +17,7 @@ const SENT_COLUMNS: Column<Snapshot>[] = [
 
 /** Scheduled copies other people sent. Nothing at all when there are none: this is an extra on the catalogue. */
 export function SentToMe() {
-  const query = useApiQuery<{ items: Snapshot[] }>('/api/v1/reports/snapshots');
+  const query = useApiQuery<ApiResponse<'/api/v1/reports/snapshots'>>('/api/v1/reports/snapshots');
   return (
     <QueryState query={query} compact loading={<Skeleton height="block" />} isEmpty={(d) => !d.items.length}>
       {(d) => (

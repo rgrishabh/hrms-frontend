@@ -15,18 +15,20 @@ import { Select } from '../../components/Select';
 import { Table, type Column, type SortState } from '../../components/Table';
 import { fmtDate, fmtDateTime, fmtNumber } from '../../format';
 import { qs } from '../../api';
-import { useRevealable } from '../../lib/masking';
+import { isMaskedField, useRevealable } from '../../lib/masking';
 import { useApiQuery } from '../../lib/query';
 import { SaveReportButton } from './SavedReports';
-import type { ColType, ReportColumn, ReportData, ReportInfo, ReportRow } from './types';
+import type { ColType, ReportColumn, ReportCopy, ReportData, ReportInfo, ReportResult, ReportRow } from './types';
 
 const NUMERIC: ColType[] = ['int', 'number', 'percent', 'money'];
 const CODE_COLUMNS = new Set(['employee_code', 'code', 'course_code', 'method_code']);
 const PAGE_SIZE = 100;
 
-function Cell({ column, value, masked }: { column: ReportColumn; value: unknown; masked?: readonly string[] }) {
-  // The server names what it withheld. A report without the list masks every empty money column, the only kind it holds back.
-  if (masked && (masked.length ? masked.includes(column.key) : column.type === 'money') && (value === null || value === undefined)) return <Money value={null} masked />;
+/** The server withholds figures row by row, and names them on each row and on the totals. */
+const withholds = (d: ReportData) => [...d.rows, d.totals].some((r) => !!r?.['masked']);
+
+function Cell({ column, value, masked }: { column: ReportColumn; value: unknown; masked: boolean }) {
+  if (masked && (value === null || value === undefined)) return <Money value={null} masked />;
   if (value === null || value === undefined || value === '') return <>—</>;
   switch (column.type) {
     case 'money': return <Money value={value as number | string} />;
@@ -62,7 +64,7 @@ export function ReportView({ def, advanced }: { def: ReportInfo; advanced: boole
       <QueryState query={report}>
         {(d) => (
           <>
-            {(d.masked || revealed) && <div><RevealToggle revealed={revealed} loading={report.isFetching} onChange={setRevealed} /></div>}
+            {(withholds(d) || revealed) && <div><RevealToggle revealed={revealed} loading={report.isFetching} onChange={setRevealed} /></div>}
             <Result data={d} exportBase={`/api/v1/reports/${def.key}/export`} exportQuery={query} fileBase={def.key} refreshing={report.isPlaceholderData} />
           </>
         )}
@@ -72,7 +74,7 @@ export function ReportView({ def, advanced }: { def: ReportInfo; advanced: boole
 }
 
 export function SnapshotView({ id }: { id: string }) {
-  const query = useApiQuery<ReportData>(`/api/v1/reports/snapshots/${id}`);
+  const query = useApiQuery<ReportCopy>(`/api/v1/reports/snapshots/${id}`);
   return (
     <div className="stack-4">
       <div><Link to="/reports">← All reports</Link></div>
@@ -109,7 +111,7 @@ function compare(type: ColType, x: unknown, y: unknown): number {
 }
 
 /** A report comes whole from the server, so sorting, filtering and paging happen here. */
-function Result({ data, exportBase, exportQuery, fileBase, refreshing }: { data: ReportData; exportBase: string; exportQuery: string; fileBase: string; refreshing?: boolean }) {
+function Result({ data, exportBase, exportQuery, fileBase, refreshing }: { data: ReportResult; exportBase: string; exportQuery: string; fileBase: string; refreshing?: boolean }) {
   const [sort, setSort] = useState<SortState | null>(null);
   const [filter, setFilter] = useState('');
   const [page, setPage] = useState(1);
@@ -136,14 +138,14 @@ function Result({ data, exportBase, exportQuery, fileBase, refreshing }: { data:
     align: NUMERIC.includes(c.type) ? 'right' : 'left',
     card: i === 0 ? 'title' : undefined,
     className: c.type !== 'text' || CODE_COLUMNS.has(c.key) ? 'nowrap' : undefined,
-    cell: (r) => <Cell column={c} value={r[c.key]} masked={data.masked ? data.maskedFields ?? [] : undefined} />,
+    cell: (r) => <Cell column={c} value={r[c.key]} masked={isMaskedField(r, c.key)} />,
   }));
   const foot = data.totals && !filter.trim()
     ? (c: Column<ReportRow>, i: number) => {
       if (i === 0) return 'Total';
       const column = data.columns.find((x) => x.key === c.key);
       const value = data.totals?.[c.key];
-      return !column || column.type === 'text' || value === undefined ? null : <Cell column={column} value={value} masked={data.masked ? data.maskedFields ?? [] : undefined} />;
+      return !column || column.type === 'text' || value === undefined ? null : <Cell column={column} value={value} masked={isMaskedField(data.totals, column.key)} />;
     }
     : undefined;
   return (

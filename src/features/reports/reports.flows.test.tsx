@@ -107,7 +107,8 @@ describe('report view', () => {
     expect(await screen.findByText('No data for these options.')).toBeTruthy();
   });
   it('masked pay stays hidden until reveal, which asks with reveal=1, and a blank elsewhere stays a dash', async () => {
-    const masked = { ...REPORT, masked: true, maskedFields: ['cost'], rows: [{ ...ROWS[0], cost: null, score: null }], totals: { cost: null } };
+    const withheld = { masked: true, maskedFields: ['cost'] };
+    const masked = { ...REPORT, rows: [{ ...ROWS[0], cost: null, score: null, ...withheld }], totals: { cost: null, ...withheld } };
     const f = mockPageApi(['x'], api({ extra: (url) => (url.includes('/reports/pay') ? (url.includes('reveal=1') ? REPORT : masked) : undefined) }));
     renderPage(<Reports />, '/reports?r=pay');
     const table = await screen.findByRole('table', { name: 'Payroll cost' });

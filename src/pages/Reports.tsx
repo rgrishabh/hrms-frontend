@@ -6,7 +6,7 @@ import { QueryState } from '../components/QueryState';
 import { Catalogue, SentToMe } from '../features/reports/Catalogue';
 import { ReportView, SnapshotView } from '../features/reports/ReportView';
 import { SavedReports } from '../features/reports/SavedReports';
-import type { ReportInfo } from '../features/reports/types';
+import type { ReportCatalogue } from '../features/reports/types';
 import { useApiQuery } from '../lib/query';
 import '../features/reports/Reports.css';
 
@@ -14,7 +14,7 @@ export function Reports() {
   const [params] = useSearchParams();
   const key = params.get('r');
   const snapshot = params.get('snapshot');
-  const query = useApiQuery<{ items: ReportInfo[]; today: string; advanced: boolean }>('/api/v1/reports');
+  const query = useApiQuery<ReportCatalogue>('/api/v1/reports');
   return (
     <div className="stack-4">
       <PageHeader title="Reports" description="Headcount, attrition, attendance, leave, pay and compliance reports. View on screen or download as Excel or CSV; downloads are recorded." />

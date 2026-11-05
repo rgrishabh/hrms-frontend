@@ -14,6 +14,7 @@ import { Table, type Column } from '../../components/Table';
 import { useToast } from '../../components/Toast';
 import { useSubmit } from '../../components/useSubmit';
 import { fmtDate } from '../../format';
+import type { ApiResponse, Refine } from '../../lib/api-types';
 import { invalidateApi, useApiQuery } from '../../lib/query';
 import type { ReportInfo, SavedReport, Schedule } from './types';
 
@@ -27,7 +28,7 @@ const scheduleText = (s: Schedule) => `${FREQUENCY[s.frequency]}${s.frequency ==
 
 export function SavedReports({ items }: { items: readonly ReportInfo[] }) {
   const toast = useToast();
-  const query = useApiQuery<{ items: SavedReport[] }>(SAVED_URL);
+  const query = useApiQuery<Refine<ApiResponse<'/api/v1/reports/saved'>, { items: SavedReport[] }>>(SAVED_URL);
   const [schedule, setSchedule] = useState<SavedReport | null>(null);
   const [remove, setRemove] = useState<SavedReport | null>(null);
   const columns: Column<SavedReport>[] = [
@@ -81,9 +82,9 @@ function ScheduleForm({ saved, onClose }: { saved: SavedReport; onClose: () => v
   const [f, setF] = useState({ frequency: s0?.frequency ?? 'monthly', weekday: String(s0?.weekday ?? 1), dayOfMonth: String(s0?.dayOfMonth ?? 1), period: s0?.period ?? 'last_month', enabled: s0?.enabled ?? true });
   const [to, setTo] = useState<string[]>(s0?.recipientIds ?? []);
   const [removing, setRemoving] = useState(false);
-  const people = useApiQuery<{ items: { id: string; name: string; email: string }[] }>(`${SAVED_URL}/${saved.id}/recipients`);
+  const people = useApiQuery<ApiResponse<'/api/v1/reports/saved/{id}/recipients'>>(`${SAVED_URL}/${saved.id}/recipients`);
   const form = useSubmit(async () => {
-    const r = await api.put<{ nextRunOn: string }>(`${SAVED_URL}/${saved.id}/schedule`, {
+    const r = await api.put<ApiResponse<'/api/v1/reports/saved/{id}/schedule', 'put'>>(`${SAVED_URL}/${saved.id}/schedule`, {
       frequency: f.frequency,
       weekday: f.frequency === 'weekly' ? Number(f.weekday) : undefined,
       dayOfMonth: f.frequency === 'monthly' ? Number(f.dayOfMonth) : undefined,
