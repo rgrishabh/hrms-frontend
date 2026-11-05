@@ -17,7 +17,7 @@ import { useToast } from '../../components/Toast';
 import { useTableState } from '../../components/useTableState';
 import { fmtMonth } from '../../format';
 import { ApplyForm, DeferForm, DisburseForm, LoanDetail, RepaymentForm } from './LoanForms';
-import { KIND_LABEL, loanKinds, loansNoun, loansTitle, reloadLoans, terms, type Loan } from './types';
+import { KIND_LABEL, loanKinds, loansNoun, loansPhrase, reloadLoans, terms, type Loan } from './types';
 
 const URL_BASE = '/api/v1/loans/requests';
 const PAGE_SIZE = 25;
@@ -56,10 +56,10 @@ export function MyLoans() {
   return (
     <div className="stack-3">
       <div className="cluster-between">
-        <h2>My {loansTitle(kinds).toLowerCase().replace('&', 'and')}</h2>
+        <h2>My {loansPhrase(kinds, 'and')}</h2>
         <div className="cluster"><RevealToggle revealed={revealed} loading={list.isFetching} onChange={setRevealed} /><Button variant="primary" onClick={() => setForm(true)}>Apply</Button></div>
       </div>
-      <QueryState query={list} isEmpty={(d) => !d.items.length} empty={<EmptyState icon={<HandCoins />} title={`You have no ${loansTitle(kinds).toLowerCase().replace('&', 'or')}`} description={`Apply for ${loansNoun(kinds)} when you need one.`} />}>
+      <QueryState query={list} isEmpty={(d) => !d.items.length} empty={<EmptyState icon={<HandCoins />} title={`You have no ${loansPhrase(kinds, 'or')}`} description={`Apply for ${loansNoun(kinds)} when you need one.`} />}>
         {(d) => <Table label="My advances and loans" columns={columns} rows={d.items} rowKey={(l) => l.id} refreshing={list.isPlaceholderData} pagination={{ page: d.page, pageSize: d.pageSize, total: d.total, onPage: setPage }} />}
       </QueryState>
       {form && <ApplyForm onClose={() => setForm(false)} onSaved={() => { toast('Application sent for approval'); void reloadLoans(); }} />}

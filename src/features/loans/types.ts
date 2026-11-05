@@ -19,6 +19,8 @@ const KIND_FLAG: Record<LoanKind, FeatureFlag> = { salary_advance: 'FEATURE_SALA
 export const loanKinds = (hasFeature: (...flags: FeatureFlag[]) => boolean): LoanKind[] => (['salary_advance', 'loan'] as const).filter((k) => hasFeature(KIND_FLAG[k]));
 
 export const loansTitle = (kinds: readonly LoanKind[]) => (kinds.length === 1 ? (kinds[0] === 'loan' ? 'Loans' : 'Salary advances') : 'Advances & loans');
+/** For inside a sentence, in lower case. Both kinds on are joined by the word the sentence needs. */
+export const loansPhrase = (kinds: readonly LoanKind[], joiner: 'and' | 'or') => (kinds.length === 1 ? (kinds[0] === 'loan' ? 'loans' : 'salary advances') : `advances ${joiner} loans`);
 export const loansNoun = (kinds: readonly LoanKind[]) => (kinds.length === 1 ? (kinds[0] === 'loan' ? 'a loan' : 'a salary advance') : 'an advance or loan');
 
 /** Terms can be masked with the rest of a loan. Without them there is nothing to say, rather than a guess. */
