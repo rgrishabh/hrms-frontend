@@ -20,7 +20,7 @@ test('invitation, a refused weak password with its reason, sign-in, then forgot 
   await page.getByLabel(/^New password/).fill('passwordpassword');
   await page.getByLabel(/^Confirm/).fill('passwordpassword');
   await page.getByRole('button', { name: 'Set password' }).click();
-  await expect(page.getByText(/leaked passwords|too repetitive/)).toBeVisible();
+  await expect(page.getByRole('alert').filter({ hasText: /leaked passwords|too repetitive/ })).toBeVisible();
   await page.getByLabel(/^New password/).fill(STRONG);
   await page.getByLabel(/^Confirm/).fill(STRONG);
   await page.getByRole('button', { name: 'Set password' }).click();
