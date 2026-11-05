@@ -1,9 +1,13 @@
+import { existsSync, readFileSync } from 'node:fs';
 import { expect, type Cookie, type Page } from '@playwright/test';
 import { ERROR_SURFACE_ATTR, INFLIGHT_ATTR, MAIN_TEST_ID } from '../src/contract';
 import { NAV_LABELS, type NavLabel } from '../src/app/nav-labels';
 
-export const DOMAIN = process.env.E2E_DOMAIN ?? 'example.test';
-export const PASSWORD = process.env.E2E_PASSWORD ?? '';
+const creds = existsSync('.e2e/creds.json') ? (JSON.parse(readFileSync('.e2e/creds.json', 'utf8')) as { password: string; adminPassword: string; domain: string }) : null;
+
+export const DOMAIN = process.env.E2E_DOMAIN ?? creds?.domain ?? 'example.test';
+export const PASSWORD = process.env.E2E_PASSWORD ?? creds?.password ?? '';
+export const ADMIN_PASSWORD = creds?.adminPassword ?? '';
 export type Persona = 'director' | 'hr.head' | 'hr.exec' | 'payroll' | 'finance' | 'lab.manager' | 'quality' | 'it' | 'analyst' | 'sampler';
 
 // One sign-in per persona per run (the API allows few sign-ins per minute per IP); later tests reuse the session cookie.

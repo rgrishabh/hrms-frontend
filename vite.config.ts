@@ -51,21 +51,21 @@ function precompress(): Plugin {
   };
 }
 
-// The API resolves the tenant from the Host header, so the dev proxy must
-// preserve it (changeOrigin: false). Use http://<tenant>.localhost:5173.
+const API_PROXY = process.env.HRMS_API_PROXY ?? 'http://127.0.0.1:4000';
+const proxy = {
+  '/api': { target: API_PROXY, changeOrigin: false },
+  '/brand': { target: API_PROXY, changeOrigin: false },
+};
+
 export default defineConfig({
   plugins: [react(), serviceWorker(), precompress()],
   build: { sourcemap: false },
   server: {
     port: 5173,
     allowedHosts: ['.localhost'],
-    proxy: {
-      '/api': { target: 'http://127.0.0.1:4000', changeOrigin: false },
-      '/brand': { target: 'http://127.0.0.1:4000', changeOrigin: false },
-      '/branding': { target: 'http://127.0.0.1:4000', changeOrigin: false },
-    },
+    proxy,
   },
-  preview: { headers: { 'Content-Security-Policy': CSP } },
+  preview: { headers: { 'Content-Security-Policy': CSP }, proxy },
   test: {
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
