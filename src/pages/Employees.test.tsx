@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Route, Routes, useParams } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -488,6 +488,14 @@ describe('employee record', () => {
       items: [
         { key: 'confirmation', label: 'Confirmation letter', group: 'employment', fields: [], unavailable: 'This person has not been confirmed yet' },
         { key: 'promotion', label: 'Promotion letter', group: 'employment', fields: [{ key: 'effectiveDate', label: 'Effective date', type: 'date', required: true, maxLength: 10 }, { key: 'previousDesignation', label: 'Previous designation', type: 'text', required: false, maxLength: 200 }], unavailable: null },
+        {
+          key: 'offer', label: 'Offer letter', group: 'employment', unavailable: null,
+          fields: [
+            { key: 'offeredOn', label: 'Date of the offer', type: 'date', required: true, maxLength: 10, value: '' },
+            { key: 'designation', label: 'Position offered', type: 'text', required: true, maxLength: 200, value: 'Analyst' },
+            { key: 'annualCtc', label: 'Annual salary offered', type: 'money', required: true, maxLength: 16, value: '' },
+          ],
+        },
         { key: 'recommendation', label: 'Recommendation letter', group: 'exit', fields: [{ key: 'body', label: 'Recommendation, in your own words', type: 'long', required: true, maxLength: 4000 }], unavailable: null },
       ],
       exit: { experience: 'x', relieving: 'x' },
@@ -518,6 +526,22 @@ describe('employee record', () => {
       await userEvent.type(dlg.getByLabelText(/Previous designation/), 'Analyst');
       await userEvent.click(dlg.getByRole('button', { name: 'Cancel' }));
       await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    });
+    it('an offer letter starts from the record, and what is filled in is sent with what is typed', async () => {
+      const names = saved();
+      const f = mockPageApi(['employees.read', 'employees.manage'], ['FEATURE_ONBOARDING'], record(EMP, (url, init) => (init?.method === 'POST' ? pdf('x.pdf') : url.endsWith('/letters') ? LETTERS : pdf(url))), 'e1');
+      show();
+      await userEvent.click(await screen.findByRole('button', { name: 'Offer letter' }));
+      const dlg = within(await screen.findByRole('dialog', { name: 'Write a letter' }));
+      expect((await dlg.findByLabelText(/^Letter/) as HTMLSelectElement).value).toBe('offer');
+      expect((dlg.getByLabelText(/Position offered/) as HTMLInputElement).value).toBe('Analyst');
+      expect((dlg.getByLabelText(/Annual salary offered/) as HTMLInputElement).inputMode).toBe('decimal');
+      expect(dlg.getByText(/Check what is filled in/)).toBeTruthy();
+      fireEvent.change(dlg.getByLabelText(/Date of the offer/), { target: { value: '2023-11-15' } });
+      await userEvent.type(dlg.getByLabelText(/Annual salary offered/), '420000');
+      await userEvent.click(dlg.getByRole('button', { name: 'Download PDF' }));
+      await waitFor(() => expect(names).toEqual(['offer-letter.pdf']));
+      expect(bodyOf(writes(f, '/letters/offer')[0]!)).toEqual({ fields: { offeredOn: '2023-11-15', designation: 'Analyst', annualCtc: '420000' } });
     });
     it('salary slips: for payroll readers, one PDF each, and an empty state', async () => {
       const names = saved();

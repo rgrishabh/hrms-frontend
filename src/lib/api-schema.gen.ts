@@ -16714,7 +16714,8 @@ export interface operations {
                                 maxLength: number;
                                 required: boolean;
                                 /** @enum {string} */
-                                type: "text" | "long" | "date";
+                                type: "text" | "long" | "date" | "money";
+                                value: string;
                             }[];
                             /** @enum {string} */
                             group: "employment" | "pay" | "conduct" | "exit" | "other";
@@ -16755,7 +16756,7 @@ export interface operations {
             header?: never;
             path: {
                 id: string;
-                kind: "confirmation" | "probation-extension" | "promotion" | "transfer" | "employment-certificate" | "noc" | "salary-revision" | "salary-certificate" | "appreciation" | "show-cause" | "warning" | "resignation-acceptance" | "termination" | "settlement" | "internship-certificate" | "recommendation" | "general";
+                kind: "offer" | "confirmation" | "probation-extension" | "promotion" | "transfer" | "employment-certificate" | "noc" | "salary-revision" | "salary-certificate" | "appreciation" | "show-cause" | "warning" | "resignation-acceptance" | "termination" | "settlement" | "internship-certificate" | "recommendation" | "general";
             };
             cookie?: never;
         };

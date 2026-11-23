@@ -338,6 +338,7 @@ function LettersCard({ employeeId, self }: { employeeId: string; self: boolean }
   return (
     <Card title="Letters and records">
       <div className="stack-3">
+        {!self && (onboarding || offboarding) && <div className="cluster"><WriteLetter employeeId={employeeId} label="Offer letter" start="offer" /></div>}
         {onboarding && (
           <div className="cluster">
             <DownloadButton url={`${base}/appointment.pdf${includePay ? '?includePay=1' : ''}`} fileName="appointment.pdf">Appointment letter</DownloadButton>
