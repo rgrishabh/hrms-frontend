@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import './Toast.css';
@@ -22,6 +22,13 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const nextId = useRef(1);
   const timers = useRef(new Map<number, ReturnType<typeof setTimeout>>());
+  const mounted = useRef(false);
+  // No timer outlives the provider, including one for an action that finishes after it is gone.
+  useEffect(() => {
+    const pending = timers.current;
+    mounted.current = true;
+    return () => { mounted.current = false; pending.forEach((t) => { clearTimeout(t); }); pending.clear(); };
+  }, []);
 
   const remove = useCallback((id: number) => {
     clearTimeout(timers.current.get(id));
@@ -29,9 +36,11 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     setToasts((t) => t.filter((x) => x.id !== id));
   }, []);
   const schedule = useCallback((item: ToastItem) => {
+    clearTimeout(timers.current.get(item.id));
     timers.current.set(item.id, setTimeout(() => remove(item.id), item.kind === 'error' ? ERROR_MS : OK_MS));
   }, [remove]);
   const push = useCallback((text: string, kind: ToastKind = 'ok', action?: ToastAction) => {
+    if (!mounted.current) return;
     const item = { id: nextId.current++, text, kind, action };
     setToasts((t) => [...t, item]);
     schedule(item);

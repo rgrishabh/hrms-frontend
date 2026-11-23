@@ -26,6 +26,19 @@ describe('Toast', () => {
       expect(screen.queryByText('Saved')).toBeNull();
     } finally { vi.useRealTimers(); }
   });
+  it('leaves no timer behind once it is gone, even for a toast that comes late', () => {
+    vi.useFakeTimers();
+    try {
+      const { unmount } = renderUi(<Capture />);
+      act(() => { toast('Saved'); toast('Failed', 'error'); });
+      const late = toast;
+      unmount();
+      const before = vi.getTimerCount();
+      late('Too late');
+      expect(vi.getTimerCount()).toBe(before);
+      expect(before).toBe(0);
+    } finally { vi.useRealTimers(); }
+  });
   it('offers an undo that runs once and closes the toast', () => {
     const undo = vi.fn();
     renderUi(<Capture />);

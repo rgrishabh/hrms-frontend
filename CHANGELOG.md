@@ -9,6 +9,7 @@
 
 ### Fixed
 
+* Toasts leave no timer running once their page is gone.
 * "Include salary" on an appointment letter sent a value the API refuses.
 * The offline banner no longer shows, and loads and saves no longer pause, when the browser wrongly reports offline (VPN, virtual adapter, local server without internet, wake from sleep). The app asks `/healthz` first, and checks again every 5 seconds until the connection is back.
 
