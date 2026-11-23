@@ -39,6 +39,20 @@ test('losing the connection while working shows a clear banner', async ({ page, 
   await expect(page.getByText('You are offline.')).toHaveCount(0);
 });
 
+test('a browser that wrongly says offline shows no banner while the server answers', async ({ page }) => {
+  await mockApi(page);
+  await page.goto('/');
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  const probe = page.waitForResponse('**/healthz');
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, 'onLine', { get: () => false, configurable: true });
+    window.dispatchEvent(new Event('offline'));
+  });
+  expect((await probe).ok()).toBe(true);
+  await page.waitForTimeout(500);
+  await expect(page.getByText('You are offline.')).toHaveCount(0);
+});
+
 test('a manifest is linked and describes the app', async ({ page, request }) => {
   await mockApi(page);
   await page.goto('/');

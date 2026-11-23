@@ -1,7 +1,5 @@
-import { act, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { logger } from '../lib/logger';
-import { useOnline } from './online';
 import { registerServiceWorker } from './register';
 
 const setServiceWorker = (register: () => Promise<unknown>) => Object.defineProperty(navigator, 'serviceWorker', { value: { register }, configurable: true });
@@ -41,20 +39,5 @@ describe('registerServiceWorker', () => {
   it('a browser without service workers is left alone', () => {
     vi.stubEnv('PROD', true);
     expect(() => registerServiceWorker()).not.toThrow();
-  });
-});
-
-describe('useOnline', () => {
-  it('follows the browser', () => {
-    const line = vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(true);
-    const { result, unmount } = renderHook(() => useOnline());
-    expect(result.current).toBe(true);
-    line.mockReturnValue(false);
-    act(() => { window.dispatchEvent(new Event('offline')); });
-    expect(result.current).toBe(false);
-    line.mockReturnValue(true);
-    act(() => { window.dispatchEvent(new Event('online')); });
-    expect(result.current).toBe(true);
-    unmount();
   });
 });

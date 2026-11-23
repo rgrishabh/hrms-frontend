@@ -1,5 +1,14 @@
-import { QueryClient, useMutation, useQuery, type UseMutationOptions, type UseQueryOptions } from '@tanstack/react-query';
+import { onlineManager, QueryClient, useMutation, useQuery, type UseMutationOptions, type UseQueryOptions } from '@tanstack/react-query';
 import { api, ApiError } from '../api';
+import { isOnline, subscribeOnline } from '../pwa/online';
+
+// Pause loads and saves on the same evidence as the offline banner, not on the browser's flag alone.
+onlineManager.setEventListener((setOnline) => {
+  const sync = () => { setOnline(isOnline()); };
+  const stop = subscribeOnline(sync);
+  sync();
+  return stop;
+});
 
 /**
  * Server state lives in memory only and is cleared at sign-out. Client errors are not retried;

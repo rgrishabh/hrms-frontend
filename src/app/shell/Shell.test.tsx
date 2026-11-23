@@ -97,7 +97,8 @@ describe('on a desktop', () => {
     vi.unstubAllGlobals();
   });
   it('going offline says what still works, and coming back removes the notice', async () => {
-    show();
+    mockPageApi(SELF, FLAGS, (url) => { if (url === '/healthz') throw new TypeError('Failed to fetch'); return api()(url); });
+    renderPage(<Shell><p>Page body</p></Shell>, '/leave');
     await screen.findByText('Page body');
     const online = vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false);
     act(() => { window.dispatchEvent(new Event('offline')); });
@@ -105,6 +106,15 @@ describe('on a desktop', () => {
     online.mockReturnValue(true);
     act(() => { window.dispatchEvent(new Event('online')); });
     await waitFor(() => expect(screen.queryByText(/You are offline/)).toBeNull());
+  });
+  it('a browser that wrongly says offline shows no notice while the server answers', async () => {
+    const f = show();
+    await screen.findByText('Page body');
+    vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false);
+    act(() => { window.dispatchEvent(new Event('offline')); });
+    await waitFor(() => expect(f.mock.calls.some(([url]) => url === '/healthz')).toBe(true));
+    await act(async () => { await Promise.resolve(); });
+    expect(screen.queryByText(/You are offline/)).toBeNull();
   });
   it('a page that crashes is contained, and the shell stays', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
