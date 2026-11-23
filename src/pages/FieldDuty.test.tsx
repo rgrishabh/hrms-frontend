@@ -128,7 +128,7 @@ describe('asking for field duty', () => {
     const f = api(MINE, []);
     renderPage(<FieldDuty />);
     const dlg = await open();
-    await date(dlg, /^From/, '2026-11-12');
+    await date(dlg, /^From/, '2030-11-12');
     await userEvent.selectOptions(within(dlg).getByLabelText('Day'), 'second_half');
     await userEvent.selectOptions(within(dlg).getByLabelText('Purpose'), 'training');
     await userEvent.type(within(dlg).getByLabelText(/^Place/), 'Mumbai');
@@ -137,7 +137,7 @@ describe('asking for field duty', () => {
     await waitFor(() => expect(writes(f, '/field-duty/requests')).toHaveLength(1));
     const post = writes(f, '/field-duty/requests')[0]!;
     expect(String(post[0])).toBe('/api/v1/field-duty/requests');
-    expect(bodyOf(post)).toEqual({ startDate: '2026-11-12', endDate: '2026-11-12', dayPart: 'second_half', purpose: 'training', place: 'Mumbai', reason: 'Course' });
+    expect(bodyOf(post)).toEqual({ startDate: '2030-11-12', endDate: '2030-11-12', dayPart: 'second_half', purpose: 'training', place: 'Mumbai', reason: 'Course' });
     expect(await screen.findByText('Field duty requested; sent for approval')).toBeTruthy();
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
   });
@@ -145,9 +145,9 @@ describe('asking for field duty', () => {
     const f = api(MINE, []);
     renderPage(<FieldDuty />);
     const dlg = await open();
-    await date(dlg, /^From/, '2026-11-12');
+    await date(dlg, /^From/, '2030-11-12');
     await userEvent.selectOptions(within(dlg).getByLabelText('Day'), 'first_half');
-    await date(dlg, /^To/, '2026-11-14');
+    await date(dlg, /^To/, '2030-11-14');
     expect((within(dlg).getByLabelText('Day') as HTMLSelectElement).value).toBe('full');
     expect((within(dlg).getByLabelText('Day') as HTMLSelectElement).disabled).toBe(true);
     expect(within(dlg).getByText('Half days are for a single date')).toBeTruthy();
@@ -157,7 +157,7 @@ describe('asking for field duty', () => {
     await userEvent.type(within(dlg).getByLabelText(/^Reason/), 'Audit');
     await userEvent.click(within(dlg).getByRole('button', { name: 'Submit for approval' }));
     await waitFor(() => expect(writes(f, '/field-duty/requests')).toHaveLength(1));
-    expect(bodyOf(writes(f, '/field-duty/requests')[0]!)).toMatchObject({ startDate: '2026-11-12', endDate: '2026-11-14', dayPart: 'full', clientName: 'Tata', reference: 'WO-9' });
+    expect(bodyOf(writes(f, '/field-duty/requests')[0]!)).toMatchObject({ startDate: '2030-11-12', endDate: '2030-11-14', dayPart: 'full', clientName: 'Tata', reference: 'WO-9' });
   });
   it('moving From past To brings To along', async () => {
     api(MINE, []);
