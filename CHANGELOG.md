@@ -71,6 +71,19 @@
 * Browser validation messages now show inline at the field, with focus on the first problem.
 * Recruitment: add or replace a candidate's resume from their detail, with a full-stack journey over both downloads.
 
+## [2.0.0](https://github.com/rgrishabh/hrms-frontend/compare/v1.1.0...v2.0.0) (2026-11-23)
+
+
+### ⚠ BREAKING CHANGES
+
+* HRMS revamp: design system, PWA, typed client, full-stack tests ([#31](https://github.com/rgrishabh/hrms-frontend/issues/31))
+
+### Features
+
+* **employees:** letters, salary slips and the offer letter ([#40](https://github.com/rgrishabh/hrms-frontend/issues/40)) ([4ddf338](https://github.com/rgrishabh/hrms-frontend/commit/4ddf338d5c1ed5b2a5b4d010d6bd8646afd8eb6b))
+* HRMS revamp: design system, PWA, typed client, full-stack tests ([#31](https://github.com/rgrishabh/hrms-frontend/issues/31)) ([da4c83f](https://github.com/rgrishabh/hrms-frontend/commit/da4c83f73ae1447b9129af9ec075feb94a41ef97))
+* **letters:** offer letter button on a profile ([#41](https://github.com/rgrishabh/hrms-frontend/issues/41)) ([a8b477f](https://github.com/rgrishabh/hrms-frontend/commit/a8b477fbc93509e74478cc8290296cc2c7d5bab7))
+
 ## [1.1.0](https://github.com/rgrishabh/hrms-frontend/compare/v1.0.0...v1.1.0) (2026-11-04)
 
 
