@@ -59,8 +59,9 @@ test('field duty: report on a site visit, request a trip, the manager approves, 
   await expect(trip).toContainText('Approved');
   await expect(trip.getByRole('button', { name: 'Cancel' })).toBeVisible();   // not started: the employee may still cancel
   await page.goto('/attendance/me');
-  let days = page.getByRole('button', { name: /On field duty$/ });
-  if (!(await days.count())) { await page.getByRole('button', { name: 'Previous month' }).click(); days = page.getByRole('button', { name: /On field duty$/ }); }
+  const days = page.getByRole('button', { name: /On field duty$/ });
+  // The demo's site days are in this month or the last, by the day of the run. Counting before the calendar has loaded finds none and turns the page too soon.
+  if (!(await days.first().waitFor({ timeout: 10_000 }).then(() => true, () => false))) await page.getByRole('button', { name: 'Previous month' }).click();
   await expect(days.first()).toBeVisible();
   await days.first().click();
   await expect(page.getByText(/^(full day|half day)$/).first()).toBeVisible();
