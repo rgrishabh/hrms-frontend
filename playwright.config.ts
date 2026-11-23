@@ -1,26 +1,33 @@
 import { defineConfig, devices } from '@playwright/test';
 
 /**
- * Browser end-to-end tests. They run against an installation loaded with the backend's synthetic
- * demo data (`demo` command) — locally (vite + API) or in CI — never against real data.
- *   E2E_BASE_URL   default http://localhost:5173
- *   E2E_DOMAIN     the demo logins' email domain (default example.test)
- *   E2E_PASSWORD   the demo password (from demo-credentials.txt; never commit it)
- * Privileged personas need MFA_ENFORCEMENT=off on the target (local/CI only).
+ * Full-stack browser tests. They run against the real API, worker and Postgres with the backend's
+ * synthetic demo data: `e2e/full/stack.mjs` starts it all, here or in CI, never against real data.
+ *   E2E_PROFILE  full (default) | off | single: which flags and mode the stack starts with.
  */
+const profile = process.env.E2E_PROFILE ?? 'full';
+const web = process.env.E2E_WEB_PORT ?? '4311';
+
 export default defineConfig({
   testDir: './e2e',
-  testMatch: /.*\.e2e\.ts$/,
+  testMatch: profile === 'full' ? /(full\/.*\.full\.ts|.*\.e2e\.ts)$/ : new RegExp(`full/.*\\.${profile}\\.ts$`),
   fullyParallel: false,
   workers: 1,
-  retries: process.env.CI ? 1 : 0,
-  timeout: 45_000,
+  retries: 0,
+  timeout: 60_000,
   expect: { timeout: 10_000 },
-  reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'list',
+  reporter: process.env.CI ? [['list'], ['html', { open: 'never' }], ['json', { outputFile: 'test-results/full.json' }]] : 'list',
   use: {
-    baseURL: process.env.E2E_BASE_URL ?? 'http://localhost:5173',
+    baseURL: `http://localhost:${web}`,
+    serviceWorkers: 'block',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  webServer: { command: 'node e2e/full/stack.mjs up --reset', url: `http://localhost:${web}/api/v1/config/public`, reuseExistingServer: !process.env.CI, timeout: 240_000, stdout: 'pipe' },
+  projects: [
+    { name: 'desktop', use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } } },
+    // 360px, the narrowest phone we support. Chromium so the run needs one browser.
+    // The older per-module flows click through the desktop sidebar, so they run there. Journeys and the screen walk run on both.
+    { name: 'mobile', testIgnore: /e2e\/[^/]+\.e2e\.ts$/, use: { ...devices['Pixel 7'], viewport: { width: 360, height: 740 } } },
+  ],
 });

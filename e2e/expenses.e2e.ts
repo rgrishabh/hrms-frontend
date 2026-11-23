@@ -36,12 +36,12 @@ test('an expense claim goes from the employee through manager and finance approv
   for (const who of ['lab.manager', 'finance'] as const) {
     await login(page, who);
     await page.goto('/approvals');
-    const req = page.getByRole('row').filter({ hasText: `${title}: ₹350` });
+    const req = page.getByRole('row').filter({ hasText: title });
     await expect(req).toHaveCount(1);
     await req.getByRole('button', { name: 'Approve' }).click();
     await page.getByRole('dialog', { name: 'Approve request' }).getByRole('button', { name: 'Approve' }).click();
     await expect(page.getByText(/Request (approved|pending)/)).toBeVisible();
-    await expect(page.getByRole('row').filter({ hasText: `${title}: ₹350` })).toHaveCount(0);
+    await expect(page.getByRole('row').filter({ hasText: title })).toHaveCount(0);
   }
 
   // 3. Payroll prepares a payment batch; the dashboard shows claims waiting for reimbursement.
@@ -75,7 +75,7 @@ test('an expense claim goes from the employee through manager and finance approv
   await page.goto('/expenses');
   const row = page.getByRole('row').filter({ hasText: title });
   await expect(row).toContainText('Paid');
-  await row.click();
+  await row.getByRole('button', { name: title }).click();
   await expect(page.getByRole('dialog', { name: title })).toContainText(`paid, ref ${ref}`);
   await noErrors(page);
 });

@@ -1,0 +1,29 @@
+.field { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; }
+.field__label { font-size: var(--text-sm); font-weight: var(--weight-medium); color: var(--text); }
+.field__required { color: var(--danger); }
+.field__hint { font-size: var(--text-xs); color: var(--text-3); }
+.field__error { font-size: var(--text-xs); color: var(--danger); }
+
+.control {
+  width: 100%; min-height: var(--control-height); padding: var(--space-1) var(--space-3);
+  background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--radius);
+  color: var(--text); font-size: var(--text-base);
+  transition: border-color var(--duration-fast) var(--ease), box-shadow var(--duration-fast) var(--ease);
+}
+.control::placeholder { color: var(--text-3); opacity: 1; }
+.control:hover:not(:disabled) { border-color: var(--text-3); }
+.control:focus-visible { outline: 2px solid var(--brand-ring); outline-offset: 0; border-color: var(--brand-ring); }
+.control:disabled { background: var(--surface-2); color: var(--text-3); cursor: not-allowed; }
+.control[aria-invalid="true"] { border-color: var(--danger); }
+.control--area { min-height: 84px; padding-block: var(--space-2); resize: vertical; }
+
+.check { display: inline-flex; align-items: flex-start; gap: var(--space-2); font-size: var(--text-base); cursor: pointer; }
+.check input { width: 16px; height: 16px; margin: 2px 0 0; flex: none; accent-color: var(--brand); cursor: pointer; }
+.check__hint { display: block; }
+
+/* Phones: 16px stops iOS zooming on focus, 44px is the touch target. */
+@media (pointer: coarse), (max-width: 860px) {
+  .control { min-height: var(--touch-target); font-size: var(--text-md); }
+  .check { min-height: var(--touch-target); align-items: center; }
+  .check input { width: 20px; height: 20px; margin: 0; }
+}

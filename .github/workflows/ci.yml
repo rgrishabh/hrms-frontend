@@ -1,18 +1,202 @@
 name: CI
-# Pull requests: lint, tests (no database), image build (no push), Trivy, gitleaks, PR comment.
+# Separate jobs so a failure names its cause. Node 22 as in the Dockerfile, except API drift: the backend needs 24.
+# publish-develop.yml calls this file as its gate.
 on:
   pull_request:
     branches: [develop, main]
-permissions:
-  contents: read
+  push:
+    branches: [develop, main]
+  workflow_dispatch:
+    inputs:
+      backend_ref:
+        description: hrms-backend ref the API spec is generated from
+        type: string
+        default: main
+  workflow_call:
+    inputs:
+      backend_ref:
+        description: hrms-backend ref the API spec is generated from
+        type: string
+        default: main
+
+permissions: {}
+
 concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
-  ci:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            tools/lint/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - run: npm --prefix tools/lint ci --no-audit --no-fund
+      - run: npm run lint
+
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run typecheck
+
+  unit:
+    name: Unit tests and coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Tests, with the coverage thresholds from vite.config.ts
+        run: npm run test:coverage
+      - if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: coverage-summary
+          path: coverage/coverage-summary.json
+          retention-days: 7
+          if-no-files-found: ignore
+
+  api-drift:
+    name: API drift
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check out the backend (openapi.json is generated, not committed)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: rgrishabh/hrms-backend
+          ref: ${{ inputs.backend_ref || 'main' }}
+          path: .backend
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: |
+            tools/lint/package-lock.json
+            .backend/package-lock.json
+      - name: Generate the spec
+        working-directory: .backend
+        run: |
+          npm ci --no-audit --no-fund
+          npm run openapi
+      - run: npm --prefix tools/lint ci --no-audit --no-fund
+      - name: Compare with the committed API types
+        env:
+          HRMS_OPENAPI: ${{ github.workspace }}/.backend/openapi.json
+        run: npm run api:check
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: dist
+          path: dist/
+          retention-days: 1
+          if-no-files-found: error
+
+  bundle:
+    name: Bundle budget
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: dist
+          path: dist
+      - name: Initial JS under the budget
+        run: npm run check:bundle
+
+  report:
+    name: PR comment
+    needs: [lint, typecheck, unit, api-drift, build, bundle]
+    # A pull request from a fork gets a read-only token and cannot comment.
+    if: ${{ always() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
       pull-requests: write
-    uses: rgrishabh/hrms-deployment/.github/workflows/_app-ci.yml@main
-    with:
-      app: frontend
+    steps:
+      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          LINT: ${{ needs.lint.result }}
+          TYPECHECK: ${{ needs.typecheck.result }}
+          UNIT: ${{ needs.unit.result }}
+          DRIFT: ${{ needs.api-drift.result }}
+          BUILD: ${{ needs.build.result }}
+          BUNDLE: ${{ needs.bundle.result }}
+        with:
+          script: |
+            const { LINT, TYPECHECK, UNIT, DRIFT, BUILD, BUNDLE } = process.env;
+            const row = (name, result) => `| ${name} | ${result} |`;
+            const run = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const marker = '<!-- hrms-ci:frontend -->';
+            const body = [marker, '### CI: hrms-frontend', '', '| Check | Result |', '|---|---|',
+              row('Lint', LINT), row('Typecheck', TYPECHECK), row('Unit tests and coverage', UNIT),
+              row('API drift', DRIFT), row('Build', BUILD), row('Bundle budget', BUNDLE), '',
+              `Commit \`${context.payload.pull_request.head.sha.slice(0, 7)}\` · [run details](${run})`].join('\n');
+            const { data: comments } = await github.rest.issues.listComments({ ...context.repo, issue_number: context.issue.number, per_page: 100 });
+            const mine = comments.find((c) => c.body?.includes(marker));
+            if (mine) await github.rest.issues.updateComment({ ...context.repo, comment_id: mine.id, body });
+            else await github.rest.issues.createComment({ ...context.repo, issue_number: context.issue.number, body });

@@ -1,0 +1,10 @@
+.case-text { padding: var(--space-3); background: var(--surface-2); border-radius: var(--radius); white-space: pre-wrap; overflow-wrap: anywhere; }
+.case-events { display: flex; flex-direction: column; gap: var(--space-2); }
+.case-event { padding: var(--space-2) var(--space-3); border: 1px solid var(--border); border-radius: var(--radius); }
+.case-event__meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-2); color: var(--text-2); font-size: var(--text-xs); overflow-wrap: anywhere; }
+.case-event__text { margin-top: var(--space-1); white-space: pre-wrap; overflow-wrap: anywhere; }
+.committee-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-2); padding-bottom: var(--space-2); border-bottom: 1px solid var(--border); }
+.committee-row:last-child { border-bottom: 0; }
+.committee-row__name { flex: 1 1 200px; min-width: 0; overflow-wrap: anywhere; }
+.committee-row__field { flex: 1 1 180px; min-width: 0; }
+.committee-list { display: flex; flex-direction: column; gap: var(--space-2); overflow-wrap: anywhere; }

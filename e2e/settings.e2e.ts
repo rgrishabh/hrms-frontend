@@ -19,8 +19,8 @@ test('an IT administrator is offered only the roles they may grant, and cannot m
   await page.getByRole('button', { name: 'Add user' }).click();
   const form = page.getByRole('dialog', { name: 'Add user' });
   await expect(form.getByRole('checkbox', { name: 'Employee', exact: true })).toBeVisible();
-  await expect(form.getByRole('checkbox', { name: 'IT Administrator' })).toBeVisible();
-  for (const name of ['Administrator', 'HR Administrator', 'Payroll Manager'])
+  // Nobody grants a role at or above their own level, which now includes their own role (D40).
+  for (const name of ['IT Administrator', 'Administrator', 'HR Administrator', 'Payroll Manager'])
     await expect(form.getByRole('checkbox', { name, exact: true })).toHaveCount(0);
   await expect(form).toContainText('can only be granted by an administrator');
   await form.getByRole('button', { name: 'Cancel' }).click();

@@ -1,0 +1,7 @@
+.skeleton { display: block; border-radius: var(--radius-sm); background: var(--surface-3); animation: skeleton-pulse 1.4s ease-in-out infinite; }
+.skeleton--w-xs { width: 15%; } .skeleton--w-sm { width: 30%; } .skeleton--w-md { width: 50%; } .skeleton--w-lg { width: 75%; } .skeleton--w-full { width: 100%; }
+.skeleton--h-line { height: 12px; } .skeleton--h-heading { height: 22px; } .skeleton--h-tile { height: 84px; border-radius: var(--radius); } .skeleton--h-block { height: 220px; border-radius: var(--radius); }
+.skeleton-tiles { display: grid; gap: var(--space-3); grid-template-columns: repeat(auto-fill, minmax(min(100%, 160px), 1fr)); }
+.skeleton-region { padding-block: var(--space-2); }
+@keyframes skeleton-pulse { 50% { opacity: 0.5; } }
+@media (prefers-reduced-motion: reduce) { .skeleton { animation: none; } }

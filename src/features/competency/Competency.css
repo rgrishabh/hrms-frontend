@@ -1,0 +1,7 @@
+/* position: hidden text stays inside the table's scroller, instead of widening the page. */
+.matrix-cell { position: relative; display: flex; flex-wrap: wrap; gap: var(--space-1); }
+.matrix-legend { color: var(--text-2); font-size: var(--text-xs); }
+.matrix-person { display: flex; flex-direction: column; gap: var(--space-2); }
+.matrix-person__method { display: flex; flex-direction: column; gap: var(--space-1); }
+.matrix-person__name { font-size: var(--text-sm); overflow-wrap: anywhere; }
+.history-list { display: flex; flex-direction: column; gap: var(--space-1); font-size: var(--text-sm); overflow-wrap: anywhere; }

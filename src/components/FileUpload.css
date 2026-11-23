@@ -1,0 +1,7 @@
+.file-upload { position: relative; display: flex; align-items: center; justify-content: center; gap: var(--space-2); min-height: 72px; padding: var(--space-3); border: 1px dashed var(--border-strong); border-radius: var(--radius); background: var(--surface-2); color: var(--text-2); font-size: var(--text-sm); text-align: center; }
+.file-upload svg { width: 18px; height: 18px; flex: none; }
+.file-upload:hover, .file-upload--over { border-color: var(--brand-ring); background: var(--brand-subtle); color: var(--brand-subtle-text); }
+.file-upload:focus-within { outline: 2px solid var(--brand-ring); outline-offset: 2px; }
+.file-upload__input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.file-upload__chosen { display: flex; align-items: center; gap: var(--space-2); min-height: var(--control-height); padding: var(--space-1) var(--space-1) var(--space-1) var(--space-3); border: 1px solid var(--border-strong); border-radius: var(--radius); }
+.file-upload__name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

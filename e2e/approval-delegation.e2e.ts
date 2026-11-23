@@ -27,8 +27,8 @@ test("while the lab manager is away, the quality manager approves her team's lea
   const form = page.getByRole('dialog', { name: 'Apply for leave' });
   const cl = await form.getByLabel('Leave type').locator('option', { hasText: /^Casual Leave/ }).getAttribute('value');
   await form.getByLabel('Leave type').selectOption(cl!);
-  await form.getByLabel('From', { exact: true }).fill(date);
-  await form.getByLabel('To', { exact: true }).fill(date);
+  await form.getByLabel(/^From/).fill(date);
+  await form.getByLabel(/^To\b/).fill(date);
   await form.getByLabel('Reason').fill('Delegation check (E2E)');
   await form.getByRole('button', { name: 'Submit for approval' }).click();
   await expect(page.getByText('Leave requested: 1 day(s). Sent for approval.')).toBeVisible();
@@ -61,11 +61,8 @@ test('a manager hands over their approvals and ends the handover; HR sees it', a
   const mine = page.locator('[aria-label="My handover"]');
   await mine.getByRole('button', { name: 'Hand over my approvals' }).click();
   const dlg = page.getByRole('dialog', { name: 'Hand over my approvals' });
-  await dlg.getByLabel('Search for approves instead').fill('Ananya');
-  const pick = dlg.getByLabel('Approves instead', { exact: true });
-  const ananya = pick.locator('option', { hasText: 'Ananya Iyer' });
-  await expect(ananya).toHaveCount(1);
-  await pick.selectOption((await ananya.getAttribute('value'))!);
+  await dlg.getByRole('combobox', { name: 'Approves instead' }).fill('Ananya');
+  await dlg.getByRole('option', { name: /Ananya/ }).first().click();
   await dlg.getByLabel('Note for them (optional)').fill('Audit week (E2E)');
   await dlg.getByRole('button', { name: 'Hand over' }).click();
   await expect(page.getByText('Approvals handed to Ananya Iyer')).toBeVisible();

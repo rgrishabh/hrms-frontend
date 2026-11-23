@@ -25,7 +25,7 @@ test('a loan: apply, manager and finance approve, payroll disburses, the schedul
   await form.getByRole('button', { name: 'Submit for approval' }).click();
   await expect(page.getByText('Application sent for approval')).toBeVisible();
 
-  const summary = /Aditya Joshi: loan ₹25000 in 6 instalment\(s\)/;
+  const summary = /Aditya Joshi: Loan|Aditya Joshi: loan/;
   await login(page, 'lab.manager');
   await approve(page, summary);
   await login(page, 'finance');
@@ -34,6 +34,8 @@ test('a loan: apply, manager and finance approve, payroll disburses, the schedul
   await login(page, 'payroll');
   await page.goto('/loans');
   await page.getByRole('tab', { name: 'Everyone' }).click();
+  // The purpose is masked until shown, as the amounts are.
+  await page.getByRole('button', { name: 'Show amounts' }).click();
   const row = page.getByRole('table', { name: 'Advances and loans' }).getByRole('row').filter({ hasText: 'Aditya Joshi' }).filter({ hasText: 'Laptop' });
   await row.getByRole('button', { name: 'Disburse' }).click();
   const pay = page.getByRole('dialog', { name: 'Disburse' });
@@ -42,8 +44,11 @@ test('a loan: apply, manager and finance approve, payroll disburses, the schedul
   await expect(page.getByText('Recorded as paid; recovery starts in payroll')).toBeVisible();
   await expect(row).toContainText('Disbursed');
   await row.getByRole('button', { name: 'Details' }).click();
-  const d = page.getByRole('dialog', { name: /^Loan — ₹25,000\.00/ });
+  // Masked until asked: the title has no amount yet, and showing is audited.
+  const d = page.getByRole('dialog', { name: /^Loan/ });
+  await d.getByRole('button', { name: 'Show details' }).click();
+  await expect(page.getByRole('dialog', { name: /^Loan — ₹25,000\.00/ })).toBeVisible();
   await expect(d.getByRole('table', { name: 'Schedule' }).getByRole('row')).toHaveCount(7);   // header + 6 instalments
-  await expect(d.locator('.stat').filter({ hasText: 'Outstanding' })).toContainText('₹25,000.00');
+  await expect(d.locator('.tile').filter({ hasText: 'Outstanding' })).toContainText('₹25,000.00');
   await noErrors(page);
 });

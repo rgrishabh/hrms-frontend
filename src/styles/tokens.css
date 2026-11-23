@@ -1,0 +1,141 @@
+/*
+ * Design tokens. Neutral and status colours are fixed; brand tokens are written to :root at runtime
+ * by src/lib/brand.ts, in light (-l) and dark (-d) forms, from BRAND_*_COLOR. The defaults below are
+ * the neutral fallback before config loads. data-theme is set by /boot.js before first paint.
+ */
+:root {
+  color-scheme: light;
+
+  --bg: #f7f7f5;
+  --surface: #ffffff;
+  --surface-2: #f1f1ee;
+  --surface-3: #e7e7e3;
+  --overlay: rgb(15 17 21 / 45%);
+
+  --text: #1a1c1e;
+  --text-2: #4a5056;
+  --text-3: #5f656b;
+
+  --border: #e2e2de;
+  --border-strong: #84898f;
+
+  --ok: #14663f;
+  --ok-bg: #e4f3ea;
+  --warn: #7f4c00;
+  --warn-bg: #fbefd9;
+  --danger: #ad241c;
+  --danger-bg: #fbe8e6;
+  --danger-solid: #b3261e;
+  --on-danger: #ffffff;
+  --info: #0b5aa8;
+  --info-bg: #e6f0fa;
+
+  --brand: var(--brand-solid-l, #2b3a4a);
+  --brand-hover: var(--brand-solid-hover-l, #1f2c3a);
+  --brand-active: var(--brand-solid-active-l, #16202c);
+  --on-brand: var(--brand-on-l, #ffffff);
+  --brand-text: var(--brand-text-l, #2b3a4a);
+  --brand-ring: var(--brand-ring-l, #2b3a4a);
+  --brand-subtle: var(--brand-subtle-l, #e8ecf0);
+  --brand-subtle-text: var(--brand-subtle-text-l, #2b3a4a);
+  --accent: var(--accent-solid-l, #2b3a4a);
+  --accent-text: var(--accent-text-l, #2b3a4a);
+  --secondary-text: var(--secondary-text-l, #2b3a4a);
+
+  --font-sans: "Inter Variable", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --text-xs: 0.75rem;
+  --text-sm: 0.8125rem;
+  --text-base: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.375rem;
+  --text-2xl: 1.75rem;
+  --leading-tight: 1.25;
+  --leading: 1.5;
+  --weight-normal: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+
+  --radius-sm: 4px;
+  --radius: 6px;
+  --radius-lg: 10px;
+  --radius-full: 999px;
+
+  --shadow-sm: 0 1px 2px rgb(16 18 22 / 6%);
+  --shadow-md: 0 4px 12px rgb(16 18 22 / 10%);
+  --shadow-lg: 0 16px 40px rgb(16 18 22 / 18%);
+
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --duration-fast: 100ms;
+  --duration: 180ms;
+
+  --touch-target: 44px;
+  --control-height: 36px;
+  --control-height-sm: 30px;
+  --sidebar-width: 232px;
+  --rail-width: 56px;
+  --topbar-height: 52px;
+  --bottom-nav-height: 56px;
+  --z-sticky: 10;
+  --z-drawer: 40;
+  --z-dialog: 50;
+  --z-toast: 90;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg: #0e1013;
+  --surface: #16191d;
+  --surface-2: #1e2227;
+  --surface-3: #272c32;
+  --overlay: rgb(0 0 0 / 60%);
+
+  --text: #e8eaed;
+  --text-2: #b4bac1;
+  --text-3: #979ea6;
+
+  --border: #2b3036;
+  --border-strong: #717880;
+
+  --ok: #6fd39b;
+  --ok-bg: #12301f;
+  --warn: #f2c063;
+  --warn-bg: #33270f;
+  --danger: #ff9b92;
+  --danger-bg: #3a1714;
+  --danger-solid: #c9392f;
+  --on-danger: #ffffff;
+  --info: #8ac0f5;
+  --info-bg: #11273f;
+
+  --brand: var(--brand-solid-d, #8fa3b8);
+  --brand-hover: var(--brand-solid-hover-d, #9fb1c4);
+  --brand-active: var(--brand-solid-active-d, #afbfcf);
+  --on-brand: var(--brand-on-d, #000000);
+  --brand-text: var(--brand-text-d, #a9bacb);
+  --brand-ring: var(--brand-ring-d, #8fa3b8);
+  --brand-subtle: var(--brand-subtle-d, #27313b);
+  --brand-subtle-text: var(--brand-subtle-text-d, #c5d2de);
+  --accent: var(--accent-solid-d, #8fa3b8);
+  --accent-text: var(--accent-text-d, #a9bacb);
+  --secondary-text: var(--secondary-text-d, #a9bacb);
+
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 40%);
+  --shadow-md: 0 4px 12px rgb(0 0 0 / 45%);
+  --shadow-lg: 0 16px 40px rgb(0 0 0 / 60%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --duration-fast: 0ms; --duration: 0ms; }
+}

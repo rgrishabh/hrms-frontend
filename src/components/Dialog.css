@@ -1,0 +1,35 @@
+body.dialog-open { overflow: hidden; }
+.dialog-backdrop { position: fixed; inset: 0; z-index: var(--z-dialog); background: var(--overlay); display: flex; animation: dialog-fade var(--duration) var(--ease); }
+.dialog-backdrop--modal { align-items: center; justify-content: center; padding: var(--space-4); }
+.dialog-backdrop--drawer.dialog-backdrop--right { justify-content: flex-end; }
+.dialog-backdrop--drawer.dialog-backdrop--left { justify-content: flex-start; }
+
+.dialog { display: flex; flex-direction: column; background: var(--surface); box-shadow: var(--shadow-lg); outline: none; min-width: 0; }
+.dialog--modal { width: 100%; max-height: min(88vh, 820px); border-radius: var(--radius-lg); animation: dialog-rise var(--duration) var(--ease); }
+.dialog--modal.dialog--sm { max-width: 420px; }
+.dialog--modal.dialog--md { max-width: 560px; }
+.dialog--modal.dialog--lg { max-width: 840px; }
+.dialog--drawer { width: min(400px, 88vw); height: 100%; height: 100dvh; animation: dialog-slide var(--duration) var(--ease); }
+.dialog--drawer.dialog--sm { width: min(300px, 86vw); }
+.dialog--drawer.dialog--lg { width: min(640px, 96vw); }
+.dialog-backdrop--left .dialog--drawer { animation-name: dialog-slide-left; }
+
+.dialog__header { display: flex; align-items: flex-start; gap: var(--space-3); padding: var(--space-4) var(--space-5); border-bottom: 1px solid var(--border); }
+.dialog__title { font-size: var(--text-md); }
+.dialog__description { margin-top: var(--space-1); font-size: var(--text-sm); color: var(--text-2); }
+.dialog__body { flex: 1 1 auto; overflow-y: auto; padding: var(--space-5); overscroll-behavior: contain; }
+.dialog__footer { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: var(--space-2); padding: var(--space-3) var(--space-5); border-top: 1px solid var(--border); }
+.dialog__footer--warn { background: var(--warn-bg); color: var(--warn); }
+
+@keyframes dialog-fade { from { opacity: 0; } }
+@keyframes dialog-rise { from { opacity: 0; transform: translateY(6px); } }
+@keyframes dialog-slide { from { transform: translateX(24px); opacity: 0; } }
+@keyframes dialog-slide-left { from { transform: translateX(-24px); opacity: 0; } }
+
+/* Full-screen sheet on phones, with room for the home indicator. */
+@media (max-width: 720px) {
+  .dialog-backdrop--modal { padding: 0; align-items: stretch; }
+  .dialog--modal, .dialog--modal.dialog--sm, .dialog--modal.dialog--md, .dialog--modal.dialog--lg { max-width: none; max-height: none; height: 100%; height: 100dvh; border-radius: 0; }
+  .dialog__header, .dialog__body, .dialog__footer { padding-inline: var(--space-4); }
+  .dialog__footer { padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom)); }
+}

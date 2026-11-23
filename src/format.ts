@@ -1,8 +1,10 @@
-/** Indian locale formatting. Business timezone comes from tenant settings (default Asia/Kolkata). */
+/** Display formatting from the installation's brand settings (locale, timezone, currency, date format). */
+let locale = 'en-IN';
 let tz = 'Asia/Kolkata';
 let dateFormat = 'DD/MM/YYYY';
 let currency = 'INR';
-export const setLocalePrefs = (p: { timezone?: string; dateFormat?: string; currency?: string }) => {
+export const setLocalePrefs = (p: { locale?: string; timezone?: string; dateFormat?: string; currency?: string }) => {
+  if (p.locale) locale = p.locale;
   if (p.timezone) tz = p.timezone;
   if (p.dateFormat) dateFormat = p.dateFormat;
   if (p.currency) currency = p.currency;
@@ -22,7 +24,7 @@ export function fmtDate(d: string | null | undefined): string {
 
 export function fmtTime(iso: string | null | undefined): string {
   if (!iso) return '—';
-  return new Intl.DateTimeFormat('en-IN', { timeZone: tz, hour: '2-digit', minute: '2-digit', hour12: true }).format(new Date(iso));
+  return new Intl.DateTimeFormat(locale, { timeZone: tz, hour: '2-digit', minute: '2-digit', hour12: true }).format(new Date(iso));
 }
 
 export function fmtDateTime(iso: string | null | undefined): string {
@@ -32,10 +34,30 @@ export function fmtDateTime(iso: string | null | undefined): string {
   return `${fmtDate(local)} ${fmtTime(iso)}`;
 }
 
+/** The tenant-timezone date of a timestamp. Never slice an ISO timestamp: that gives the UTC date. */
+export function fmtDateOfInstant(iso: string | null | undefined): string {
+  if (!iso) return '—';
+  return fmtDate(new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(iso)));
+}
+
 export const fmtMinutes = (m: number | null | undefined) => (m == null ? '—' : `${Math.floor(m / 60)}h ${String(m % 60).padStart(2, '0')}m`);
 
-/** Money in the installation's currency (ORGANIZATION_CURRENCY), Indian digit grouping. */
-export const money = (n: number | string) => new Intl.NumberFormat('en-IN', { style: 'currency', currency }).format(Number(n));
+/** Money in the installation's currency and locale. */
+export const money = (n: number | string) => new Intl.NumberFormat(locale, { style: 'currency', currency }).format(Number(n));
+
+/** A plain number in the installation's locale. */
+export const fmtNumber = (n: number | string, maximumFractionDigits = 2) => new Intl.NumberFormat(locale, { maximumFractionDigits }).format(Number(n));
+
+/** The currency's symbol, for mask text and labels. */
+export function currencySymbol(): string {
+  return new Intl.NumberFormat(locale, { style: 'currency', currency }).formatToParts(0).find((p) => p.type === 'currency')?.value ?? currency;
+}
+
+/** "YYYY-MM" or "YYYY-MM-DD" as "June 2026". */
+export const fmtMonth = (d: string) => new Date(`${d.slice(0, 7)}-01T00:00:00Z`).toLocaleDateString(locale, { month: 'long', year: 'numeric', timeZone: 'UTC' });
+
+/** A clock time in a given timezone, for the punch card. */
+export const fmtClock = (timeZone: string, at = new Date()) => new Intl.DateTimeFormat(locale, { timeZone, hour: '2-digit', minute: '2-digit', hour12: true }).format(at);
 
 /** Today's business date in the tenant timezone, 'YYYY-MM-DD'. */
 export const todayLocal = () => new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());

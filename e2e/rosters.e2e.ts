@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { login, noErrors } from './helpers';
+import { login, noErrors, openMenu } from './helpers';
 
 test('HR builds a rotation, sees the instrument-room crews next week, and changes one day', async ({ page }) => {
   const code = `E2E-${Date.now() % 100000}`;
@@ -13,7 +13,7 @@ test('HR builds a rotation, sees the instrument-room crews next week, and change
   await patterns.getByRole('button', { name: 'New pattern' }).click();
   const dlg = page.getByRole('dialog', { name: 'New roster pattern' });
   await dlg.getByLabel('Code').fill(code);
-  await dlg.getByLabel('Name', { exact: true }).fill('Weekend lab cover (E2E)');
+  await dlg.getByLabel(/^Name/).fill('Weekend lab cover (E2E)');
   await dlg.getByLabel('Days in the cycle').fill('4');
   await dlg.getByLabel('Day 2', { exact: true }).selectOption({ label: 'MORN' });
   await dlg.getByLabel('Day 3', { exact: true }).selectOption({ label: 'Off' });
@@ -45,7 +45,7 @@ test('HR builds a rotation, sees the instrument-room crews next week, and change
 
 test('an employee sees only their own roster', async ({ page }) => {
   await login(page, 'analyst');
-  await page.getByLabel('Main navigation').getByRole('link', { name: 'Roster', exact: true }).click();
+  await (await openMenu(page)).getByRole('link', { name: 'Roster', exact: true }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Roster' })).toBeVisible();
   const rows = page.getByRole('table', { name: 'Roster' }).locator('tbody tr');
   await expect(rows).toHaveCount(1);

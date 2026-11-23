@@ -1,104 +1,136 @@
 name: E2E
-# Browser end-to-end tests (Playwright) of this frontend's production build against the backend image
-# (hrms-backend:develop by default) on a throwaway database filled with the backend's SYNTHETIC demo data.
-# Nothing here touches a real installation; all credentials are generated per run.
+# Browser tests of the production build. The mocked suite needs no backend. The full suite runs against a checkout
+# of hrms-backend on a throwaway database with its SYNTHETIC demo data: playwright.config.ts starts e2e/full/stack.mjs
+# for each profile, which resets the database, seeds it, and starts the API, worker and mail sink.
+# Node 24 for the full suite: the backend needs it.
 on:
   pull_request:
     branches: [develop, main]
   workflow_dispatch:
     inputs:
-      backend_tag:
-        description: "hrms-backend image tag (default: develop)"
-        required: false
+      backend_ref:
+        description: hrms-backend ref to test against
+        type: string
+        default: main
 
-permissions:
-  contents: read
-  packages: read
+permissions: {}
 
 concurrency:
-  group: e2e-${{ github.ref }}
+  group: e2e-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  e2e:
-    name: Playwright
+  mock:
+    name: Mocked browser suite
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - run: npm run build
+      - run: npm run e2e:mock
+      # In the image the Linux baselines were made in, as fonts render differently elsewhere.
+      - name: Visual baselines
+        run: |
+          docker run --rm -v "$PWD":/w -v /w/node_modules -v /w/test-results -w /w \
+            mcr.microsoft.com/playwright:v1.64.1-noble \
+            sh -c 'npm ci --no-audit --no-fund && npm run e2e:visual'
+      - if: ${{ failure() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: playwright-mock
+          path: test-results/
+          retention-days: 7
+          if-no-files-found: ignore
+
+  full:
+    name: Full stack
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
     services:
-      db:
+      postgres:
         image: postgres:17-alpine
         env:
           POSTGRES_PASSWORD: ci-postgres
         ports: ["5432:5432"]
         options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 5s
-          --health-retries 20
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 20
     env:
-      BACKEND_IMAGE: ghcr.io/rgrishabh/hrms-backend:${{ inputs.backend_tag || 'develop' }}
-      APP_URL: http://localhost:5173
-      E2E_DOMAIN: example.test
+      E2E_BACKEND_DIR: ${{ github.workspace }}/.backend
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+      - name: Check out the backend
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          node-version: "22"
+          repository: rgrishabh/hrms-backend
+          ref: ${{ inputs.backend_ref || 'main' }}
+          path: .backend
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
           cache: npm
-      - run: npm ci
-
-      - name: Backend on a throwaway database with demo data
-        run: |
-          set -euo pipefail
-          docker pull -q "$BACKEND_IMAGE"
-          owner_pw=$(openssl rand -hex 16); app_pw=$(openssl rand -hex 16)   # throwaway, per run
-          echo "::add-mask::$owner_pw"; echo "::add-mask::$app_pw"
-          owner=postgres://hrms_owner:$owner_pw@localhost:5432/hrms
-          run() { docker run --rm --network host -e DATABASE_SSL=disable "$@"; }
-          run -e DB_HOST=localhost -e DB_NAME=hrms -e DB_ADMIN_USER=postgres -e DB_ADMIN_PASSWORD=ci-postgres \
-              -e DB_OWNER_PASSWORD="$owner_pw" -e DB_APP_PASSWORD="$app_pw" "$BACKEND_IMAGE" provision
-          run -e DATABASE_MIGRATION_URL="$owner" "$BACKEND_IMAGE" migrate
-          run -e DATABASE_MIGRATION_URL="$owner" -e APP_URL -e ORGANIZATION_NAME="E2E Labs" -e BOOTSTRAP_ADMIN_EMAIL=admin@example.test \
-              "$BACKEND_IMAGE" bootstrap > /dev/null   # the one-time setup link is not needed
-          run -e DATABASE_MIGRATION_URL="$owner" -e APP_URL -e DEMO_DATA_ALLOWED=true "$BACKEND_IMAGE" demo > "$RUNNER_TEMP/demo.txt"
-          pw=$(sed -n 's/^Password for all demo logins: //p' "$RUNNER_TEMP/demo.txt")
-          rm -f "$RUNNER_TEMP/demo.txt"
-          [ -n "$pw" ] || { echo "::error::demo data did not produce logins"; exit 1; }
-          echo "::add-mask::$pw"
-          echo "E2E_PASSWORD=$pw" >> "$GITHUB_ENV"
-          docker run -d --name api --network host \
-            -e NODE_ENV=development -e HOST=127.0.0.1 -e PORT=4000 -e APP_URL -e ORGANIZATION_NAME="E2E Labs" \
-            -e DATABASE_URL="postgres://hrms_app:$app_pw@localhost:5432/hrms" -e DATABASE_SSL=disable \
-            -e DATA_ENCRYPTION_KEY="$(openssl rand -base64 32)" -e COOKIE_SECURE=false -e MFA_ENFORCEMENT=off \
-            -e JOBS_ENABLED=false -e MAIL_TRANSPORT=disabled -e STORAGE_DRIVER=local -e STORAGE_PATH=/tmp/storage \
-            -e SMS_TRANSPORT=log \
-            -e ENABLED_MODULES=default,attendance.mobile,attendance.biometric,expenses,training,lab.competency,core.policies,recruitment,core.onboarding,core.offboarding,payroll,payroll.payslips,payroll.statutory,posh,grievance,performance,assets,overtime,field_duty,travel,advances_loans,accounting_exports,notifications.sms,reports.advanced \
-            "$BACKEND_IMAGE" serve
-          for _ in $(seq 1 30); do curl -sf http://127.0.0.1:4000/ready >/dev/null && exit 0; sleep 2; done
-          docker logs api; exit 1
-
-      - name: Frontend production build, served with the API proxy
-        run: |
-          npm run build
-          nohup npx vite preview --host 127.0.0.1 --port 5173 --strictPort > "$RUNNER_TEMP/preview.log" 2>&1 &
-          for _ in $(seq 1 30); do curl -sf http://localhost:5173/ >/dev/null && exit 0; sleep 1; done
-          cat "$RUNNER_TEMP/preview.log"; exit 1
-
-      - run: npx playwright install --with-deps chromium
-      - name: Playwright
-        run: npx playwright test
+          cache-dependency-path: |
+            package-lock.json
+            .backend/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - name: Install the backend
+        working-directory: .backend
+        run: npm ci --no-audit --no-fund
+      - name: Roles and database (passwords generated per run)
         env:
-          E2E_BASE_URL: ${{ env.APP_URL }}
-
-      - name: API log (on failure)
-        if: failure()
-        run: docker logs api 2>&1 | tail -200
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        if: failure()
+          PGPASSWORD: ci-postgres
+        run: |
+          owner_pw=$(openssl rand -hex 16); app_pw=$(openssl rand -hex 16)
+          echo "::add-mask::$owner_pw"; echo "::add-mask::$app_pw"
+          psql -h 127.0.0.1 -U postgres -v ON_ERROR_STOP=1 \
+            -c "CREATE ROLE hrms_owner LOGIN PASSWORD '$owner_pw' NOSUPERUSER NOBYPASSRLS" \
+            -c "CREATE ROLE hrms_app LOGIN PASSWORD '$app_pw' NOSUPERUSER NOBYPASSRLS" \
+            -c "CREATE DATABASE hrms_e2e OWNER hrms_owner"
+          {
+            echo "E2E_DB_OWNER_URL=postgres://hrms_owner:$owner_pw@127.0.0.1:5432/hrms_e2e"
+            echo "E2E_DB_APP_URL=postgres://hrms_app:$app_pw@127.0.0.1:5432/hrms_e2e"
+          } >> "$GITHUB_ENV"
+      - run: npx playwright install --with-deps chromium
+      - id: build
+        run: npm run build
+      # Each profile keeps its report apart, and a failure in one does not hide the others.
+      - name: Profile full, desktop and mobile
+        env:
+          E2E_PROFILE: full
+          PLAYWRIGHT_HTML_OUTPUT_DIR: playwright-report/full
+        run: npx playwright test --project=desktop --project=mobile --output=test-results/full
+      - name: Profile off
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        env:
+          E2E_PROFILE: "off"
+          PLAYWRIGHT_HTML_OUTPUT_DIR: playwright-report/off
+        run: npx playwright test --output=test-results/off
+      - name: Profile single
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        env:
+          E2E_PROFILE: single
+          PLAYWRIGHT_HTML_OUTPUT_DIR: playwright-report/single
+        run: npx playwright test --output=test-results/single
+      - if: ${{ failure() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: playwright-report
+          name: playwright-full
           path: |
             playwright-report/
             test-results/
           retention-days: 7
+          if-no-files-found: ignore

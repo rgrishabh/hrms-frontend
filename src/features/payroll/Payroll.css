@@ -1,0 +1,8 @@
+.salary-picker { max-width: 420px; }
+.run-totals .tile__value { font-size: var(--text-lg); }
+.run-warnings { margin-top: var(--space-1); font-size: var(--text-xs); color: var(--text-2); }
+.run-warnings summary { cursor: pointer; color: var(--warn); font-weight: var(--weight-medium); }
+.run-warnings ul { margin-top: var(--space-1); max-width: 36rem; }
+@media (pointer: coarse), (max-width: 860px) {
+  .run-warnings summary { display: flex; align-items: center; min-height: var(--touch-target); }
+}

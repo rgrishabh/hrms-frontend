@@ -1,0 +1,7 @@
+.error-state { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--space-3); padding: var(--space-4); background: var(--danger-bg); border-radius: var(--radius); color: var(--text); }
+.error-state__icon { width: 18px; height: 18px; flex: none; margin-top: 2px; color: var(--danger); }
+.error-state__title { font-weight: var(--weight-semibold); color: var(--danger); }
+.error-state__detail { font-size: var(--text-sm); }
+.error-state .grow { flex: 1 1 200px; }
+.error-state--compact { padding: var(--space-2) var(--space-3); }
+.inline-error { padding: var(--space-2) var(--space-3); background: var(--danger-bg); color: var(--danger); border-radius: var(--radius); font-size: var(--text-sm); }
