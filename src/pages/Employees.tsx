@@ -17,6 +17,7 @@ import { useDebouncedValue } from '../components/hooks';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { DownloadButton } from '../components/DownloadButton';
 import { EmployeeCards } from '../features/employees/EmployeeCards';
+import { SalarySlips, WriteLetter } from '../features/employees/Letters';
 import { Checkbox, Input } from '../components/Input';
 import { KeyValue } from '../components/KeyValue';
 import { Modal } from '../components/Modal';
@@ -324,7 +325,7 @@ function ImportDialog({ onClose }: { onClose: () => void }) {
 
 /** Letters as PDF. Salary on an appointment letter is a choice, and reading it is recorded. */
 function LettersCard({ employeeId, self }: { employeeId: string; self: boolean }) {
-  const { can, hasFeature } = useAuth();
+  const { can, canAny, hasFeature } = useAuth();
   const toast = useToast();
   const [includePay, setIncludePay] = useState(false);
   const [erasing, setErasing] = useState(false);
@@ -332,13 +333,14 @@ function LettersCard({ employeeId, self }: { employeeId: string; self: boolean }
   const onboarding = hasFeature('FEATURE_ONBOARDING') && manage;
   const offboarding = hasFeature('FEATURE_OFFBOARDING') && (manage || (self && can('lifecycle.self')));
   const base = `/api/v1/lifecycle/employees/${employeeId}/letters`;
-  if (!onboarding && !offboarding && !self) return null;
+  const slips = hasFeature('FEATURE_PAYSLIPS') && canAny('payroll.read', 'payroll.manage');
+  if (!onboarding && !offboarding && !self && !slips) return null;
   return (
     <Card title="Letters and records">
       <div className="stack-3">
         {onboarding && (
           <div className="cluster">
-            <DownloadButton url={`${base}/appointment.pdf${includePay ? '?includePay=true' : ''}`} fileName="appointment.pdf">Appointment letter</DownloadButton>
+            <DownloadButton url={`${base}/appointment.pdf${includePay ? '?includePay=1' : ''}`} fileName="appointment.pdf">Appointment letter</DownloadButton>
             <Checkbox label="Include salary" hint="Recorded in the audit log." checked={includePay} onChange={(e) => setIncludePay(e.target.checked)} />
           </div>
         )}
@@ -348,6 +350,7 @@ function LettersCard({ employeeId, self }: { employeeId: string; self: boolean }
             <DownloadButton url={`${base}/relieving.pdf`} fileName="relieving.pdf">Relieving letter</DownloadButton>
           </div>
         )}
+        {!self && (onboarding || offboarding || slips) && <div className="cluster">{(onboarding || offboarding) && <WriteLetter employeeId={employeeId} />}<SalarySlips employeeId={employeeId} /></div>}
         {self && (
           <div className="cluster">
             <DownloadButton url={`/api/v1/tenant/data-rights/employees/${employeeId}/export`} fileName="my-data.json">Export my data</DownloadButton>

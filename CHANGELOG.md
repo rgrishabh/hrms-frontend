@@ -4,10 +4,12 @@
 
 ### Added
 
+* Letters. A profile's "Write another letter" produces 17 more as PDF, and says why one is not available; what is typed goes by POST. "Salary slips" lists someone's payslips as PDF. An approved offer has an "Offer letter". The Owner sees all of it, since the API now gives that role every permission.
 * ID and business cards. The Employees page prints them for everyone, or a chosen branch or department; a profile prints one person's and takes the photo. Needs `employees.manage`. Settings, General sets the wording on the back of the ID card, using a new text area control.
 
 ### Fixed
 
+* "Include salary" on an appointment letter sent a value the API refuses.
 * The offline banner no longer shows, and loads and saves no longer pause, when the browser wrongly reports offline (VPN, virtual adapter, local server without internet, wake from sleep). The app asks `/healthz` first, and checks again every 5 seconds until the connection is back.
 
 ### Removed
