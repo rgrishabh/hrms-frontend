@@ -467,7 +467,7 @@ describe('employee record', () => {
       expect(reads(f, 'includePay')).toHaveLength(0);
       await userEvent.click(screen.getByRole('checkbox', { name: /Include salary/ }));
       await userEvent.click(screen.getByRole('button', { name: 'Appointment letter' }));
-      await waitFor(() => expect(reads(f, 'appointment.pdf?includePay=true')).toHaveLength(1));
+      await waitFor(() => expect(reads(f, 'appointment.pdf?includePay=1')).toHaveLength(1));
       await userEvent.click(screen.getByRole('button', { name: 'Experience letter' }));
       await userEvent.click(screen.getByRole('button', { name: 'Relieving letter' }));
       await waitFor(() => expect(names).toEqual(['appointment.pdf', 'appointment.pdf', 'experience.pdf', 'relieving.pdf']));
@@ -483,6 +483,58 @@ describe('employee record', () => {
       expect(screen.getByRole('button', { name: 'Experience letter' })).toBeTruthy();
       expect(screen.queryByRole('button', { name: 'Appointment letter' })).toBeNull();
       expect(screen.getByRole('tab', { name: 'Personal details' })).toBeTruthy();
+    });
+    const LETTERS = {
+      items: [
+        { key: 'confirmation', label: 'Confirmation letter', group: 'employment', fields: [], unavailable: 'This person has not been confirmed yet' },
+        { key: 'promotion', label: 'Promotion letter', group: 'employment', fields: [{ key: 'effectiveDate', label: 'Effective date', type: 'date', required: true, maxLength: 10 }, { key: 'previousDesignation', label: 'Previous designation', type: 'text', required: false, maxLength: 200 }], unavailable: null },
+        { key: 'recommendation', label: 'Recommendation letter', group: 'exit', fields: [{ key: 'body', label: 'Recommendation, in your own words', type: 'long', required: true, maxLength: 4000 }], unavailable: null },
+      ],
+      exit: { experience: 'x', relieving: 'x' },
+    };
+    it('another letter: the reason when it cannot be written, required text checked, and what was typed posted', async () => {
+      const names = saved();
+      const f = mockPageApi(['employees.read', 'employees.manage'], ['FEATURE_ONBOARDING'], record(EMP, (url, init) => (init?.method === 'POST' ? pdf('x.pdf') : url.endsWith('/letters') ? LETTERS : pdf(url))), 'e1');
+      show();
+      await userEvent.click(await screen.findByRole('button', { name: 'Write another letter' }));
+      const dlg = within(await screen.findByRole('dialog', { name: 'Write a letter' }));
+      const pick = await dlg.findByLabelText(/^Letter/);
+      const download = dlg.getByRole('button', { name: 'Download PDF' }) as HTMLButtonElement;
+      expect(download.disabled).toBe(true);
+      await userEvent.selectOptions(pick, 'confirmation');
+      expect(dlg.getByText(/has not been confirmed yet/)).toBeTruthy();
+      expect(download.disabled).toBe(true);
+      await userEvent.selectOptions(pick, 'recommendation');
+      await userEvent.click(download);
+      expect(dlg.getByText('This is needed on the letter')).toBeTruthy();
+      await userEvent.type(dlg.getByLabelText(/Recommendation, in/), '  Careful and dependable. ');
+      await userEvent.click(download);
+      await waitFor(() => expect(names).toEqual(['recommendation-letter.pdf']));
+      const post = writes(f, '/letters/recommendation')[0]!;
+      expect(bodyOf(post)).toEqual({ fields: { body: 'Careful and dependable.' } });
+      expect((post[1]!.headers as Record<string, string>)['x-csrf-token']).toBe('t');
+      await userEvent.selectOptions(pick, 'promotion');
+      expect(dlg.getByLabelText(/Effective date/)).toBeTruthy();
+      await userEvent.type(dlg.getByLabelText(/Previous designation/), 'Analyst');
+      await userEvent.click(dlg.getByRole('button', { name: 'Cancel' }));
+      await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    });
+    it('salary slips: for payroll readers, one PDF each, and an empty state', async () => {
+      const names = saved();
+      const items = [{ id: 'p1', period: '2026-10', kind: 'regular', status: 'paid' }];
+      const f = mockPageApi(['employees.read', 'payroll.read'], ['FEATURE_PAYSLIPS'], record(EMP, (url) => (url.endsWith('/payslips') ? { items } : pdf(url))), 'e1');
+      show();
+      await userEvent.click(await screen.findByRole('button', { name: 'Salary slips' }));
+      await userEvent.click(await screen.findByRole('button', { name: 'Salary slip for 2026-10' }));
+      await waitFor(() => expect(names).toEqual(['payslip-2026-10.pdf']));
+      expect(reads(f, '/payroll/payslips/p1/payslip.pdf')).toHaveLength(1);
+      expect(screen.queryByRole('button', { name: 'Write another letter' })).toBeNull();
+    });
+    it('no salary slips says so', async () => {
+      mockPageApi(['employees.read', 'payroll.read'], ['FEATURE_PAYSLIPS'], record(EMP, (url) => (url.endsWith('/payslips') ? { items: [] } : undefined)), 'e1');
+      show();
+      await userEvent.click(await screen.findByRole('button', { name: 'Salary slips' }));
+      expect(await screen.findByText('No salary slips yet.')).toBeTruthy();
     });
     it('someone else without letter rights sees no letters', async () => {
       mockPageApi(['employees.read'], ['FEATURE_OFFBOARDING'], record(), 'e1');

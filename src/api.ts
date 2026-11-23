@@ -152,13 +152,15 @@ function upload<T>(url: string, form: FormData, method: 'POST' | 'PUT' = 'POST')
   return send<T>(url, { method, body: form, headers: csrfToken ? { 'x-csrf-token': csrfToken } : {} }, false);
 }
 
-/** A file from the API. Failures throw like any other call, so a problem body is never saved as the file. */
-async function blob(url: string): Promise<{ blob: Blob; fileName: string | null; excluded: number }> {
+/** A file from the API. Failures throw like any other call, so a problem body is never saved as the file. With a body it is a POST. */
+async function blob(url: string, body?: unknown): Promise<{ blob: Blob; fileName: string | null; excluded: number }> {
   setInflight(inflight + 1);
   try {
     let res: Response;
     try {
-      res = await fetch(url, { credentials: 'same-origin' });
+      res = await fetch(url, body === undefined
+        ? { credentials: 'same-origin' }
+        : { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json', ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}) }, body: JSON.stringify(body) });
     } catch {
       throw new ApiError({ type: 'about:blank', title: 'Cannot reach the server. Check your connection and try again.', status: 0, code: 'network_error' });
     }

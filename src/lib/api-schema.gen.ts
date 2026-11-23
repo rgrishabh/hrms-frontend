@@ -2565,6 +2565,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/lifecycle/employees/{id}/letters": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get /api/v1/lifecycle/employees/:id/letters"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/lifecycle/employees/{id}/letters/{kind}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["post /api/v1/lifecycle/employees/:id/letters/:kind"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/lifecycle/employees/{id}/letters/appointment.pdf": {
         parameters: {
             query?: never;
@@ -3390,6 +3422,22 @@ export interface paths {
         };
         get?: never;
         put: operations["put /api/v1/payroll/components/:id"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/payroll/employees/{id}/payslips": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get /api/v1/payroll/employees/:id/payslips"];
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -4447,6 +4495,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["post /api/v1/recruitment/offers/:id/hire"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/recruitment/offers/{id}/offer-letter.pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get /api/v1/recruitment/offers/:id/offer-letter.pdf"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -16621,6 +16685,124 @@ export interface operations {
             };
         };
     };
+    "get /api/v1/lifecycle/employees/:id/letters": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        exit: {
+                            experience: string | null;
+                            relieving: string | null;
+                        };
+                        items: {
+                            fields: {
+                                key: string;
+                                label: string;
+                                maxLength: number;
+                                required: boolean;
+                                /** @enum {string} */
+                                type: "text" | "long" | "date";
+                            }[];
+                            /** @enum {string} */
+                            group: "employment" | "pay" | "conduct" | "exit" | "other";
+                            key: string;
+                            label: string;
+                            unavailable: string | null;
+                        }[];
+                    };
+                };
+            };
+            /** @description An RFC 7807 problem */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        code: string;
+                        detail: string;
+                        errors: {
+                            message: string;
+                            path: string;
+                        }[];
+                        instance: string;
+                        status: number;
+                        title: string;
+                        type: string;
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
+    "post /api/v1/lifecycle/employees/:id/letters/:kind": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                kind: "confirmation" | "probation-extension" | "promotion" | "transfer" | "employment-certificate" | "noc" | "salary-revision" | "salary-certificate" | "appreciation" | "show-cause" | "warning" | "resignation-acceptance" | "termination" | "settlement" | "internship-certificate" | "recommendation" | "general";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @default {} */
+                    fields?: {
+                        [key: string]: string;
+                    };
+                };
+            };
+        };
+        responses: {
+            /** @description A file */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": string;
+                };
+            };
+            /** @description An RFC 7807 problem */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        code: string;
+                        detail: string;
+                        errors: {
+                            message: string;
+                            path: string;
+                        }[];
+                        instance: string;
+                        status: number;
+                        title: string;
+                        type: string;
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
     "get /api/v1/lifecycle/employees/:id/letters/appointment.pdf": {
         parameters: {
             query?: {
@@ -19926,6 +20108,57 @@ export interface operations {
                 content: {
                     "application/json": {
                         ok: boolean;
+                    };
+                };
+            };
+            /** @description An RFC 7807 problem */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        code: string;
+                        detail: string;
+                        errors: {
+                            message: string;
+                            path: string;
+                        }[];
+                        instance: string;
+                        status: number;
+                        title: string;
+                        type: string;
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
+    "get /api/v1/payroll/employees/:id/payslips": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            id: string;
+                            kind: string;
+                            period: string;
+                            status: string;
+                        }[];
                     };
                 };
             };
@@ -24272,6 +24505,50 @@ export interface operations {
                         onboardingChecklistId: string | null;
                         requisitionClosed: boolean;
                     };
+                };
+            };
+            /** @description An RFC 7807 problem */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        code: string;
+                        detail: string;
+                        errors: {
+                            message: string;
+                            path: string;
+                        }[];
+                        instance: string;
+                        status: number;
+                        title: string;
+                        type: string;
+                    } & {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
+    "get /api/v1/recruitment/offers/:id/offer-letter.pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A file */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": string;
                 };
             };
             /** @description An RFC 7807 problem */

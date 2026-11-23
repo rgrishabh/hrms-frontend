@@ -1,8 +1,8 @@
 import { api } from '../api';
 
-/** Saves a file from the API. Throws an ApiError on failure, so the caller can say what went wrong. `excluded` counts people left out of it. */
-export async function downloadFile(url: string, fallbackName: string): Promise<{ excluded: number }> {
-  const { blob, fileName, excluded } = await api.blob(url);
+/** Saves a file from the API. Throws an ApiError on failure, so the caller can say what went wrong. `excluded` counts people left out of it. With a body it is asked for by POST. */
+export async function downloadFile(url: string, fallbackName: string, body?: unknown): Promise<{ excluded: number }> {
+  const { blob, fileName, excluded } = await api.blob(url, body);
   const href = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = href;

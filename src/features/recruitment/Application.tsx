@@ -69,6 +69,7 @@ function OfferCard({ o, canEdit, onEdit, onHire, onConfirm }: { o: Offer; canEdi
           <div className="cluster">
             {['draft', 'rejected'].includes(o.status) && canEdit && <Button size="sm" onClick={onEdit}>Edit offer</Button>}
             {['draft', 'rejected'].includes(o.status) && <Button size="sm" variant="primary" loading={isBusy('submit')} onClick={() => act('submit', 'Sent for approval')}>Submit for approval</Button>}
+            {['approved', 'sent', 'accepted'].includes(o.status) && can('recruitment.compensation') && <DownloadButton url={`/api/v1/recruitment/offers/${o.id}/offer-letter.pdf`} fileName="offer-letter.pdf">Offer letter</DownloadButton>}
             {o.status === 'approved' && <Button size="sm" variant="primary" loading={isBusy('sent')} onClick={() => act('sent', 'Marked as sent')}>Mark sent</Button>}
             {o.status === 'sent' && <Button size="sm" variant="primary" loading={isBusy('accepted')} onClick={() => act('accepted', 'Accepted')}>Accepted</Button>}
             {o.status === 'sent' && <Button size="sm" onClick={() => onConfirm('declined')}>Declined</Button>}
