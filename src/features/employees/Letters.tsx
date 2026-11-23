@@ -30,30 +30,33 @@ const GROUPS: readonly { key: Letter['group']; label: string }[] = [
   { key: 'other', label: 'Other' },
 ];
 
-/** Every letter beyond the three with their own buttons. What it says about the person comes from the record; only what is asked for here is typed. */
-export function WriteLetter({ employeeId }: { employeeId: string }) {
+/** The letters written through a form. What one says about the person comes from the record; only what is asked for here is typed. With `start`, the form opens on that letter. */
+export function WriteLetter({ employeeId, label = 'Write another letter', start = '' }: { employeeId: string; label?: string; start?: string }) {
   const [open, setOpen] = useState(false);
   return (
     <>
-      <Button size="sm" onClick={() => setOpen(true)}>Write another letter</Button>
-      {open && <LetterDialog employeeId={employeeId} onClose={() => setOpen(false)} />}
+      <Button size="sm" onClick={() => setOpen(true)}>{label}</Button>
+      {open && <LetterDialog employeeId={employeeId} start={start} onClose={() => setOpen(false)} />}
     </>
   );
 }
 
-function LetterDialog({ employeeId, onClose }: { employeeId: string; onClose: () => void }) {
+function LetterDialog({ employeeId, start, onClose }: { employeeId: string; start: string; onClose: () => void }) {
   const query = useApiQuery<Letters>(`/api/v1/lifecycle/employees/${employeeId}/letters`, { staleTime: 0 });
   return (
     <Modal title="Write a letter" size="lg" onClose={onClose}>
-      <QueryState query={query} loading={<SkeletonRows />}>{(d) => <LetterForm employeeId={employeeId} letters={d.items} onClose={onClose} />}</QueryState>
+      <QueryState query={query} loading={<SkeletonRows />}>{(d) => <LetterForm employeeId={employeeId} letters={d.items} start={start} onClose={onClose} />}</QueryState>
     </Modal>
   );
 }
 
-function LetterForm({ employeeId, letters, onClose }: { employeeId: string; letters: readonly Letter[]; onClose: () => void }) {
+const initial = (letters: readonly Letter[], key: string): Record<string, string> =>
+  Object.fromEntries((letters.find((l) => l.key === key)?.fields ?? []).map((f) => [f.key, f.value ?? '']));
+
+function LetterForm({ employeeId, letters, start, onClose }: { employeeId: string; letters: readonly Letter[]; start: string; onClose: () => void }) {
   const toast = useToast();
-  const [key, setKey] = useState('');
-  const [values, setValues] = useState<Record<string, string>>({});
+  const [key, setKey] = useState(() => (letters.some((l) => l.key === start) ? start : ''));
+  const [values, setValues] = useState(() => initial(letters, start));
   const letter = letters.find((l) => l.key === key);
   const s = useSubmit(async () => {
     if (!letter) return;
@@ -61,9 +64,14 @@ function LetterForm({ employeeId, letters, onClose }: { employeeId: string; lett
     await downloadFile(`/api/v1/lifecycle/employees/${employeeId}/letters/${letter.key}`, `${letter.key}-letter.pdf`, { fields });
     toast(`${letter.label} downloaded`);
   }, { validate: (): FieldErrors => Object.fromEntries((letter?.fields ?? []).filter((f) => f.required && !(values[f.key] ?? '').trim()).map((f) => [f.key, 'This is needed on the letter'])) });
+  const pick = (next: string) => {
+    setKey(next);
+    setValues(initial(letters, next));
+    s.setError(null);
+  };
   return (
     <form className="stack-3" onSubmit={(e) => void s.submit(e)} noValidate>
-      <Select label="Letter" required value={key} placeholder="Select…" onChange={(e) => { setKey(e.target.value); setValues({}); s.setError(null); }}>
+      <Select label="Letter" required value={key} placeholder="Select…" onChange={(e) => pick(e.target.value)}>
         {GROUPS.map((g) => {
           const of = letters.filter((l) => l.group === g.key);
           return of.length > 0 && <optgroup key={g.key} label={g.label}>{of.map((l) => <option key={l.key} value={l.key}>{l.unavailable ? `${l.label} (not available)` : l.label}</option>)}</optgroup>;
@@ -76,9 +84,9 @@ function LetterForm({ employeeId, letters, onClose }: { employeeId: string; lett
         if (f.type === 'date') return <DatePicker key={f.key} label={common.label} required={common.required} value={common.value} error={common.error} onChange={(e) => set(e.target.value)} />;
         return f.type === 'long'
           ? <Textarea key={f.key} {...common} rows={6} onChange={(e) => set(e.target.value)} />
-          : <Input key={f.key} {...common} onChange={(e) => set(e.target.value)} />;
+          : <Input key={f.key} {...common} inputMode={f.type === 'money' ? 'decimal' : undefined} onChange={(e) => set(e.target.value)} />;
       })}
-      {letter && !letter.unavailable && <p className="text-sm text-2">Names, dates and salary come from the record. The download is recorded in the audit log, and no copy is kept.</p>}
+      {letter && !letter.unavailable && <p className="text-sm text-2">{letter.fields.some((f) => f.type === 'money') ? 'Check what is filled in: the record shows what applies now. ' : 'Names, dates and salary come from the record. '}The download is recorded in the audit log, and no copy is kept.</p>}
       <FormActions error={s.error} busy={s.busy} submitLabel="Download PDF" disabled={!letter || !!letter.unavailable} onCancel={onClose} />
     </form>
   );

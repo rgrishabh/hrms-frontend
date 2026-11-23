@@ -4,7 +4,7 @@
 
 ### Added
 
-* Letters. A profile's "Write another letter" produces 17 more as PDF, and says why one is not available; what is typed goes by POST. "Salary slips" lists someone's payslips as PDF. An approved offer has an "Offer letter". The Owner sees all of it, since the API now gives that role every permission.
+* Letters. A profile's "Write another letter" produces 18 more as PDF, the offer letter among them, which also has its own button, and says why one is not available; what is typed goes by POST. "Salary slips" lists someone's payslips as PDF. An approved offer has an "Offer letter". The Owner sees all of it, since the API now gives that role every permission.
 * ID and business cards. The Employees page prints them for everyone, or a chosen branch or department; a profile prints one person's and takes the photo. Needs `employees.manage`. Settings, General sets the wording on the back of the ID card, using a new text area control.
 
 ### Fixed
